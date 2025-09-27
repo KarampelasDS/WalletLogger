@@ -7,11 +7,13 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { Store } from "../stores/Store";
 const { width, height } = Dimensions.get("window");
 
 export default function NavBar() {
   const router = useRouter();
-  const iconSize = width < 800 ? width * 0.07 : width * 0.03;
+  const iconSize = Store((state) => state.iconSize);
+
   return (
     <View style={styles.NavBar}>
       <TouchableOpacity
@@ -51,16 +53,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#2C2E42",
     position: "absolute",
     bottom: "0",
-    marginBottom: "20",
+    paddingBottom: "2%",
     flex: 1,
     flexDirection: "row",
     width: "100%",
     justifyContent: "center",
-    height: width < 800 ? "8%" : "15%",
+    height: "10%",
     alignItems: "center",
-    paddingRight: "15%",
-    paddingLeft: "15%",
-    gap: "15%",
+    paddingRight: "10%",
+    paddingLeft: "10%",
+    gap: "10%",
+    borderTopWidth: 2,
+    borderTopColor: "#fff",
   },
   NavBarItem: {
     alignItems: "center",

@@ -4,9 +4,9 @@ import NavBar from "../components/NavBar";
 const Home = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Calendar Page</Text>
+      <Text style={styles.title}>Add Page</Text>
       <Text style={{ marginTop: 10, marginBottom: 30, color: "white" }}>
-        Calendar here
+        Add transactions here
       </Text>
     </View>
   );
