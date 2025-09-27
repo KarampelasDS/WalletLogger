@@ -4,8 +4,8 @@ import NavBar from "../components/NavBar";
 const Home = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Home Page</Text>
-      <Text style={{ marginTop: 10, marginBottom: 30 }}>Home here</Text>
+      <Text style={styles.title}>Statistics Page</Text>
+      <Text style={{ marginTop: 10, marginBottom: 30 }}>Statistics here</Text>
     </View>
   );
 };
