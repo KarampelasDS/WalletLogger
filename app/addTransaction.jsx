@@ -4,7 +4,7 @@ import NavBar from "../components/NavBar";
 const Home = () => {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Add Page</Text>
+      <Text style={styles.title}>Add Transaction Page</Text>
       <Text style={{ marginTop: 10, marginBottom: 30, color: "white" }}>
         Add transactions here
       </Text>
