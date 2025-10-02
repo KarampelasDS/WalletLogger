@@ -7,7 +7,7 @@ import { Store } from "../stores/Store";
 
 export default function Layout() {
   const setIconSize = Store((state) => state.setIconSize);
-  const { width, height } = Dimensions.get("window");
+  const { width } = Dimensions.get("window");
   const iconSize = width * 0.07;
   setIconSize(iconSize);
 
