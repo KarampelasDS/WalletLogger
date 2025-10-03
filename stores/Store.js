@@ -6,4 +6,6 @@ export const Store = create((set) => ({
   currentTransaction: null,
   setCurrentTransaction: (transaction) =>
     set({ currentTransaction: transaction }),
+  currentDate: new Date(),
+  setCurrentDate: (date) => set({ currentDate: date }),
 }));
