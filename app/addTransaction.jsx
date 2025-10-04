@@ -2,8 +2,9 @@ import { StyleSheet, Text, View } from "react-native";
 import NavBar from "../components/NavBar";
 import Title from "../components/Title/Title";
 import { useNavigation } from "@react-navigation/native";
+import * as SQLite from "expo-sqlite";
 
-const Home = () => {
+const addTransaction = () => {
   const navigation = useNavigation();
   return (
     <View style={styles.container}>
@@ -21,7 +22,7 @@ const Home = () => {
     </View>
   );
 };
-export default Home;
+export default addTransaction;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
