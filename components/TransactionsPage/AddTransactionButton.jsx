@@ -6,12 +6,14 @@ import { useRouter } from "expo-router";
 export default function AddTransactionButton() {
   const router = useRouter();
   return (
-    <TouchableOpacity style={styles.AddTransactionButton}>
+    <TouchableOpacity
+      style={styles.AddTransactionButton}
+      onPress={() => router.push("/addTransaction")}
+    >
       <Ionicons
         name="add"
         size={Store((state) => state.iconSize) + 25}
         color="#fff"
-        onPress={() => router.push("/addTransaction")}
       />
     </TouchableOpacity>
   );
