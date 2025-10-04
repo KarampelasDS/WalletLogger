@@ -12,6 +12,11 @@ export default function Title(props) {
         </TouchableOpacity>
       )}
       <Text style={styles.titleText}>{props.title}</Text>
+      {props.frontIcon && (
+        <TouchableOpacity onPress={props.onPressFrontIcon}>
+          <Ionicons name={props.frontIcon} size={iconSize} color="#fff" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 }
