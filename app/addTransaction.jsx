@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
   },
   TransactionDetailsRow: {
     flexDirection: "row",
-    justifyContent: "flex-start",
     alignItems: "center",
+    width: "100%",
   },
   TransactionDetailName: {
     color: "white",
@@ -146,6 +146,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#d9d9d925",
-    width: "70%",
+    flex: 1,
+    textAlign: "left",
+    paddingVertical: 2,
   },
 });
