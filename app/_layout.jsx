@@ -11,6 +11,7 @@ export default function Layout() {
   const { width } = Dimensions.get("window");
   const iconSize = width * 0.07;
   setIconSize(iconSize);
+  const ZustandShowNavbar = Store((state) => state.showNavbar);
 
   return (
     <>
@@ -18,7 +19,7 @@ export default function Layout() {
       <SafeAreaView style={styles.safeArea}>
         <Slot />
       </SafeAreaView>
-      <NavBar />
+      {ZustandShowNavbar && <NavBar />}
     </>
   );
 }

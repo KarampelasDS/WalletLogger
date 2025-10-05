@@ -8,4 +8,6 @@ export const Store = create((set) => ({
     set({ currentTransaction: transaction }),
   currentDate: new Date(),
   setCurrentDate: (date) => set({ currentDate: date }),
+  showNavbar: true,
+  setShowNavbar: (show) => set({ showNavbar: show }),
 }));

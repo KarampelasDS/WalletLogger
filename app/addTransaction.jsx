@@ -1,13 +1,45 @@
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import NavBar from "../components/NavBar";
 import Title from "../components/Title/Title";
 import { useNavigation } from "@react-navigation/native";
 import * as SQLite from "expo-sqlite";
 import { useState } from "react";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import { Store } from "../stores/Store";
+import Keyboard from "../components/Keyboard/Keyboard";
 
 const addTransaction = () => {
   const navigation = useNavigation();
   const [transactionType, setTransactionType] = useState("Expense");
+  const [focusedInput, setFocusedInput] = useState(null);
+
+  //Date Picking
+  const [transactionDate, setTransactionDate] = useState(new Date());
+  const [datePickerMode, setDatePickerMode] = useState("date");
+  const [showDatePickerMode, setShowDatePickerMode] = useState(false);
+
+  //Amount Picking
+  const [transactionAmount, setTransactionAmount] = useState();
+  const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
+  const setShowNavbar = Store((state) => state.setShowNavbar);
+
+  const onChange = (event, transactionDate) => {
+    const currentDate = transactionDate;
+    setShowDatePickerMode(false);
+    setTransactionDate(currentDate);
+  };
+
+  const showMode = (currentMode) => {
+    setShowDatePickerMode(true);
+    setDatePickerMode(currentMode);
+  };
+
+  const showDatepicker = () => {
+    showMode("date");
+  };
+
+  const showTimepicker = () => {
+    showMode("time");
+  };
 
   const colors = {
     Income: "#4EA758",
@@ -77,11 +109,84 @@ const addTransaction = () => {
       <View style={styles.TransactionDetails}>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Date</Text>
-          <Text style={styles.TransactionDetailValue}>12 Aug 2023</Text>
+          <Text
+            style={[
+              styles.TransactionDetailValue,
+              focusedInput == "Date" && {
+                borderBottomColor: colors[transactionType],
+              },
+            ]}
+          >
+            <Text
+              onPress={() => {
+                showDatepicker();
+                setShowAmountKeyboard(false);
+                setShowNavbar(true);
+                setFocusedInput("Date");
+              }}
+            >
+              {"("}
+              {transactionDate.toLocaleString("en-GB", {
+                weekday: "short",
+              })}
+              {") "}
+            </Text>
+            <Text
+              onPress={() => {
+                showDatepicker();
+                setShowAmountKeyboard(false);
+                setShowNavbar(true);
+                setFocusedInput("Date");
+              }}
+            >
+              {transactionDate.toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })}{" "}
+            </Text>
+            <Text
+              onPress={() => {
+                showTimepicker();
+                setShowAmountKeyboard(false);
+                setShowNavbar(true);
+                setFocusedInput("Date");
+              }}
+            >
+              {transactionDate.toLocaleString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })}
+            </Text>
+          </Text>
+          {showDatePickerMode && (
+            <DateTimePicker
+              testID="dateTimePicker"
+              value={transactionDate}
+              mode={datePickerMode}
+              is24Hour={true}
+              onChange={onChange}
+            />
+          )}
         </View>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Amount</Text>
-          <Text style={styles.TransactionDetailValue}>21.00</Text>
+          <Text
+            onPress={() => {
+              setShowAmountKeyboard(true);
+              setShowNavbar(false);
+              setFocusedInput("Amount");
+            }}
+            style={[
+              styles.TransactionDetailValue,
+              focusedInput == "Amount" && {
+                borderBottomColor: colors[transactionType],
+              },
+            ]}
+          >
+            {transactionAmount}
+          </Text>
         </View>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Category</Text>
@@ -96,6 +201,12 @@ const addTransaction = () => {
           <Text style={styles.TransactionDetailValue}>Test</Text>
         </View>
       </View>
+      {showAmountKeyboard && (
+        <Keyboard
+          headerText={focusedInput}
+          typeColor={colors[transactionType]}
+        />
+      )}
     </View>
   );
 };
