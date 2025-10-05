@@ -23,9 +23,6 @@ export default function Title(props) {
 
 const styles = StyleSheet.create({
   title: {
-    position: "absolute",
-    top: "5%",
-    left: "5%",
     width: "90%",
     borderBottomColor: "#fff",
     borderBottomWidth: 2,
@@ -35,6 +32,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     zIndex: 1000,
+    paddingBottom: 5,
+    marginBottom: 15,
   },
   titleText: {
     color: "#fff",
