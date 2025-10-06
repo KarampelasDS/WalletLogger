@@ -5,13 +5,17 @@ import { StatusBar } from "expo-status-bar";
 import { Dimensions, StyleSheet } from "react-native";
 import { Store } from "../stores/Store";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useEffect } from "react";
 
 export default function Layout() {
   const setIconSize = Store((state) => state.setIconSize);
+  const ZustandShowNavbar = Store((state) => state.showNavbar);
   const { width } = Dimensions.get("window");
   const iconSize = width * 0.07;
-  setIconSize(iconSize);
-  const ZustandShowNavbar = Store((state) => state.showNavbar);
+
+  useEffect(() => {
+    setIconSize(iconSize);
+  }, [iconSize, setIconSize]);
 
   return (
     <>

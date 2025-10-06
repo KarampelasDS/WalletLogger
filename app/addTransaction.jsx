@@ -18,7 +18,7 @@ const addTransaction = () => {
   const [showDatePickerMode, setShowDatePickerMode] = useState(false);
 
   //Amount Picking
-  const [transactionAmount, setTransactionAmount] = useState();
+  const [transactionAmount, setTransactionAmount] = useState("");
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
   const setShowNavbar = Store((state) => state.setShowNavbar);
 
@@ -39,6 +39,18 @@ const addTransaction = () => {
 
   const showTimepicker = () => {
     showMode("time");
+  };
+
+  const openKeyboard = () => {
+    setShowAmountKeyboard(true);
+    setShowNavbar(false);
+    setFocusedInput("Amount");
+  };
+
+  const closeKeyboard = () => {
+    setShowAmountKeyboard(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
   };
 
   const colors = {
@@ -120,8 +132,7 @@ const addTransaction = () => {
             <Text
               onPress={() => {
                 showDatepicker();
-                setShowAmountKeyboard(false);
-                setShowNavbar(true);
+                closeKeyboard();
                 setFocusedInput("Date");
               }}
             >
@@ -134,8 +145,7 @@ const addTransaction = () => {
             <Text
               onPress={() => {
                 showDatepicker();
-                setShowAmountKeyboard(false);
-                setShowNavbar(true);
+                closeKeyboard();
                 setFocusedInput("Date");
               }}
             >
@@ -148,7 +158,7 @@ const addTransaction = () => {
             <Text
               onPress={() => {
                 showTimepicker();
-                setShowAmountKeyboard(false);
+                closeKeyboard();
                 setShowNavbar(true);
                 setFocusedInput("Date");
               }}
@@ -174,7 +184,7 @@ const addTransaction = () => {
           <Text style={styles.TransactionDetailName}>Amount</Text>
           <Text
             onPress={() => {
-              setShowAmountKeyboard(true);
+              openKeyboard();
               setShowNavbar(false);
               setFocusedInput("Amount");
             }}
@@ -185,7 +195,9 @@ const addTransaction = () => {
               },
             ]}
           >
-            {transactionAmount}
+            {Number(transactionAmount).toLocaleString("en-US", {
+              maximumFractionDigits: 2,
+            })}
           </Text>
         </View>
         <View style={styles.TransactionDetailsRow}>
@@ -205,6 +217,9 @@ const addTransaction = () => {
         <Keyboard
           headerText={focusedInput}
           typeColor={colors[transactionType]}
+          value={transactionAmount}
+          valueUpdateFunction={setTransactionAmount}
+          closeKeyboard={closeKeyboard}
         />
       )}
     </View>
