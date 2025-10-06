@@ -1,6 +1,8 @@
 import { create } from "zustand";
 
 export const Store = create((set) => ({
+  completedSetup: false,
+  setCompletedSetup: (completed) => set({ completedSetup: completed }),
   iconSize: 0,
   setIconSize: (newSize) => set({ iconSize: newSize }),
   currentTransaction: null,
