@@ -2,7 +2,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Title from "../components/Title/Title";
 import { useNavigation } from "@react-navigation/native";
 import * as SQLite from "expo-sqlite";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Store } from "../stores/Store";
 import Keyboard from "../components/Keyboard/Keyboard";
@@ -16,11 +16,6 @@ const addTransaction = () => {
   const [transactionDate, setTransactionDate] = useState(new Date());
   const [datePickerMode, setDatePickerMode] = useState("date");
   const [showDatePickerMode, setShowDatePickerMode] = useState(false);
-
-  //Amount Picking
-  const [transactionAmount, setTransactionAmount] = useState("");
-  const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
-  const setShowNavbar = Store((state) => state.setShowNavbar);
 
   const onChange = (event, transactionDate) => {
     const currentDate = transactionDate;
@@ -41,6 +36,11 @@ const addTransaction = () => {
     showMode("time");
   };
 
+  //Amount Picking
+  const [transactionAmount, setTransactionAmount] = useState("");
+  const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
+  const setShowNavbar = Store((state) => state.setShowNavbar);
+
   const openKeyboard = () => {
     setShowAmountKeyboard(true);
     setShowNavbar(false);
@@ -52,6 +52,24 @@ const addTransaction = () => {
     setShowNavbar(true);
     setFocusedInput(null);
   };
+
+  //Category Picking
+  const [transactionCategory, setTransactionCategory] = useState("");
+  const [showCategoryPicker, setShowCategoryPicker] = useState(true);
+  const [storedCategories, setStoredCategories] = useState([]);
+  const LoadCategories = async () => {
+    const db = await SQLite.openDatabaseAsync("ExpenseManager.db");
+    if (!db) {
+      console.error("Could not open DB");
+      return;
+    }
+    const categories = await db.getAllAsync("SELECT * FROM categories");
+    setStoredCategories(categories);
+  };
+
+  useEffect(() => {
+    LoadCategories();
+  }, []);
 
   const colors = {
     Income: "#4EA758",
@@ -221,6 +239,17 @@ const addTransaction = () => {
           valueUpdateFunction={setTransactionAmount}
           closeKeyboard={closeKeyboard}
         />
+      )}
+      {showCategoryPicker && (
+        <View>
+          <Text>Category Picker</Text>
+          {storedCategories.map((category) => (
+            <Text key={category.category_id}>
+              {category.category_emoji}
+              {category.category_name}
+            </Text>
+          ))}
+        </View>
       )}
     </View>
   );
