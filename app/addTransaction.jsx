@@ -234,6 +234,7 @@ const addTransaction = () => {
       {showAmountKeyboard && (
         <Keyboard
           headerText={focusedInput}
+          headerBackgroundColor={colors[transactionType]}
           typeColor={colors[transactionType]}
           value={transactionAmount}
           valueUpdateFunction={setTransactionAmount}

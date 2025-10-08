@@ -2,6 +2,7 @@ import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Store } from "../../stores/Store";
 import { useEffect } from "react";
+import KeyboardHeader from "../KeyboardHeader/KeyboardHeader";
 
 export default function Keyboard(props) {
   const iconSize = Store((state) => state.iconSize);
@@ -52,14 +53,10 @@ export default function Keyboard(props) {
       ></TouchableOpacity>
       <View style={styles.keyboard}>
         <View>
-          <Text
-            style={[
-              styles.keyboardHeader,
-              { backgroundColor: `${props.typeColor}` },
-            ]}
-          >
-            {props.headerText}
-          </Text>
+          <KeyboardHeader
+            text={props.headerText}
+            backgroundColor={props.headerBackgroundColor}
+          />
         </View>
         <View>
           <View style={styles.keyboardRow}>
