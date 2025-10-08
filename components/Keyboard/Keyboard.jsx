@@ -30,6 +30,15 @@ export default function Keyboard(props) {
       return;
     }
 
+    // Manage Extreme Amount Lengths
+    if (nextStr.length > 14 && val != ".") {
+      if (nextStr.includes(".") && nextStr.length <= 17) {
+        props.valueUpdateFunction(nextStr);
+        return;
+      }
+      return;
+    }
+
     props.valueUpdateFunction(nextStr);
   };
 

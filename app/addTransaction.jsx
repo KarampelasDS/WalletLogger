@@ -213,9 +213,19 @@ const addTransaction = () => {
               },
             ]}
           >
-            {Number(transactionAmount).toLocaleString("en-US", {
-              maximumFractionDigits: 2,
-            })}
+            {transactionAmount == "."
+              ? "0."
+              : Number(transactionAmount).toLocaleString("en-US", {
+                  maximumFractionDigits: 2,
+                })}
+            {transactionAmount[transactionAmount.length - 1] === "." &&
+            transactionAmount != "."
+              ? "."
+              : ""}
+            {transactionAmount[transactionAmount.length - 1] === "0" &&
+            transactionAmount.includes(".")
+              ? "0"
+              : ""}
           </Text>
         </View>
         <View style={styles.TransactionDetailsRow}>
