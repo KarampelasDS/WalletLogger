@@ -71,6 +71,7 @@ const addTransaction = () => {
     LoadCategories();
   }, []);
 
+  // Transfer Colors
   const colors = {
     Income: "#4EA758",
     Expense: "#CD5D5D",
