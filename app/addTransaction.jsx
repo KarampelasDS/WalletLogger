@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Store } from "../stores/Store";
 import Keyboard from "../components/Keyboard/Keyboard";
+import OptionPicker from "../components/OptionPicker/OptionPicker";
 
 const addTransaction = () => {
   const navigation = useNavigation();
@@ -55,7 +56,7 @@ const addTransaction = () => {
 
   //Category Picking
   const [transactionCategory, setTransactionCategory] = useState("");
-  const [showCategoryPicker, setShowCategoryPicker] = useState(true);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [storedCategories, setStoredCategories] = useState([]);
   const LoadCategories = async () => {
     const db = await SQLite.openDatabaseAsync("ExpenseManager.db");
@@ -70,6 +71,18 @@ const addTransaction = () => {
   useEffect(() => {
     LoadCategories();
   }, []);
+
+  const openCategoryPicker = () => {
+    setShowCategoryPicker(true);
+    setShowNavbar(false);
+    setFocusedInput("Category");
+  };
+
+  const closeCategoryPicker = () => {
+    setShowCategoryPicker(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
+  };
 
   // Transfer Colors
   const colors = {
@@ -231,7 +244,19 @@ const addTransaction = () => {
         </View>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Category</Text>
-          <Text style={styles.TransactionDetailValue}>Transport</Text>
+          <Text
+            style={[
+              styles.TransactionDetailValue,
+              focusedInput == "Category" && {
+                borderBottomColor: colors[transactionType],
+              },
+            ]}
+            onPress={() => {
+              openCategoryPicker();
+            }}
+          >
+            {transactionCategory}
+          </Text>
         </View>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Account</Text>
@@ -253,15 +278,15 @@ const addTransaction = () => {
         />
       )}
       {showCategoryPicker && (
-        <View>
-          <Text>Category Picker</Text>
-          {storedCategories.map((category) => (
-            <Text key={category.category_id}>
-              {category.category_emoji}
-              {category.category_name}
-            </Text>
-          ))}
-        </View>
+        <OptionPicker
+          value={transactionCategory}
+          valueUpdateFunction={setTransactionCategory}
+          options={storedCategories}
+          headerText={focusedInput}
+          headerBackgroundColor={colors[transactionType]}
+          typeColor={colors[transactionType]}
+          closePicker={closeCategoryPicker}
+        />
       )}
     </View>
   );
