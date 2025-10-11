@@ -2,7 +2,16 @@ import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function Option(props) {
   return (
-    <TouchableOpacity style={styles.container}>
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => {
+        props.valueUpdateFunction({
+          emoji: props.emoji,
+          name: props.name,
+          id: props.id,
+        });
+      }}
+    >
       <Text style={styles.optionText}>
         {props.emoji}
         {props.name}

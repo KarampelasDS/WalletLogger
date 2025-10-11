@@ -17,6 +17,8 @@ export default function OptionPicker(props) {
               key={category.category_id}
               emoji={category.category_emoji}
               name={category.category_name}
+              id={category.category_id}
+              valueUpdateFunction={props.valueUpdateFunction}
             />
           ))}
         </View>

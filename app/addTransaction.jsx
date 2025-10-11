@@ -77,6 +77,11 @@ const addTransaction = () => {
 
   useEffect(() => {
     LoadCategories();
+    setTransactionCategory({
+      name: "",
+      id: 0,
+      emoji: "",
+    });
   }, [transactionType]);
 
   const openCategoryPicker = () => {
@@ -262,6 +267,7 @@ const addTransaction = () => {
               openCategoryPicker();
             }}
           >
+            {transactionCategory.emoji}
             {transactionCategory.name}
           </Text>
         </View>
