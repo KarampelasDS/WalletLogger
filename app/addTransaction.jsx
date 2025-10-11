@@ -12,6 +12,7 @@ const addTransaction = () => {
   const navigation = useNavigation();
   const [transactionType, setTransactionType] = useState("Expense");
   const [focusedInput, setFocusedInput] = useState(null);
+  const db = Store((state) => state.db);
 
   //Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
@@ -63,7 +64,6 @@ const addTransaction = () => {
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [storedCategories, setStoredCategories] = useState([]);
   const LoadCategories = async () => {
-    const db = await SQLite.openDatabaseAsync("ExpenseManager.db");
     if (!db) {
       console.error("Could not open DB");
       return;

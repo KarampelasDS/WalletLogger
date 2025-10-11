@@ -1,6 +1,8 @@
 import { create } from "zustand";
+import * as SQLite from "expo-sqlite";
 
 export const Store = create((set) => ({
+  db: null,
   completedSetup: false,
   setCompletedSetup: (completed) => set({ completedSetup: completed }),
   iconSize: 0,
@@ -12,4 +14,11 @@ export const Store = create((set) => ({
   setCurrentDate: (date) => set({ currentDate: date }),
   showNavbar: true,
   setShowNavbar: (show) => set({ showNavbar: show }),
+
+  // add an async init function
+  initDB: async () => {
+    const db = await SQLite.openDatabaseAsync("ExpenseManager.db");
+    set({ db });
+    return db;
+  },
 }));

@@ -28,7 +28,13 @@ const Home = () => {
   const [shownMonth, setShownMonth] = useState(currentMonth);
   const [shownYear, setShownYear] = useState(currentYear);
   const completedSetup = Store((state) => state.completedSetup);
+  const initDB = Store((state) => state.initDB);
+  const db = Store((state) => state.db);
   const router = useRouter();
+
+  useEffect(() => {
+    initDB();
+  }, []);
 
   if (!completedSetup) {
     return <Redirect href="/setup/setup1" />;
@@ -36,7 +42,6 @@ const Home = () => {
 
   useEffect(() => {
     const readDB = async () => {
-      const db = await openDatabaseAsync("ExpenseManager.db");
       const accounts = await db.getAllAsync("SELECT * FROM accounts");
       console.log("Accounts:", accounts);
       const categories = await db.getAllAsync("SELECT * FROM categories");
