@@ -1,28 +1,34 @@
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  TextInput,
+  Keyboard,
+  TouchableWithoutFeedback,
+} from "react-native";
 import Title from "../components/Title/Title";
 import { useNavigation } from "@react-navigation/native";
-import * as SQLite from "expo-sqlite";
 import { useEffect, useState } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Store } from "../stores/Store";
-import Keyboard from "../components/Keyboard/Keyboard";
+import KeyboardComponent from "../components/Keyboard/Keyboard";
 import OptionPicker from "../components/OptionPicker/OptionPicker";
 
-const addTransaction = () => {
+const AddTransaction = () => {
   const navigation = useNavigation();
   const [transactionType, setTransactionType] = useState("Expense");
   const [focusedInput, setFocusedInput] = useState(null);
   const db = Store((state) => state.db);
 
-  //Date Picking
+  // Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
   const [datePickerMode, setDatePickerMode] = useState("date");
   const [showDatePickerMode, setShowDatePickerMode] = useState(false);
 
-  const onChange = (event, transactionDate) => {
-    const currentDate = transactionDate;
+  const onChange = (event, date) => {
     setShowDatePickerMode(false);
-    setTransactionDate(currentDate);
+    if (date) setTransactionDate(date);
   };
 
   const showMode = (currentMode) => {
@@ -30,15 +36,10 @@ const addTransaction = () => {
     setDatePickerMode(currentMode);
   };
 
-  const showDatepicker = () => {
-    showMode("date");
-  };
+  const showDatepicker = () => showMode("date");
+  const showTimepicker = () => showMode("time");
 
-  const showTimepicker = () => {
-    showMode("time");
-  };
-
-  //Amount Picking
+  // Amount Picking
   const [transactionAmount, setTransactionAmount] = useState("");
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
   const setShowNavbar = Store((state) => state.setShowNavbar);
@@ -55,7 +56,7 @@ const addTransaction = () => {
     setFocusedInput(null);
   };
 
-  //Category Picking
+  // Category Picking
   const [transactionCategory, setTransactionCategory] = useState({
     name: "",
     id: 0,
@@ -63,6 +64,7 @@ const addTransaction = () => {
   });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [storedCategories, setStoredCategories] = useState([]);
+
   const LoadCategories = async () => {
     if (!db) {
       console.error("Could not open DB");
@@ -77,11 +79,7 @@ const addTransaction = () => {
 
   useEffect(() => {
     LoadCategories();
-    setTransactionCategory({
-      name: "",
-      id: 0,
-      emoji: "",
-    });
+    setTransactionCategory({ name: "", id: 0, emoji: "" });
   }, [transactionType]);
 
   const openCategoryPicker = () => {
@@ -89,7 +87,6 @@ const addTransaction = () => {
     setShowNavbar(false);
     setFocusedInput("Category");
   };
-
   const closeCategoryPicker = () => {
     setShowCategoryPicker(false);
     setShowNavbar(true);
@@ -97,7 +94,6 @@ const addTransaction = () => {
   };
 
   // Account Picking
-
   const [transactionAccount, setTransactionAccount] = useState({
     name: "",
     id: 0,
@@ -124,14 +120,16 @@ const addTransaction = () => {
     setShowNavbar(false);
     setFocusedInput("Account");
   };
-
   const closeAccountPicker = () => {
     setShowAccountPicker(false);
     setShowNavbar(true);
     setFocusedInput(null);
   };
 
-  // Transfer Colors
+  // Note
+  const [transactionNote, setTransactionNote] = useState("");
+
+  // Colors
   const colors = {
     Income: "#4EA758",
     Expense: "#CD5D5D",
@@ -139,233 +137,217 @@ const addTransaction = () => {
   };
 
   return (
-    <View style={styles.container}>
-      <Title
-        title="Add Transaction"
-        backIcon="arrow-back-circle-outline"
-        onPressBackIcon={() => {
-          navigation.goBack();
-        }}
-      />
-      <View style={styles.typeSelector}>
-        <TouchableOpacity onPress={() => setTransactionType("Income")}>
-          <Text
-            style={[
-              styles.type,
-              transactionType == "Income"
-                ? {
-                    color: colors["Income"],
-                    borderWidth: 1,
-                    borderColor: colors["Income"],
-                  }
-                : {},
-            ]}
-          >
-            Income
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setTransactionType("Expense")}>
-          <Text
-            style={[
-              styles.type,
-              transactionType == "Expense"
-                ? {
-                    color: colors["Expense"],
-                    borderWidth: 1,
-                    borderColor: colors["Expense"],
-                  }
-                : {},
-            ]}
-          >
-            Expense
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setTransactionType("Transfer")}>
-          <Text
-            style={[
-              styles.type,
-              transactionType == "Transfer"
-                ? {
-                    color: colors["Transfer"],
-                    borderWidth: 1,
-                    borderColor: colors["Transfer"],
-                  }
-                : {},
-            ]}
-          >
-            Transfer
-          </Text>
-        </TouchableOpacity>
-      </View>
-      <View style={styles.TransactionDetails}>
-        <View style={styles.TransactionDetailsRow}>
-          <Text style={styles.TransactionDetailName}>Date</Text>
-          <Text
-            style={[
-              styles.TransactionDetailValue,
-              focusedInput == "Date" && {
-                borderBottomColor: colors[transactionType],
-              },
-            ]}
-          >
-            <Text
-              onPress={() => {
-                showDatepicker();
-                closeKeyboard();
-                setFocusedInput("Date");
-              }}
+    <TouchableWithoutFeedback
+      style={{ zIndex: 1100 }}
+      onPress={Keyboard.dismiss}
+    >
+      <View style={styles.container}>
+        <Title
+          title="Add Transaction"
+          backIcon="arrow-back-circle-outline"
+          onPressBackIcon={() => navigation.goBack()}
+        />
+
+        <View style={styles.typeSelector}>
+          {["Income", "Expense", "Transfer"].map((type) => (
+            <TouchableOpacity
+              key={type}
+              onPress={() => setTransactionType(type)}
             >
-              {"("}
-              {transactionDate.toLocaleString("en-GB", {
-                weekday: "short",
-              })}
-              {") "}
-            </Text>
-            <Text
-              onPress={() => {
-                showDatepicker();
-                closeKeyboard();
-                setFocusedInput("Date");
-              }}
-            >
-              {transactionDate.toLocaleString("en-GB", {
-                day: "2-digit",
-                month: "short",
-                year: "numeric",
-              })}{" "}
-            </Text>
-            <Text
-              onPress={() => {
-                showTimepicker();
-                closeKeyboard();
-                setShowNavbar(true);
-                setFocusedInput("Date");
-              }}
-            >
-              {transactionDate.toLocaleString("en-GB", {
-                hour: "2-digit",
-                minute: "2-digit",
-                hour12: false,
-              })}
-            </Text>
-          </Text>
-          {showDatePickerMode && (
-            <DateTimePicker
-              testID="dateTimePicker"
-              value={transactionDate}
-              mode={datePickerMode}
-              is24Hour={true}
-              onChange={onChange}
-            />
-          )}
+              <Text
+                style={[
+                  styles.type,
+                  transactionType === type && {
+                    color: colors[type],
+                    borderWidth: 1,
+                    borderColor: colors[type],
+                  },
+                ]}
+              >
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-        <View style={styles.TransactionDetailsRow}>
-          <Text style={styles.TransactionDetailName}>Amount</Text>
-          <Text
-            onPress={() => {
-              openKeyboard();
-              setShowNavbar(false);
-              setFocusedInput("Amount");
-            }}
-            style={[
-              styles.TransactionDetailValue,
-              focusedInput == "Amount" && {
-                borderBottomColor: colors[transactionType],
-              },
-            ]}
-          >
-            {transactionAmount == "."
-              ? "0."
-              : Number(transactionAmount).toLocaleString("en-US", {
-                  maximumFractionDigits: 2,
+
+        <View style={styles.TransactionDetails}>
+          {/* Date */}
+          <View style={styles.TransactionDetailsRow}>
+            <Text style={styles.TransactionDetailName}>Date</Text>
+            <Text
+              style={[
+                styles.TransactionDetailValue,
+                focusedInput === "Date" && {
+                  borderBottomColor: colors[transactionType],
+                },
+              ]}
+            >
+              <Text
+                onPress={() => {
+                  showDatepicker();
+                  closeKeyboard();
+                  setFocusedInput("Date");
+                }}
+              >
+                {"("}
+                {transactionDate.toLocaleString("en-GB", { weekday: "short" })}
+                {") "}
+              </Text>
+              <Text
+                onPress={() => {
+                  showDatepicker();
+                  closeKeyboard();
+                  setFocusedInput("Date");
+                }}
+              >
+                {transactionDate.toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}{" "}
+              </Text>
+              <Text
+                onPress={() => {
+                  showTimepicker();
+                  closeKeyboard();
+                  setShowNavbar(true);
+                  setFocusedInput("Date");
+                }}
+              >
+                {transactionDate.toLocaleString("en-GB", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
                 })}
-            {transactionAmount[transactionAmount.length - 1] === "." &&
-            transactionAmount != "."
-              ? "."
-              : ""}
-            {transactionAmount[transactionAmount.length - 1] === "0" &&
-            transactionAmount.includes(".")
-              ? "0"
-              : ""}
-          </Text>
+              </Text>
+            </Text>
+            {showDatePickerMode && (
+              <DateTimePicker
+                testID="dateTimePicker"
+                value={transactionDate}
+                mode={datePickerMode}
+                is24Hour={true}
+                onChange={onChange}
+              />
+            )}
+          </View>
+
+          {/* Amount */}
+          <View style={styles.TransactionDetailsRow}>
+            <Text style={styles.TransactionDetailName}>Amount</Text>
+            <Text
+              onPress={openKeyboard}
+              style={[
+                styles.TransactionDetailValue,
+                focusedInput === "Amount" && {
+                  borderBottomColor: colors[transactionType],
+                },
+              ]}
+            >
+              {transactionAmount === "."
+                ? "0."
+                : Number(transactionAmount).toLocaleString("en-US", {
+                    maximumFractionDigits: 2,
+                  })}
+              {transactionAmount.endsWith(".") && transactionAmount !== "."
+                ? "."
+                : ""}
+              {transactionAmount.endsWith("0") &&
+              transactionAmount.includes(".")
+                ? "0"
+                : ""}
+            </Text>
+          </View>
+
+          {/* Category */}
+          <View style={styles.TransactionDetailsRow}>
+            <Text style={styles.TransactionDetailName}>Category</Text>
+            <Text
+              style={[
+                styles.TransactionDetailValue,
+                focusedInput === "Category" && {
+                  borderBottomColor: colors[transactionType],
+                },
+              ]}
+              onPress={openCategoryPicker}
+            >
+              {transactionCategory.emoji}
+              {transactionCategory.name}
+            </Text>
+          </View>
+
+          {/* Account */}
+          <View style={styles.TransactionDetailsRow}>
+            <Text style={styles.TransactionDetailName}>Account</Text>
+            <Text
+              style={[
+                styles.TransactionDetailValue,
+                focusedInput === "Account" && {
+                  borderBottomColor: colors[transactionType],
+                },
+              ]}
+              onPress={openAccountPicker}
+            >
+              {transactionAccount.emoji}
+              {transactionAccount.name}
+            </Text>
+          </View>
+
+          {/* Note */}
+          <View style={styles.TransactionDetailsRow}>
+            <Text style={styles.TransactionDetailName}>Note</Text>
+            <TextInput
+              value={transactionNote}
+              onChangeText={setTransactionNote}
+              style={styles.TransactionDetailValue}
+            />
+          </View>
         </View>
-        <View style={styles.TransactionDetailsRow}>
-          <Text style={styles.TransactionDetailName}>Category</Text>
-          <Text
-            style={[
-              styles.TransactionDetailValue,
-              focusedInput == "Category" && {
-                borderBottomColor: colors[transactionType],
-              },
-            ]}
-            onPress={() => {
-              openCategoryPicker();
-            }}
-          >
-            {transactionCategory.emoji}
-            {transactionCategory.name}
-          </Text>
-        </View>
-        <View style={styles.TransactionDetailsRow}>
-          <Text style={styles.TransactionDetailName}>Account</Text>
-          <Text
-            style={[
-              styles.TransactionDetailValue,
-              focusedInput == "Account" && {
-                borderBottomColor: colors[transactionType],
-              },
-            ]}
-            onPress={() => {
-              openAccountPicker();
-            }}
-          >
-            {transactionAccount.emoji}
-            {transactionAccount.name}
-          </Text>
-        </View>
-        <View style={styles.TransactionDetailsRow}>
-          <Text style={styles.TransactionDetailName}>Note</Text>
-          <Text style={styles.TransactionDetailValue}>Test</Text>
-        </View>
+
+        {/* Custom Keyboards / Pickers */}
+        {showAmountKeyboard && (
+          <KeyboardComponent
+            headerText={focusedInput}
+            headerBackgroundColor={colors[transactionType]}
+            typeColor={colors[transactionType]}
+            value={transactionAmount}
+            valueUpdateFunction={setTransactionAmount}
+            closeKeyboard={closeKeyboard}
+          />
+        )}
+
+        {showCategoryPicker && (
+          <OptionPicker
+            value={transactionCategory}
+            valueUpdateFunction={setTransactionCategory}
+            options={storedCategories}
+            headerText={focusedInput}
+            headerBackgroundColor={colors[transactionType]}
+            typeColor={colors[transactionType]}
+            closePicker={closeCategoryPicker}
+            type="Category"
+          />
+        )}
+
+        {showAccountPicker && (
+          <OptionPicker
+            value={transactionAccount}
+            valueUpdateFunction={setTransactionAccount}
+            options={storedAccounts}
+            headerText={focusedInput}
+            headerBackgroundColor={colors[transactionType]}
+            typeColor={colors[transactionType]}
+            closePicker={closeAccountPicker}
+            type="Account"
+          />
+        )}
       </View>
-      {showAmountKeyboard && (
-        <Keyboard
-          headerText={focusedInput}
-          headerBackgroundColor={colors[transactionType]}
-          typeColor={colors[transactionType]}
-          value={transactionAmount}
-          valueUpdateFunction={setTransactionAmount}
-          closeKeyboard={closeKeyboard}
-        />
-      )}
-      {showCategoryPicker && (
-        <OptionPicker
-          value={transactionCategory}
-          valueUpdateFunction={setTransactionCategory}
-          options={storedCategories}
-          headerText={focusedInput}
-          headerBackgroundColor={colors[transactionType]}
-          typeColor={colors[transactionType]}
-          closePicker={closeCategoryPicker}
-          type="Category"
-        />
-      )}
-      {showAccountPicker && (
-        <OptionPicker
-          value={transactionAccount}
-          valueUpdateFunction={setTransactionAccount}
-          options={storedAccounts}
-          headerText={focusedInput}
-          headerBackgroundColor={colors[transactionType]}
-          typeColor={colors[transactionType]}
-          closePicker={closeAccountPicker}
-          type="Account"
-        />
-      )}
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
-export default addTransaction;
+
+export default AddTransaction;
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
