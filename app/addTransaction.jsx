@@ -55,7 +55,11 @@ const addTransaction = () => {
   };
 
   //Category Picking
-  const [transactionCategory, setTransactionCategory] = useState("");
+  const [transactionCategory, setTransactionCategory] = useState({
+    name: "",
+    id: 0,
+    emoji: "",
+  });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
   const [storedCategories, setStoredCategories] = useState([]);
   const LoadCategories = async () => {
@@ -64,13 +68,16 @@ const addTransaction = () => {
       console.error("Could not open DB");
       return;
     }
-    const categories = await db.getAllAsync("SELECT * FROM categories");
+    const categories = await db.getAllAsync(
+      "SELECT * FROM categories WHERE category_type = ?",
+      [transactionType]
+    );
     setStoredCategories(categories);
   };
 
   useEffect(() => {
     LoadCategories();
-  }, []);
+  }, [transactionType]);
 
   const openCategoryPicker = () => {
     setShowCategoryPicker(true);
@@ -255,7 +262,7 @@ const addTransaction = () => {
               openCategoryPicker();
             }}
           >
-            {transactionCategory}
+            {transactionCategory.name}
           </Text>
         </View>
         <View style={styles.TransactionDetailsRow}>
