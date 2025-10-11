@@ -96,6 +96,41 @@ const addTransaction = () => {
     setFocusedInput(null);
   };
 
+  // Account Picking
+
+  const [transactionAccount, setTransactionAccount] = useState({
+    name: "",
+    id: 0,
+    emoji: "",
+  });
+  const [showAccountPicker, setShowAccountPicker] = useState(false);
+  const [storedAccounts, setStoredAccounts] = useState([]);
+
+  const LoadAccounts = async () => {
+    if (!db) {
+      console.error("Could not open DB");
+      return;
+    }
+    const accounts = await db.getAllAsync("SELECT * FROM accounts");
+    setStoredAccounts(accounts);
+  };
+
+  useEffect(() => {
+    LoadAccounts();
+  }, []);
+
+  const openAccountPicker = () => {
+    setShowAccountPicker(true);
+    setShowNavbar(false);
+    setFocusedInput("Account");
+  };
+
+  const closeAccountPicker = () => {
+    setShowAccountPicker(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
+  };
+
   // Transfer Colors
   const colors = {
     Income: "#4EA758",
@@ -273,7 +308,20 @@ const addTransaction = () => {
         </View>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Account</Text>
-          <Text style={styles.TransactionDetailValue}>Checking</Text>
+          <Text
+            style={[
+              styles.TransactionDetailValue,
+              focusedInput == "Account" && {
+                borderBottomColor: colors[transactionType],
+              },
+            ]}
+            onPress={() => {
+              openAccountPicker();
+            }}
+          >
+            {transactionAccount.emoji}
+            {transactionAccount.name}
+          </Text>
         </View>
         <View style={styles.TransactionDetailsRow}>
           <Text style={styles.TransactionDetailName}>Note</Text>
@@ -299,6 +347,19 @@ const addTransaction = () => {
           headerBackgroundColor={colors[transactionType]}
           typeColor={colors[transactionType]}
           closePicker={closeCategoryPicker}
+          type="Category"
+        />
+      )}
+      {showAccountPicker && (
+        <OptionPicker
+          value={transactionAccount}
+          valueUpdateFunction={setTransactionAccount}
+          options={storedAccounts}
+          headerText={focusedInput}
+          headerBackgroundColor={colors[transactionType]}
+          typeColor={colors[transactionType]}
+          closePicker={closeAccountPicker}
+          type="Account"
         />
       )}
     </View>
