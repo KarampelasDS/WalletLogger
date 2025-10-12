@@ -63,22 +63,30 @@ const AddTransaction = () => {
     emoji: "",
   });
   const [showCategoryPicker, setShowCategoryPicker] = useState(false);
-  const [storedCategories, setStoredCategories] = useState([]);
+  const [storedExpenseCategories, setStoredExpenseCategories] = useState([]);
+  const [storedIncomeCategories, setStoredIncomeCategories] = useState([]);
 
   const LoadCategories = async () => {
     if (!db) {
       console.error("Could not open DB");
       return;
     }
-    const categories = await db.getAllAsync(
-      "SELECT * FROM categories WHERE category_type = ?",
-      [transactionType]
+    const incomeCategories = await db.getAllAsync(
+      "SELECT * FROM categories WHERE category_type = 'Income'"
     );
-    setStoredCategories(categories);
+    setStoredIncomeCategories(incomeCategories);
+
+    const expenseCategories = await db.getAllAsync(
+      "SELECT * FROM categories WHERE category_type = 'Expense'"
+    );
+    setStoredExpenseCategories(expenseCategories);
   };
 
   useEffect(() => {
     LoadCategories();
+  }, []);
+
+  useEffect(() => {
     setTransactionCategory({ name: "", id: 0, emoji: "" });
   }, [transactionType]);
 
@@ -428,7 +436,11 @@ const AddTransaction = () => {
           <OptionPicker
             value={transactionCategory}
             valueUpdateFunction={setTransactionCategory}
-            options={storedCategories}
+            options={
+              transactionType == "Income"
+                ? storedIncomeCategories
+                : storedExpenseCategories
+            }
             headerText={"Category"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
