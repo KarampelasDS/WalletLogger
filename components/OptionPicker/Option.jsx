@@ -6,9 +6,10 @@ export default function Option(props) {
       style={styles.container}
       onPress={() => {
         props.valueUpdateFunction({
-          emoji: props.emoji,
-          name: props.name,
-          id: props.id,
+          emoji: props.emoji ? props.emoji : undefined,
+          name: props.name ? props.name : undefined,
+          id: props.id ? props.id : undefined,
+          symbol: props.symbol ? props.symbol : undefined,
         });
       }}
     >

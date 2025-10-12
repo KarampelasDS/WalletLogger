@@ -20,6 +20,7 @@ const AddTransaction = () => {
   const [transactionType, setTransactionType] = useState("Expense");
   const [focusedInput, setFocusedInput] = useState(null);
   const db = Store((state) => state.db);
+  const setShowNavbar = Store((state) => state.setShowNavbar);
 
   // Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
@@ -42,7 +43,6 @@ const AddTransaction = () => {
   // Amount Picking
   const [transactionAmount, setTransactionAmount] = useState("");
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
-  const setShowNavbar = Store((state) => state.setShowNavbar);
 
   const openKeyboard = () => {
     setShowAmountKeyboard(true);
@@ -55,6 +55,32 @@ const AddTransaction = () => {
     setShowNavbar(true);
     setFocusedInput(null);
   };
+
+  // Currency Picking
+  const [transactionCurrency, setTransactionCurrency] = useState({
+    name: "",
+    id: 0,
+    symbol: "",
+  });
+  const [storedCurrencies, setStoredCurrencies] = useState();
+
+  const loadCurrencies = async () => {
+    if (!db) {
+      console.error("Could not open DB");
+      return;
+    }
+    const currencies = await db.getAllAsync("SELECT * FROM currencies");
+    setStoredCurrencies(currencies);
+    setTransactionCurrency({
+      name: currencies[0].currency_name,
+      id: currencies[0].currency_id,
+      symbol: currencies[0].currency_symbol,
+    });
+  };
+
+  useEffect(() => {
+    loadCurrencies();
+  }, []);
 
   // Category Picking
   const [transactionCategory, setTransactionCategory] = useState({
@@ -292,6 +318,7 @@ const AddTransaction = () => {
                 },
               ]}
             >
+              {transactionCurrency.symbol}
               {transactionAmount === "."
                 ? "0."
                 : Number(transactionAmount).toLocaleString("en-US", {
@@ -429,6 +456,8 @@ const AddTransaction = () => {
             value={transactionAmount}
             valueUpdateFunction={setTransactionAmount}
             closeKeyboard={closeKeyboard}
+            currencies={storedCurrencies}
+            updateCurrency={setTransactionCurrency}
           />
         )}
 

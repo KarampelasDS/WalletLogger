@@ -10,12 +10,17 @@ import { useEffect } from "react";
 export default function Layout() {
   const setIconSize = Store((state) => state.setIconSize);
   const ZustandShowNavbar = Store((state) => state.showNavbar);
-  const { width } = Dimensions.get("window");
+  const { width, height } = Dimensions.get("window");
   const iconSize = width * 0.07;
+  const setDimensions = Store((state) => state.setDimensions);
 
   useEffect(() => {
     setIconSize(iconSize);
   }, [iconSize, setIconSize]);
+
+  useEffect(() => {
+    setDimensions(width, height);
+  }, []);
 
   return (
     <>

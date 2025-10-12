@@ -6,6 +6,9 @@ export const Store = create((set) => ({
   completedSetup: false,
   setCompletedSetup: (completed) => set({ completedSetup: completed }),
   iconSize: 0,
+  dimensions: null,
+  setDimensions: (newWidth, newHeight) =>
+    set({ dimensions: { width: newWidth, height: newHeight } }),
   setIconSize: (newSize) => set({ iconSize: newSize }),
   currentTransaction: null,
   setCurrentTransaction: (transaction) =>

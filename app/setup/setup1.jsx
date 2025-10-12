@@ -16,7 +16,7 @@ export default function setup1() {
 
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS currencies (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
           currency_name VARCHAR,
           currency_symbol VARCHAR
         )
@@ -42,17 +42,17 @@ export default function setup1() {
 
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS transactions (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          type VARCHAR,
-          amount DECIMAL,
+          transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transaction_type VARCHAR,
+          transaction_amount DECIMAL,
           category_id INTEGER,
-          date DATETIME,
-          note VARCHAR,
+          transaction_date DATETIME,
+          transaction_note VARCHAR,
           account_id INTEGER,
           currency_id INTEGER,
           FOREIGN KEY (account_id) REFERENCES accounts(account_id),
           FOREIGN KEY (category_id) REFERENCES categories(category_id),
-          FOREIGN KEY (currency_id) REFERENCES currencies(id)
+          FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
         )
       `);
 
@@ -68,13 +68,18 @@ export default function setup1() {
       `);
       await db.execAsync(`
         INSERT INTO currencies (currency_name, currency_symbol)
+        SELECT 'Euro', '€'
+        WHERE NOT EXISTS (SELECT 1 FROM currencies WHERE currency_name = 'Euro')
+      `);
+      await db.execAsync(`
+        INSERT INTO currencies (currency_name, currency_symbol)
         SELECT 'US Dollar', '$'
         WHERE NOT EXISTS (SELECT 1 FROM currencies WHERE currency_name = 'US Dollar')
       `);
       await db.execAsync(`
         INSERT INTO currencies (currency_name, currency_symbol)
-        SELECT 'Euro', '€'
-        WHERE NOT EXISTS (SELECT 1 FROM currencies WHERE currency_name = 'Euro')
+        SELECT 'British Pound', '£'
+        WHERE NOT EXISTS (SELECT 1 FROM currencies WHERE currency_name = 'British Pound')
       `);
       await db.execAsync(`
         INSERT INTO currencies (currency_name, currency_symbol)

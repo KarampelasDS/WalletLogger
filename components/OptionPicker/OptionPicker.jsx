@@ -4,16 +4,23 @@ import Option from "./Option";
 
 export default function OptionPicker(props) {
   // Determine the word to use based on props.type
-  const word = props.type === "Account" ? "account" : "category";
+  const word =
+    props.type === "Account"
+      ? "account"
+      : props.type === "Currencies"
+      ? "currency"
+      : "category";
 
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.exitView} onPress={props.closePicker} />
       <View style={styles.picker}>
-        <KeyboardHeader
-          text={props.headerText}
-          backgroundColor={props.headerBackgroundColor}
-        />
+        {props.headerText && (
+          <KeyboardHeader
+            text={props.headerText}
+            backgroundColor={props.headerBackgroundColor}
+          />
+        )}
         <View style={styles.options}>
           {props.options.map((option) => (
             <Option
@@ -21,6 +28,7 @@ export default function OptionPicker(props) {
               emoji={option[`${word}_emoji`]}
               name={option[`${word}_name`]}
               id={option[`${word}_id`]}
+              symbol={option[`${word}_symbol`]}
               valueUpdateFunction={props.valueUpdateFunction}
             />
           ))}
