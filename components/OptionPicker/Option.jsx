@@ -14,7 +14,8 @@ export default function Option(props) {
       }}
     >
       <Text style={styles.optionText}>
-        {props.emoji}
+        {props.emoji && `${props.emoji} `}
+        {props.symbol && `${props.symbol} `}
         {props.name}
       </Text>
     </TouchableOpacity>

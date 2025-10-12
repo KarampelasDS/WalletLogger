@@ -21,7 +21,7 @@ export default function NavBar() {
         onPress={() => router.push("/")}
       >
         <Ionicons name="book" size={iconSize} color="#fff" />
-        <Text style={{ color: "#fff" }}>Transactions</Text>
+        <Text style={{ color: "#fff" }}>History</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.NavBarItem}
@@ -62,7 +62,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingRight: "10%",
     paddingLeft: "10%",
-    gap: "10%",
+    gap: "15%",
     borderTopWidth: 2,
     borderTopColor: "#fff",
   },
