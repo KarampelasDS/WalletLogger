@@ -49,8 +49,12 @@ export default function setup1() {
           transaction_date DATETIME,
           transaction_note VARCHAR,
           account_id INTEGER,
+          account_from_id INTEGER,
+          account_to_id INTEGER,
           currency_id INTEGER,
           FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+          FOREIGN KEY (account_from_id) REFERENCES accounts(account_id),
+          FOREIGN KEY (account_to_id) REFERENCES accounts(account_id),
           FOREIGN KEY (category_id) REFERENCES categories(category_id),
           FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
         )

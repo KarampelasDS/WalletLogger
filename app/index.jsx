@@ -32,6 +32,12 @@ const Home = () => {
   const db = Store((state) => state.db);
   const router = useRouter();
 
+  //debugging
+  const [accounts, setAccounts] = useState([]);
+  const [transactions, setTransactions] = useState([]);
+  const [currencies, setCurrencies] = useState([]);
+  const [categories, setCategories] = useState([]);
+
   useEffect(() => {
     initDB();
   }, []);
@@ -42,12 +48,23 @@ const Home = () => {
 
   useEffect(() => {
     const readDB = async () => {
-      const accounts = await db.getAllAsync("SELECT * FROM accounts");
-      console.log("Accounts:", accounts);
-      const categories = await db.getAllAsync("SELECT * FROM categories");
-      console.log("Categories:", categories);
-      const currencies = await db.getAllAsync("SELECT * FROM currencies");
-      console.log("Currencies:", currencies);
+      const accountsData = await db.getAllAsync("SELECT * FROM accounts");
+      setAccounts(accountsData);
+      console.log("Accounts:", accountsData);
+
+      const categoriesData = await db.getAllAsync("SELECT * FROM categories");
+      setCategories(categoriesData);
+      console.log("Categories:", categoriesData);
+
+      const currenciesData = await db.getAllAsync("SELECT * FROM currencies");
+      setCurrencies(currenciesData);
+      console.log("Currencies:", currenciesData);
+
+      const transactionsData = await db.getAllAsync(
+        "SELECT * FROM transactions"
+      );
+      setTransactions(transactionsData);
+      console.log("Transactions:", transactionsData);
     };
     readDB();
   }, []);
@@ -75,10 +92,18 @@ const Home = () => {
           setShownMonth((prev) => prev + 1);
         }}
       />
-      <Text style={styles.title}>Transactions Page</Text>
-      <Text style={{ marginTop: 10, marginBottom: 30, color: "white" }}>
-        Transactions here
-      </Text>
+      <View>
+        {transactions.map((transaction) => (
+          <View key={transaction.transaction_id}>
+            <Text>Transaction ID:{transaction.transaction_id}</Text>
+            <Text>Date:{transaction.transaction_date}</Text>
+            <Text>Amount:{transaction.transaction_amount}</Text>
+            <Text>Currency ID:{transaction.currency_id}</Text>
+            <Text>Category ID:{transaction.category_id}</Text>
+            <Text>Account ID:{transaction.account_id}</Text>
+          </View>
+        ))}
+      </View>
       <AddTransactionButton />
     </View>
   );

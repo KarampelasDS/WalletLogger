@@ -202,12 +202,41 @@ const AddTransaction = () => {
   const [canSubmitTransferTransaction, setCanSubmitTransferTransaction] =
     useState(false);
 
-  const submitIncomeTransaction = () => {
-    Toast.show({
-      type: "success",
-      text1: "lol",
-      text2: "eisai gayis",
-    });
+  const submitTransaction = async () => {
+    try {
+      await db.runAsync(
+        `INSERT INTO transactions (
+        transaction_type,
+        transaction_amount,
+        category_id,
+        transaction_date,
+        transaction_note,
+        account_id,
+        currency_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          transactionType,
+          parseFloat(transactionAmount),
+          transactionCategory.id,
+          transactionDate.toISOString(),
+          transactionNote,
+          transactionAccount.id,
+          transactionCurrency.id,
+        ]
+      );
+      Toast.show({
+        type: "success",
+        text1: "Transaction Saved",
+        text2: "Your transaction was added successfully.",
+      });
+    } catch (e) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to save transaction.",
+      });
+      console.error("Transaction insert error", e);
+    }
   };
 
   useEffect(() => {
@@ -229,12 +258,51 @@ const AddTransaction = () => {
     transactionType,
   ]);
 
+  const submitTransferTransaction = async () => {
+    try {
+      await db.runAsync(
+        `INSERT INTO transactions (
+        transaction_type,
+        transaction_amount,
+        transaction_date,
+        transaction_note,
+        account_from_id,
+        account_to_id,
+        currency_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [
+          transactionType,
+          parseFloat(transactionAmount),
+          transactionDate.toISOString(),
+          transactionNote,
+          transactionAccountFrom.id,
+          transactionAccountTo.id,
+          transactionCurrency.id,
+        ]
+      );
+      Toast.show({
+        type: "success",
+        text1: "Transaction Saved",
+        text2: "Your transaction was added successfully.",
+      });
+      // Optionally navigate away or reset state here
+    } catch (e) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to save transaction.",
+      });
+      console.error("Transaction insert error", e);
+    }
+  };
+
   useEffect(() => {
     if (
       transactionDate != "" &&
       transactionAmount != "" &&
       transactionAccountFrom.id != "0" &&
-      transactionAccountTo.id != "0"
+      transactionAccountTo.id != "0" &&
+      transactionAccountFrom.id != transactionAccountTo.id
     ) {
       setCanSubmitTransferTransaction(true);
       return;
@@ -573,7 +641,7 @@ const AddTransaction = () => {
           {transactionType != "Transfer" && (
             <Button
               function={() => {
-                submitIncomeTransaction();
+                submitTransaction();
               }}
               functionDisabled={() => {
                 Toast.show({
@@ -592,7 +660,7 @@ const AddTransaction = () => {
           {transactionType == "Transfer" && (
             <Button
               function={() => {
-                submitIncomeTransaction();
+                submitTransferTransaction();
               }}
               functionDisabled={() => {
                 Toast.show({
