@@ -160,7 +160,10 @@ export default function Keyboard(props) {
               <Text style={styles.keyboardButtonText}>.</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[styles.keyboardButton, {}]}
+              style={[
+                styles.keyboardButton,
+                { backgroundColor: props.typeColor },
+              ]}
               onPress={Done}
             >
               <Text style={[styles.keyboardButtonText, { fontSize: 18 }]}>

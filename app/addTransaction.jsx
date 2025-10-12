@@ -99,7 +99,19 @@ const AddTransaction = () => {
     id: 0,
     emoji: "",
   });
+  const [transactionAccountFrom, setTransactionAccountFrom] = useState({
+    name: "",
+    id: 0,
+    emoji: "",
+  });
+  const [transactionAccountTo, setTransactionAccountTo] = useState({
+    name: "",
+    id: 0,
+    emoji: "",
+  });
   const [showAccountPicker, setShowAccountPicker] = useState(false);
+  const [showAccountFromPicker, setShowAccountFromPicker] = useState(false);
+  const [showAccountToPicker, setShowAccountToPicker] = useState(false);
   const [storedAccounts, setStoredAccounts] = useState([]);
 
   const LoadAccounts = async () => {
@@ -122,6 +134,26 @@ const AddTransaction = () => {
   };
   const closeAccountPicker = () => {
     setShowAccountPicker(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
+  };
+  const openAccountFromPicker = () => {
+    setShowAccountFromPicker(true);
+    setShowNavbar(false);
+    setFocusedInput("From");
+  };
+  const closeAccountFromPicker = () => {
+    setShowAccountFromPicker(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
+  };
+  const openAccountToPicker = () => {
+    setShowAccountToPicker(true);
+    setShowNavbar(false);
+    setFocusedInput("To");
+  };
+  const closeAccountToPicker = () => {
+    setShowAccountToPicker(false);
     setShowNavbar(true);
     setFocusedInput(null);
   };
@@ -268,55 +300,106 @@ const AddTransaction = () => {
           </View>
 
           {/* Category */}
-          <View style={styles.TransactionDetailsRow}>
-            <Text style={styles.TransactionDetailName}>Category</Text>
-            <Text
-              style={[
-                styles.TransactionDetailValue,
-                focusedInput === "Category" && {
-                  borderBottomColor: colors[transactionType],
-                },
-              ]}
-              onPress={() => {
-                if (focusedInput == "Note") {
-                  Keyboard.dismiss();
-                }
-                openCategoryPicker();
-              }}
-            >
-              {transactionCategory.emoji}
-              {transactionCategory.name}
-            </Text>
-          </View>
+          {transactionType != "Transfer" && (
+            <View style={styles.TransactionDetailsRow}>
+              <Text style={styles.TransactionDetailName}>Category</Text>
+              <Text
+                style={[
+                  styles.TransactionDetailValue,
+                  focusedInput === "Category" && {
+                    borderBottomColor: colors[transactionType],
+                  },
+                ]}
+                onPress={() => {
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  openCategoryPicker();
+                }}
+              >
+                {transactionCategory.emoji}
+                {transactionCategory.name}
+              </Text>
+            </View>
+          )}
 
           {/* Account */}
-          <View style={styles.TransactionDetailsRow}>
-            <Text style={styles.TransactionDetailName}>Account</Text>
-            <Text
-              style={[
-                styles.TransactionDetailValue,
-                focusedInput === "Account" && {
-                  borderBottomColor: colors[transactionType],
-                },
-              ]}
-              onPress={() => {
-                if (focusedInput == "Note") {
-                  Keyboard.dismiss();
-                }
-                openAccountPicker();
-              }}
-            >
-              {transactionAccount.emoji}
-              {transactionAccount.name}
-            </Text>
-          </View>
+          {transactionType != "Transfer" && (
+            <View style={styles.TransactionDetailsRow}>
+              <Text style={styles.TransactionDetailName}>Account</Text>
+              <Text
+                style={[
+                  styles.TransactionDetailValue,
+                  focusedInput === "Account" && {
+                    borderBottomColor: colors[transactionType],
+                  },
+                ]}
+                onPress={() => {
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  openAccountPicker();
+                }}
+              >
+                {transactionAccount.emoji}
+                {transactionAccount.name}
+              </Text>
+            </View>
+          )}
+
+          {/* Account From */}
+          {transactionType == "Transfer" && (
+            <View style={styles.TransactionDetailsRow}>
+              <Text style={styles.TransactionDetailName}>From</Text>
+              <Text
+                style={[
+                  styles.TransactionDetailValue,
+                  focusedInput === "From" && {
+                    borderBottomColor: colors[transactionType],
+                  },
+                ]}
+                onPress={() => {
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  openAccountFromPicker();
+                }}
+              >
+                {transactionAccountFrom.emoji}
+                {transactionAccountFrom.name}
+              </Text>
+            </View>
+          )}
+
+          {/* Account To */}
+          {transactionType == "Transfer" && (
+            <View style={styles.TransactionDetailsRow}>
+              <Text style={styles.TransactionDetailName}>To</Text>
+              <Text
+                style={[
+                  styles.TransactionDetailValue,
+                  focusedInput === "To" && {
+                    borderBottomColor: colors[transactionType],
+                  },
+                ]}
+                onPress={() => {
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  openAccountToPicker();
+                }}
+              >
+                {transactionAccountTo.emoji}
+                {transactionAccountTo.name}
+              </Text>
+            </View>
+          )}
 
           {/* Note */}
           <View style={styles.TransactionDetailsRow}>
             <Text style={styles.TransactionDetailName}>Note</Text>
             <TextInput
               onFocus={() => setFocusedInput("Note")}
-              onBlur={() => setFocusedInput("")}
               value={transactionNote}
               onChangeText={setTransactionNote}
               style={[
@@ -363,6 +446,32 @@ const AddTransaction = () => {
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
             closePicker={closeAccountPicker}
+            type="Account"
+          />
+        )}
+
+        {showAccountFromPicker && (
+          <OptionPicker
+            value={transactionAccountFrom}
+            valueUpdateFunction={setTransactionAccountFrom}
+            options={storedAccounts}
+            headerText={"Account"}
+            headerBackgroundColor={colors[transactionType]}
+            typeColor={colors[transactionType]}
+            closePicker={closeAccountFromPicker}
+            type="Account"
+          />
+        )}
+
+        {showAccountToPicker && (
+          <OptionPicker
+            value={transactionAccountTo}
+            valueUpdateFunction={setTransactionAccountTo}
+            options={storedAccounts}
+            headerText={"Account"}
+            headerBackgroundColor={colors[transactionType]}
+            typeColor={colors[transactionType]}
+            closePicker={closeAccountToPicker}
             type="Account"
           />
         )}
