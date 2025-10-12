@@ -1,9 +1,35 @@
-import { View, Text } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 
 export default function Button(props) {
   return (
-    <View>
-      <Text>{props.text}</Text>
-    </View>
+    <TouchableOpacity
+      onPress={props.enabled ? props.function : props.functionDisabled}
+      style={[
+        styles.container,
+        {
+          backgroundColor: props.enabled
+            ? props.backgroundColor
+            : props.disabledColor,
+        },
+      ]}
+    >
+      <Text style={styles.text}>{props.children}</Text>
+    </TouchableOpacity>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    paddingVertical: 8,
+    paddingHorizontal: 80,
+    borderWidth: 1,
+    borderRadius: 2,
+    borderColor: "#fff",
+    elevation: 5,
+    shadowColor: "#33397bff",
+  },
+  text: {
+    fontSize: 20,
+    color: "#fff",
+  },
+});

@@ -224,6 +224,7 @@ const styles = StyleSheet.create({
   },
   keyboardRow: {
     flexDirection: "row",
+    backgroundColor: "#363642",
   },
   keyboardButton: {
     padding: 20,

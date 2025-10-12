@@ -6,6 +6,7 @@ import { Dimensions, StyleSheet } from "react-native";
 import { Store } from "../stores/Store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect } from "react";
+import Toast from "react-native-toast-message";
 
 export default function Layout() {
   const setIconSize = Store((state) => state.setIconSize);
@@ -29,6 +30,7 @@ export default function Layout() {
         <Slot />
       </SafeAreaView>
       {ZustandShowNavbar && <NavBar />}
+      <Toast />
     </>
   );
 }

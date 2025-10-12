@@ -14,6 +14,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import { Store } from "../stores/Store";
 import KeyboardComponent from "../components/Keyboard/Keyboard";
 import OptionPicker from "../components/OptionPicker/OptionPicker";
+import Button from "../components/Button/Button";
+import Toast from "react-native-toast-message";
 
 const AddTransaction = () => {
   const navigation = useNavigation();
@@ -194,6 +196,57 @@ const AddTransaction = () => {
 
   // Note
   const [transactionNote, setTransactionNote] = useState("");
+
+  // Transaction Submission
+  const [canSubmitTransaction, setCanSubmitTransaction] = useState(false);
+  const [canSubmitTransferTransaction, setCanSubmitTransferTransaction] =
+    useState(false);
+
+  const submitIncomeTransaction = () => {
+    Toast.show({
+      type: "success",
+      text1: "lol",
+      text2: "eisai gayis",
+    });
+  };
+
+  useEffect(() => {
+    if (
+      transactionDate != "" &&
+      transactionAmount != "" &&
+      transactionCategory.id != "0" &&
+      transactionAccount.id != "0"
+    ) {
+      setCanSubmitTransaction(true);
+      return;
+    }
+    setCanSubmitTransaction(false);
+  }, [
+    transactionDate,
+    transactionAmount,
+    transactionCategory,
+    transactionAccount,
+    transactionType,
+  ]);
+
+  useEffect(() => {
+    if (
+      transactionDate != "" &&
+      transactionAmount != "" &&
+      transactionAccountFrom.id != "0" &&
+      transactionAccountTo.id != "0"
+    ) {
+      setCanSubmitTransferTransaction(true);
+      return;
+    }
+    setCanSubmitTransferTransaction(false);
+  }, [
+    transactionDate,
+    transactionAmount,
+    transactionAccountFrom,
+    transactionAccountTo,
+    transactionType,
+  ]);
 
   // Colors
   const colors = {
@@ -516,6 +569,48 @@ const AddTransaction = () => {
             type="Account"
           />
         )}
+        <View style={{ marginTop: "25%" }}>
+          {transactionType != "Transfer" && (
+            <Button
+              function={() => {
+                submitIncomeTransaction();
+              }}
+              functionDisabled={() => {
+                Toast.show({
+                  type: "error",
+                  text1: "Error",
+                  text2: "Make sure you fill in all required fields",
+                });
+              }}
+              backgroundColor={"#2C2E42"}
+              disabledColor={"#31323A"}
+              enabled={canSubmitTransaction && transactionType != "Transfer"}
+            >
+              Save
+            </Button>
+          )}
+          {transactionType == "Transfer" && (
+            <Button
+              function={() => {
+                submitIncomeTransaction();
+              }}
+              functionDisabled={() => {
+                Toast.show({
+                  type: "error",
+                  text1: "Error",
+                  text2: "Make sure you fill in all required fields",
+                });
+              }}
+              backgroundColor={"#2C2E42"}
+              disabledColor={"#31323A"}
+              enabled={
+                canSubmitTransferTransaction && transactionType == "Transfer"
+              }
+            >
+              Save
+            </Button>
+          )}
+        </View>
       </View>
     </TouchableWithoutFeedback>
   );
