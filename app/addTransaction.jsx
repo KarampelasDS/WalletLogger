@@ -195,6 +195,9 @@ const AddTransaction = () => {
               </Text>
               <Text
                 onPress={() => {
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
                   showDatepicker();
                   closeKeyboard();
                   setFocusedInput("Date");
@@ -236,7 +239,12 @@ const AddTransaction = () => {
           <View style={styles.TransactionDetailsRow}>
             <Text style={styles.TransactionDetailName}>Amount</Text>
             <Text
-              onPress={openKeyboard}
+              onPress={() => {
+                if (focusedInput == "Note") {
+                  Keyboard.dismiss();
+                }
+                openKeyboard();
+              }}
               style={[
                 styles.TransactionDetailValue,
                 focusedInput === "Amount" && {
@@ -269,7 +277,12 @@ const AddTransaction = () => {
                   borderBottomColor: colors[transactionType],
                 },
               ]}
-              onPress={openCategoryPicker}
+              onPress={() => {
+                if (focusedInput == "Note") {
+                  Keyboard.dismiss();
+                }
+                openCategoryPicker();
+              }}
             >
               {transactionCategory.emoji}
               {transactionCategory.name}
@@ -286,7 +299,12 @@ const AddTransaction = () => {
                   borderBottomColor: colors[transactionType],
                 },
               ]}
-              onPress={openAccountPicker}
+              onPress={() => {
+                if (focusedInput == "Note") {
+                  Keyboard.dismiss();
+                }
+                openAccountPicker();
+              }}
             >
               {transactionAccount.emoji}
               {transactionAccount.name}
@@ -297,9 +315,16 @@ const AddTransaction = () => {
           <View style={styles.TransactionDetailsRow}>
             <Text style={styles.TransactionDetailName}>Note</Text>
             <TextInput
+              onFocus={() => setFocusedInput("Note")}
+              onBlur={() => setFocusedInput("")}
               value={transactionNote}
               onChangeText={setTransactionNote}
-              style={styles.TransactionDetailValue}
+              style={[
+                styles.TransactionDetailValue,
+                focusedInput === "Note" && {
+                  borderBottomColor: colors[transactionType],
+                },
+              ]}
             />
           </View>
         </View>
@@ -307,7 +332,7 @@ const AddTransaction = () => {
         {/* Custom Keyboards / Pickers */}
         {showAmountKeyboard && (
           <KeyboardComponent
-            headerText={focusedInput}
+            headerText={"Amount"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
             value={transactionAmount}
@@ -321,7 +346,7 @@ const AddTransaction = () => {
             value={transactionCategory}
             valueUpdateFunction={setTransactionCategory}
             options={storedCategories}
-            headerText={focusedInput}
+            headerText={"Category"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
             closePicker={closeCategoryPicker}
@@ -334,7 +359,7 @@ const AddTransaction = () => {
             value={transactionAccount}
             valueUpdateFunction={setTransactionAccount}
             options={storedAccounts}
-            headerText={focusedInput}
+            headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
             closePicker={closeAccountPicker}
