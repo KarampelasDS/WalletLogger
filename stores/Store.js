@@ -3,8 +3,14 @@ import * as SQLite from "expo-sqlite";
 
 export const Store = create((set) => ({
   db: null,
+  dbInitialized: false,
+  setDbInitialized: (newState) => set({ dbInitialized: newState }),
   completedSetup: false,
   setCompletedSetup: (completed) => set({ completedSetup: completed }),
+  dbUpToDate: false,
+  setDbUpToDate: (newState) => set({ dbUpToDate: newState }),
+  fetchedTransactions: [],
+  setfetchedTransactions: (newState) => set({ fetchedTransactions: newState }),
   iconSize: 0,
   dimensions: null,
   setDimensions: (newWidth, newHeight) =>

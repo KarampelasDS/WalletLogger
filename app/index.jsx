@@ -31,6 +31,13 @@ const Home = () => {
   const initDB = Store((state) => state.initDB);
   const db = Store((state) => state.db);
   const router = useRouter();
+  const dbInitialized = Store((state) => state.dbInitialized);
+  const setDbInitialized = Store((state) => state.setDbInitialized);
+  const [isFetching, setIsFetching] = useState(false);
+  const dbUpToDate = Store((state) => state.dbUpToDate);
+  const setDbUpToDate = Store((state) => state.setDbUpToDate);
+  const fetchedTransactions = Store((state) => state.fetchedTransactions);
+  const setfetchedTransactions = Store((state) => state.setfetchedTransactions);
 
   //debugging
   const [accounts, setAccounts] = useState([]);
@@ -39,7 +46,10 @@ const Home = () => {
   const [categories, setCategories] = useState([]);
 
   useEffect(() => {
-    initDB();
+    if (!dbInitialized) {
+      initDB();
+      setDbInitialized(true);
+    }
   }, []);
 
   if (!completedSetup) {
@@ -48,23 +58,29 @@ const Home = () => {
 
   useEffect(() => {
     const readDB = async () => {
-      const accountsData = await db.getAllAsync("SELECT * FROM accounts");
-      setAccounts(accountsData);
-      console.log("Accounts:", accountsData);
+      if (isFetching) return;
+      if (!dbUpToDate) {
+        setIsFetching(true);
+        try {
+          /*const accountsData = await db.getAllAsync("SELECT * FROM accounts");
+        setAccounts(accountsData);
 
-      const categoriesData = await db.getAllAsync("SELECT * FROM categories");
-      setCategories(categoriesData);
-      console.log("Categories:", categoriesData);
+        const categoriesData = await db.getAllAsync("SELECT * FROM categories");
+        setCategories(categoriesData);
 
-      const currenciesData = await db.getAllAsync("SELECT * FROM currencies");
-      setCurrencies(currenciesData);
-      console.log("Currencies:", currenciesData);
+        const currenciesData = await db.getAllAsync("SELECT * FROM currencies");
+        setCurrencies(currenciesData);*/
 
-      const transactionsData = await db.getAllAsync(
-        "SELECT * FROM transactions"
-      );
-      setTransactions(transactionsData);
-      console.log("Transactions:", transactionsData);
+          const transactionsData = await db.getAllAsync(
+            "SELECT * FROM transactions"
+          );
+          setfetchedTransactions(transactionsData);
+        } catch (e) {
+          console.log("DB error:", e);
+        }
+        setIsFetching(false);
+        setDbUpToDate(true);
+      }
     };
     readDB();
   }, []);
@@ -92,8 +108,9 @@ const Home = () => {
           setShownMonth((prev) => prev + 1);
         }}
       />
+      <Text>{dbInitialized ? "True" : "False"}</Text>
       <View>
-        {transactions.map((transaction) => (
+        {fetchedTransactions.map((transaction) => (
           <View key={transaction.transaction_id}>
             <Text>Transaction ID:{transaction.transaction_id}</Text>
             <Text>Date:{transaction.transaction_date}</Text>

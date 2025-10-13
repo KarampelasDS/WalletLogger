@@ -24,7 +24,7 @@ const AddTransaction = () => {
   const db = Store((state) => state.db);
   const setShowNavbar = Store((state) => state.setShowNavbar);
 
-  // Date Picking
+  //! Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
   const [datePickerMode, setDatePickerMode] = useState("date");
   const [showDatePickerMode, setShowDatePickerMode] = useState(false);
@@ -42,7 +42,7 @@ const AddTransaction = () => {
   const showDatepicker = () => showMode("date");
   const showTimepicker = () => showMode("time");
 
-  // Amount Picking
+  //! Amount Picking
   const [transactionAmount, setTransactionAmount] = useState("");
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
 
@@ -58,7 +58,7 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
-  // Currency Picking
+  //! Currency Picking
   const [transactionCurrency, setTransactionCurrency] = useState({
     name: "",
     id: 0,
@@ -84,7 +84,7 @@ const AddTransaction = () => {
     loadCurrencies();
   }, []);
 
-  // Category Picking
+  //! Category Picking
   const [transactionCategory, setTransactionCategory] = useState({
     name: "",
     id: 0,
@@ -129,7 +129,7 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
-  // Account Picking
+  //! Account Picking
   const [transactionAccount, setTransactionAccount] = useState({
     name: "",
     id: 0,
@@ -194,13 +194,15 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
-  // Note
+  //! Note
   const [transactionNote, setTransactionNote] = useState("");
 
-  // Transaction Submission
+  //! Transaction Submission
   const [canSubmitTransaction, setCanSubmitTransaction] = useState(false);
   const [canSubmitTransferTransaction, setCanSubmitTransferTransaction] =
     useState(false);
+
+  const setDbUpToDate = Store((state) => state.setDbUpToDate);
 
   const submitTransaction = async () => {
     try {
@@ -229,6 +231,7 @@ const AddTransaction = () => {
         text1: "Transaction Saved",
         text2: "Your transaction was added successfully.",
       });
+      setDbUpToDate(false);
     } catch (e) {
       Toast.show({
         type: "error",
@@ -285,7 +288,7 @@ const AddTransaction = () => {
         text1: "Transaction Saved",
         text2: "Your transaction was added successfully.",
       });
-      // Optionally navigate away or reset state here
+      setDbUpToDate(false);
     } catch (e) {
       Toast.show({
         type: "error",
