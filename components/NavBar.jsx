@@ -6,19 +6,20 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { Store } from "../stores/Store";
 const { width, height } = Dimensions.get("window");
 
 export default function NavBar() {
   const router = useRouter();
+  const pathName = usePathname();
   const iconSize = Store((state) => state.iconSize);
 
   return (
     <View style={styles.NavBar}>
       <TouchableOpacity
         style={styles.NavBarItem}
-        onPress={() => router.push("/")}
+        onPress={() => (pathName == "/" ? "" : router.push("/"))}
       >
         <Ionicons name="book" size={iconSize} color="#fff" />
         <Text style={{ color: "#fff" }}>History</Text>

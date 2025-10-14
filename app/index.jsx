@@ -1,12 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
-import { useState, useEffect, use } from "react";
+import { useState, useEffect } from "react";
 import AddTransactionButton from "../components/TransactionsPage/AddTransactionButton";
 import Title from "../components/Title/Title";
 import { Store } from "../stores/Store";
-import { useRouter } from "expo-router";
 import { Redirect } from "expo-router";
-import { openDatabaseAsync } from "expo-sqlite";
 
+// Month names for display
 const months = [
   "Jan",
   "Feb",
@@ -23,104 +22,108 @@ const months = [
 ];
 
 const Home = () => {
-  const currentMonth = Store((state) => state.currentDate.getMonth());
-  const currentYear = Store((state) => state.currentDate.getFullYear());
-  const [shownMonth, setShownMonth] = useState(currentMonth);
-  const [shownYear, setShownYear] = useState(currentYear);
-  const completedSetup = Store((state) => state.completedSetup);
-  const initDB = Store((state) => state.initDB);
+  // Zustand state accessors
+  const currentDate = Store((state) => state.currentDate);
   const db = Store((state) => state.db);
-  const router = useRouter();
+  const initDB = Store((state) => state.initDB);
   const dbInitialized = Store((state) => state.dbInitialized);
   const setDbInitialized = Store((state) => state.setDbInitialized);
-  const [isFetching, setIsFetching] = useState(false);
-  const dbUpToDate = Store((state) => state.dbUpToDate);
-  const setDbUpToDate = Store((state) => state.setDbUpToDate);
-  const fetchedTransactions = Store((state) => state.fetchedTransactions);
-  const setfetchedTransactions = Store((state) => state.setfetchedTransactions);
+  const completedSetup = Store((state) => state.completedSetup);
 
-  //debugging
-  const [accounts, setAccounts] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [currencies, setCurrencies] = useState([]);
-  const [categories, setCategories] = useState([]);
+  // Local component state
+  const [shownMonth, setShownMonth] = useState(currentDate.getMonth()); // month currently displayed
+  const [shownYear, setShownYear] = useState(currentDate.getFullYear()); // year currently displayed
+  const [transactions, setTransactions] = useState([]); // fetched transactions for that month
 
+  // Initialize database once
   useEffect(() => {
-    if (!dbInitialized) {
-      initDB();
-      setDbInitialized(true);
-    }
-  }, []);
-
-  if (!completedSetup) {
-    return <Redirect href="/setup/setup1" />;
-  }
-
-  useEffect(() => {
-    const readDB = async () => {
-      if (isFetching) return;
-      if (!dbUpToDate) {
-        setIsFetching(true);
-        try {
-          /*const accountsData = await db.getAllAsync("SELECT * FROM accounts");
-        setAccounts(accountsData);
-
-        const categoriesData = await db.getAllAsync("SELECT * FROM categories");
-        setCategories(categoriesData);
-
-        const currenciesData = await db.getAllAsync("SELECT * FROM currencies");
-        setCurrencies(currenciesData);*/
-
-          const transactionsData = await db.getAllAsync(
-            "SELECT * FROM transactions"
-          );
-          setfetchedTransactions(transactionsData);
-        } catch (e) {
-          console.log("DB error:", e);
-        }
-        setIsFetching(false);
-        setDbUpToDate(true);
+    const init = async () => {
+      if (!dbInitialized) {
+        await initDB();
+        setDbInitialized(true);
       }
     };
-    readDB();
+    init();
   }, []);
 
+  // Fetch transactions whenever month/year or DB state changes
+  useEffect(() => {
+    if (!dbInitialized) return; // skip until DB is ready
+    const fetchTransactions = async () => {
+      try {
+        // Format month as two digits (e.g., "01" for January)
+        const month = String(shownMonth + 1).padStart(2, "0");
+
+        // Query only the transactions from that month/year
+        const query = `
+          SELECT * FROM transactions
+          WHERE strftime('%Y', transaction_date) = '${shownYear}'
+          AND strftime('%m', transaction_date) = '${month}'
+          ORDER BY transaction_date DESC
+        `;
+
+        // Execute query and update state
+        const data = await db.getAllAsync(query);
+        setTransactions(data);
+      } catch (err) {
+        console.error("DB read error:", err);
+      }
+    };
+
+    fetchTransactions();
+  }, [dbInitialized, shownMonth, shownYear]); // re-run when month/year/db changes
+
+  // Redirect to setup if user hasn’t finished initial app setup
+  if (!completedSetup) return <Redirect href="/setup/setup1" />;
+
+  // UI rendering
   return (
     <View style={styles.container}>
+      {/* Month navigation header */}
       <Title
         title={`${months[shownMonth]} ${shownYear}`}
         backIcon={"chevron-back-outline"}
         onPressBackIcon={() => {
+          // Move one month back; adjust year if crossing January
           if (shownMonth === 0) {
-            setShownYear((prev) => prev - 1);
+            setShownYear((y) => y - 1);
             setShownMonth(11);
-            return;
+          } else {
+            setShownMonth((m) => m - 1);
           }
-          setShownMonth((prev) => prev - 1);
         }}
         frontIcon={"chevron-forward-outline"}
         onPressFrontIcon={() => {
+          // Move one month forward; adjust year if crossing December
           if (shownMonth === 11) {
-            setShownYear((prev) => prev + 1);
+            setShownYear((y) => y + 1);
             setShownMonth(0);
-            return;
+          } else {
+            setShownMonth((m) => m + 1);
           }
-          setShownMonth((prev) => prev + 1);
         }}
       />
-      <Text>{dbInitialized ? "True" : "False"}</Text>
-      <View>
-        {fetchedTransactions.map((transaction) => (
-          <View key={transaction.transaction_id}>
-            <Text>Transaction ID:{transaction.transaction_id}</Text>
-            <Text>Date:{transaction.transaction_date}</Text>
-            <Text>Amount:{transaction.transaction_amount}</Text>
-            <Text>Currency ID:{transaction.currency_id}</Text>
-            <Text>Category ID:{transaction.category_id}</Text>
-            <Text>Account ID:{transaction.account_id}</Text>
-          </View>
-        ))}
-      </View>
+
+      {/* Transactions list */}
+      {transactions.map((t) => (
+        <View key={t.transaction_id}>
+          <Text>Transaction ID: {t.transaction_id}</Text>
+          <Text>
+            Date:{" "}
+            {new Date(t.transaction_date).toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })}
+          </Text>
+          <Text>Amount: {t.transaction_amount}</Text>
+        </View>
+      ))}
+
+      {/* Floating add button */}
       <AddTransactionButton />
     </View>
   );
@@ -133,10 +136,5 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1E1E24",
     alignItems: "center",
-  },
-  title: {
-    fontWeight: "bold",
-    fontSize: 18,
-    color: "white",
   },
 });
