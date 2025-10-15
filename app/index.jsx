@@ -107,8 +107,10 @@ const Home = () => {
       {/* Transactions list */}
       {transactions.map((t) => (
         <View key={t.transaction_id}>
-          <Text>Transaction ID: {t.transaction_id}</Text>
-          <Text>
+          <Text style={{ color: "white" }}>
+            Transaction ID: {t.transaction_id}
+          </Text>
+          <Text style={{ color: "white" }}>
             Date:{" "}
             {new Date(t.transaction_date).toLocaleString("en-GB", {
               day: "2-digit",
@@ -119,7 +121,7 @@ const Home = () => {
               hour12: false,
             })}
           </Text>
-          <Text>Amount: {t.transaction_amount}</Text>
+          <Text style={{ color: "white" }}>Amount: {t.transaction_amount}</Text>
         </View>
       ))}
 
