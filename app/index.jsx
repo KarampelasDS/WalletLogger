@@ -4,6 +4,7 @@ import AddTransactionButton from "../components/TransactionsPage/AddTransactionB
 import Title from "../components/Title/Title";
 import { Store } from "../stores/Store";
 import { Redirect } from "expo-router";
+import TransactionDay from "../components/TransactionRecords/TransactionDay";
 
 // Month names for display
 const months = [
@@ -62,11 +63,25 @@ const Home = () => {
 
         // Query only the transactions from that month/year
         const query = `
-          SELECT * FROM transactions
-          WHERE strftime('%Y', transaction_date) = '${shownYear}'
-          AND strftime('%m', transaction_date) = '${month}'
-          ORDER BY transaction_date DESC
-        `;
+  SELECT
+    t.transaction_id,
+    t.transaction_type,
+    t.transaction_amount,
+    t.transaction_date,
+    t.transaction_note,
+    a.account_name AS account_name,
+    a.account_emoji AS account_emoji,
+    c.category_name AS category_name,
+    c.category_emoji AS category_emoji,
+    cur.currency_symbol AS currency_symbol
+  FROM transactions t
+  LEFT JOIN accounts a ON t.account_id = a.account_id
+  LEFT JOIN categories c ON t.category_id = c.category_id
+  LEFT JOIN currencies cur ON t.currency_id = cur.currency_id
+  WHERE strftime('%Y', t.transaction_date) = '${shownYear}'
+  AND strftime('%m', t.transaction_date) = '${month}'
+  ORDER BY t.transaction_date DESC
+`;
 
         // Execute query and update state
         const data = await db.getAllAsync(query);
@@ -128,7 +143,19 @@ const Home = () => {
       />
       {/* Transactions list */}
       {Object.keys(grouped).map((date) => (
-        <View
+        <TransactionDay
+          date={new Date(date).toLocaleDateString("en-GB", {
+            day: "2-digit",
+          })}
+          weekday={new Date(date).toLocaleDateString("en-GB", {
+            weekday: "short",
+          })}
+          month={new Date(date).toLocaleDateString("en-GB", {
+            month: "2-digit",
+          })}
+          year={new Date(date).toLocaleDateString("en-GB", {
+            year: "2-digit",
+          })}
           key={date}
           style={{
             marginVertical: 10,
@@ -137,41 +164,91 @@ const Home = () => {
             alignItems: "center",
           }}
         >
-          <Text
-            style={{
-              color: "white",
-              fontWeight: "bold",
-              fontSize: 18,
-              marginBottom: 5,
-            }}
-          >
-            {new Date(date).toLocaleDateString("en-GB", {
-              weekday: "short",
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-            })}
-          </Text>
           {grouped[date].map((t) => (
-            <View key={t.transaction_id} style={{ marginBottom: 8 }}>
-              <Text style={{ color: "white" }}>ID: {t.transaction_id}</Text>
-              <Text style={{ color: "white" }}>
-                Time:{" "}
-                {new Date(t.transaction_date).toLocaleTimeString("en-GB", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })}
-              </Text>
-              <Text style={{ color: "white" }}>
-                Amount: {t.transaction_amount}
-              </Text>
-              <Text style={{ color: "white" }}>
-                ------------------------------
-              </Text>
+            <View
+              key={t.transaction_id}
+              style={{ borderTopColor: "#d9d9d905", borderTopWidth: 2 }}
+            >
+              <View
+                style={{
+                  marginBottom: 8,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  width: "100%",
+                  paddingHorizontal: 10,
+                }}
+              >
+                <Text
+                  style={{
+                    color: "white",
+                    width: "30%",
+                  }}
+                  numberOfLines={1}
+                >
+                  {t.category_emoji} {t.category_name}
+                </Text>
+
+                <Text
+                  style={{
+                    color: "white",
+                    width: "20%",
+                    textAlign: "center",
+                  }}
+                  numberOfLines={1}
+                >
+                  {t.account_emoji} {t.account_name}
+                </Text>
+
+                <View
+                  style={{
+                    width: "25%",
+                  }}
+                >
+                  {t.transaction_type == "Income" && (
+                    <Text
+                      style={{
+                        color: "#4EA758",
+                        textAlign: "center",
+                      }}
+                    >
+                      {t.transaction_amount} {t.currency_symbol}
+                    </Text>
+                  )}
+                </View>
+                <View
+                  style={{
+                    width: "15%",
+                  }}
+                >
+                  {t.transaction_type == "Expense" && (
+                    <Text
+                      style={{
+                        color: "#CD5D5D",
+                        textAlign: "center",
+                      }}
+                    >
+                      {t.transaction_amount} {t.currency_symbol}
+                    </Text>
+                  )}
+                </View>
+              </View>
+              {t.transaction_note && (
+                <View>
+                  <Text
+                    style={{
+                      color: "white",
+                      paddingHorizontal: 20,
+                      paddingVertical: 10,
+                    }}
+                  >
+                    {t.transaction_note}
+                  </Text>
+                </View>
+              )}
             </View>
           ))}
-        </View>
+        </TransactionDay>
       ))}
 
       {/* Floating add button */}
