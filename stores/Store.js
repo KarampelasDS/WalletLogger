@@ -24,10 +24,17 @@ export const Store = create((set) => ({
   showNavbar: true,
   setShowNavbar: (show) => set({ showNavbar: show }),
 
-  // add an async init function
   initDB: async () => {
-    const db = await SQLite.openDatabaseAsync("ExpenseManager.db");
-    set({ db });
-    return db;
+    try {
+      // Open DB with useNewConnection to avoid connection conflicts on re-navigation
+      const db = await SQLite.openDatabaseAsync("ExpenseManager.db", {
+        useNewConnection: true,
+      });
+      set({ db, dbInitialized: true });
+      return db;
+    } catch (err) {
+      console.error("Error opening database:", err);
+      throw err;
+    }
   },
 }));
