@@ -26,7 +26,10 @@ export default function TransactionDay(props) {
             adjustsFontSizeToFit
             minimumFontScale={0.5}
           >
-            {props.income}€
+            {Number(props.income).toLocaleString("en-US", {
+              maximumFractionDigits: 2,
+            })}
+            €
           </Text>
 
           <Text
@@ -41,7 +44,10 @@ export default function TransactionDay(props) {
             adjustsFontSizeToFit
             minimumFontScale={0.5}
           >
-            {props.expenses}€
+            {Number(props.expenses).toLocaleString("en-US", {
+              maximumFractionDigits: 2,
+            })}
+            €
           </Text>
         </View>
       </View>
@@ -55,7 +61,8 @@ const styles = StyleSheet.create({
     width: "90%",
     backgroundColor: "#2c2c36",
     borderRadius: 2,
-    margin: 20,
+    marginHorizontal: 20,
+    marginVertical: 10,
   },
   header: {
     flexDirection: "row",
@@ -87,6 +94,7 @@ const styles = StyleSheet.create({
   amounts: {
     flexDirection: "row",
     gap: 20,
+    alignItems: "center",
   },
   transaction: {
     flexDirection: "column",
