@@ -14,11 +14,34 @@ export default function TransactionDay(props) {
           </Text>
         </View>
         <View style={styles.amounts}>
-          <Text style={{ color: "#4EA758", fontWeight: "bold", fontSize: 20 }}>
-            25.23€
+          <Text
+            style={{
+              color: "#4EA758",
+              fontWeight: "bold",
+              fontSize: 20,
+              width: 60,
+              textAlign: "right",
+            }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
+            {props.income}€
           </Text>
-          <Text style={{ color: "#CD5D5D", fontWeight: "bold", fontSize: 20 }}>
-            36.06€
+
+          <Text
+            style={{
+              color: "#CD5D5D",
+              fontWeight: "bold",
+              fontSize: 20,
+              width: 60,
+              textAlign: "right",
+            }}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.5}
+          >
+            {props.expenses}€
           </Text>
         </View>
       </View>
@@ -47,6 +70,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 5,
     alignItems: "baseline",
+    minWidth: "20%",
+    maxWidth: "20%",
   },
   dateDay: {
     color: "#fff",

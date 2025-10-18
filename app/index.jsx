@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View, ScrollView } from "react-native";
 import { useState, useEffect } from "react";
 import AddTransactionButton from "../components/TransactionsPage/AddTransactionButton";
 import Title from "../components/Title/Title";
@@ -50,7 +50,7 @@ const Home = () => {
   }, []);
 
   useEffect(() => {
-    console.log(grouped);
+    console.log("GROUPED:", grouped);
   }, [grouped]);
 
   // Fetch transactions whenever month/year or DB state changes
@@ -69,6 +69,10 @@ const Home = () => {
     t.transaction_amount,
     t.transaction_date,
     t.transaction_note,
+    af.account_name AS account_from_name,
+    af.account_emoji AS account_from_emoji,
+    at.account_name AS account_to_name,
+    at.account_emoji AS account_to_emoji,
     a.account_name AS account_name,
     a.account_emoji AS account_emoji,
     c.category_name AS category_name,
@@ -76,6 +80,8 @@ const Home = () => {
     cur.currency_symbol AS currency_symbol
   FROM transactions t
   LEFT JOIN accounts a ON t.account_id = a.account_id
+  LEFT JOIN accounts af ON t.account_from_id = af.account_id
+  LEFT JOIN accounts at ON t.account_to_id = at.account_id
   LEFT JOIN categories c ON t.category_id = c.category_id
   LEFT JOIN currencies cur ON t.currency_id = cur.currency_id
   WHERE strftime('%Y', t.transaction_date) = '${shownYear}'
@@ -91,10 +97,10 @@ const Home = () => {
             const onlyDate = data[i].transaction_date.slice(0, 10);
 
             if (!grouped[onlyDate]) {
-              grouped[onlyDate] = []; // create array for this date
+              grouped[onlyDate] = [];
             }
 
-            grouped[onlyDate].push(data[i]); // push transaction into array
+            grouped[onlyDate].push(data[i]);
           }
         };
 
@@ -109,7 +115,7 @@ const Home = () => {
     };
 
     fetchTransactions();
-  }, [dbInitialized, shownMonth, shownYear]); // re-run when month/year/db changes
+  }, [dbInitialized, shownMonth, shownYear]);
 
   // Redirect to setup if user hasn’t finished initial app setup
   if (!completedSetup) return <Redirect href="/setup/setup1" />;
@@ -142,115 +148,173 @@ const Home = () => {
         }}
       />
       {/* Transactions list */}
-      {Object.keys(grouped).map((date) => (
-        <TransactionDay
-          date={new Date(date).toLocaleDateString("en-GB", {
-            day: "2-digit",
-          })}
-          weekday={new Date(date).toLocaleDateString("en-GB", {
-            weekday: "short",
-          })}
-          month={new Date(date).toLocaleDateString("en-GB", {
-            month: "2-digit",
-          })}
-          year={new Date(date).toLocaleDateString("en-GB", {
-            year: "2-digit",
-          })}
-          key={date}
-          style={{
-            marginVertical: 10,
-            width: "100%",
-            paddingHorizontal: 20,
-            alignItems: "center",
-          }}
-        >
-          {grouped[date].map((t) => (
-            <View
-              key={t.transaction_id}
-              style={{ borderTopColor: "#d9d9d905", borderTopWidth: 2 }}
+      <ScrollView
+        style={{ width: "100%" }}
+        contentContainerStyle={{ paddingBottom: 200 }}
+      >
+        {Object.keys(grouped).map((date, index) => {
+          console.log(date);
+          let dailyIncome = 0;
+          let dailyExpenses = 0;
+          grouped[date].forEach((t) => {
+            if (t.transaction_type === "Income") {
+              dailyIncome += parseFloat(t.transaction_amount);
+            } else if (t.transaction_type === "Expense") {
+              dailyExpenses += parseFloat(t.transaction_amount);
+            }
+          });
+          return (
+            <TransactionDay
+              date={new Date(date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+              })}
+              weekday={new Date(date).toLocaleDateString("en-GB", {
+                weekday: "short",
+              })}
+              month={new Date(date).toLocaleDateString("en-GB", {
+                month: "2-digit",
+              })}
+              year={new Date(date).toLocaleDateString("en-GB", {
+                year: "2-digit",
+              })}
+              key={date}
+              income={dailyIncome}
+              expenses={dailyExpenses}
+              style={{
+                marginVertical: 10,
+                width: "100%",
+                paddingHorizontal: 20,
+                alignItems: "center",
+              }}
             >
-              <View
-                style={{
-                  marginBottom: 8,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  width: "100%",
-                  paddingHorizontal: 10,
-                }}
-              >
-                <Text
-                  style={{
-                    color: "white",
-                    width: "30%",
-                  }}
-                  numberOfLines={1}
-                >
-                  {t.category_emoji} {t.category_name}
-                </Text>
-
-                <Text
-                  style={{
-                    color: "white",
-                    width: "20%",
-                    textAlign: "center",
-                  }}
-                  numberOfLines={1}
-                >
-                  {t.account_emoji} {t.account_name}
-                </Text>
-
+              {grouped[date].map((t) => (
                 <View
-                  style={{
-                    width: "25%",
-                  }}
+                  key={t.transaction_id}
+                  style={{ borderTopColor: "#d9d9d905", borderTopWidth: 2 }}
                 >
-                  {t.transaction_type == "Income" && (
-                    <Text
-                      style={{
-                        color: "#4EA758",
-                        textAlign: "center",
-                      }}
-                    >
-                      {t.transaction_amount} {t.currency_symbol}
-                    </Text>
-                  )}
-                </View>
-                <View
-                  style={{
-                    width: "15%",
-                  }}
-                >
-                  {t.transaction_type == "Expense" && (
-                    <Text
-                      style={{
-                        color: "#CD5D5D",
-                        textAlign: "center",
-                      }}
-                    >
-                      {t.transaction_amount} {t.currency_symbol}
-                    </Text>
-                  )}
-                </View>
-              </View>
-              {t.transaction_note && (
-                <View>
-                  <Text
+                  <View
                     style={{
-                      color: "white",
-                      paddingHorizontal: 20,
-                      paddingVertical: 10,
+                      marginBottom: 8,
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      width: "100%",
+                      paddingHorizontal: 10,
                     }}
                   >
-                    {t.transaction_note}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ))}
-        </TransactionDay>
-      ))}
+                    <Text
+                      style={{
+                        color: "white",
+                        width:
+                          t.transaction_type == "Transfer" ? "auto" : "30%",
+                      }}
+                      numberOfLines={1}
+                    >
+                      {t.transaction_type == "Transfer"
+                        ? `${t.account_from_emoji}  ${t.account_from_name}`
+                        : `${t.category_emoji}  ${t.category_name}`}
+                    </Text>
 
+                    {t.transaction_type == "Transfer" && (
+                      <Text
+                        style={{
+                          color: "white",
+                          width: "10%",
+                          textAlign: "center",
+                        }}
+                      >
+                        {"->"}
+                      </Text>
+                    )}
+                    <Text
+                      style={{
+                        color: "white",
+                        width: "20%",
+                        textAlign: "center",
+                      }}
+                      numberOfLines={1}
+                    >
+                      {t.transaction_type == "Transfer"
+                        ? `${t.account_to_emoji}  ${t.account_to_name}`
+                        : `${t.account_emoji}  ${t.account_name}`}
+                    </Text>
+                    {t.transaction_type == "Transfer" && (
+                      <View
+                        style={{
+                          width: "60%",
+                        }}
+                      >
+                        <Text
+                          style={{
+                            color: "#734BE9",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.5}
+                        >
+                          {`${t.transaction_amount} ${t.currency_symbol}`}
+                        </Text>
+                      </View>
+                    )}
+                    <View
+                      style={{
+                        width: "25%",
+                      }}
+                    >
+                      {t.transaction_type == "Income" && (
+                        <Text
+                          style={{
+                            color: "#4EA758",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.5}
+                        >
+                          {t.transaction_amount} {t.currency_symbol}
+                        </Text>
+                      )}
+                    </View>
+                    <View
+                      style={{
+                        width: "15%",
+                      }}
+                    >
+                      {t.transaction_type == "Expense" && (
+                        <Text
+                          style={{
+                            color: "#CD5D5D",
+                            textAlign: "center",
+                          }}
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.5}
+                        >
+                          {t.transaction_amount} {t.currency_symbol}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                  {t.transaction_note && (
+                    <View>
+                      <Text
+                        style={{
+                          color: "white",
+                          paddingHorizontal: 20,
+                          paddingVertical: 10,
+                        }}
+                      >
+                        {t.transaction_note}
+                      </Text>
+                    </View>
+                  )}
+                </View>
+              ))}
+            </TransactionDay>
+          );
+        })}
+      </ScrollView>
       {/* Floating add button */}
       <AddTransactionButton />
     </View>
