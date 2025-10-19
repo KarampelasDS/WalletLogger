@@ -130,7 +130,7 @@ const Home = () => {
     });
   };
 
-  if (!completedSetup) return <Redirect href="/setup/setup1" />;
+  if (!completedSetup) return <Redirect href="/setup/SetupScreen1" />;
 
   return (
     <View style={styles.container}>
