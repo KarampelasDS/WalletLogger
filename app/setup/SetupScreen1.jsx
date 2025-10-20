@@ -2,11 +2,14 @@ import { View, Text, StyleSheet } from "react-native";
 import { Store } from "../../stores/Store";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "../../components/Button/Button";
+import { useRouter } from "expo-router";
 
 export default function SetupScreen1() {
+  const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
   setShowNavbar(false);
+
   return (
     <View style={styles.container}>
       <Ionicons
@@ -18,7 +21,12 @@ export default function SetupScreen1() {
       <Text style={styles.introText}>Welcome to Wallet Logger</Text>
       <Text style={styles.introSubText}>Your all-in-one expense manager!</Text>
       <View style={styles.buttons}>
-        <Button>Get Started!</Button>
+        <Button
+          enabled={true}
+          function={() => router.push("/setup/SetupScreen2")}
+        >
+          Get Started!
+        </Button>
       </View>
     </View>
   );
