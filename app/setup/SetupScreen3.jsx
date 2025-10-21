@@ -1,23 +1,23 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-} from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { Store } from "../../stores/Store";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "../../components/Button/Button";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import Toast from "react-native-toast-message";
 import DragList from "react-native-draglist";
+import InputModal from "../../components/InputModal/InputModal";
 
 export default function SetupScreen3() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
   const [scrollEnabled, setScrollEnabled] = useState(true);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+  const [modalMode, setModalMode] = useState("edit");
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [categoryName, setCategoryName] = useState("");
+  const [categoryEmoji, setCategoryEmoji] = useState("");
 
   const [incomeCategories, setIncomeCategories] = useState([
     { id: "1", name: "Salary", emoji: "💼" },
@@ -26,7 +26,7 @@ export default function SetupScreen3() {
     { id: "4", name: "Gift", emoji: "🎁" },
     { id: "5", name: "Freelance", emoji: "🖥️" },
     { id: "6", name: "Rental Income", emoji: "🏠" },
-    { id: "7", name: "Savings Withdrawals cause im gay", emoji: "🏦" },
+    { id: "7", name: "Savings Withdrawals", emoji: "🏦" },
     { id: "8", name: "Bonus", emoji: "🎉" },
     { id: "9", name: "Refund", emoji: "💸" },
     { id: "10", name: "Allowance", emoji: "💰" },
@@ -40,9 +40,16 @@ export default function SetupScreen3() {
   function renderItem(info) {
     const { item, onDragStart, onDragEnd, isActive } = info;
 
-    // delete handler
     const handleDelete = (id) => {
       setIncomeCategories((prev) => prev.filter((cat) => cat.id !== id));
+    };
+
+    const handleEdit = (cat) => {
+      setModalMode("edit");
+      setEditingCategoryId(cat.id);
+      setCategoryName(cat.name);
+      setCategoryEmoji(cat.emoji);
+      setShowEditModal(true);
     };
 
     return (
@@ -64,6 +71,7 @@ export default function SetupScreen3() {
             ellipsizeMode="tail"
           >
             {item.name}
+            {item.id}
           </Text>
         </View>
 
@@ -79,7 +87,7 @@ export default function SetupScreen3() {
 
           {/* Edit Button */}
           <TouchableOpacity
-            onPress={() => console.log("Edit", item.id)}
+            onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
           >
@@ -107,6 +115,14 @@ export default function SetupScreen3() {
     );
   }
 
+  function handleAdd() {
+    setModalMode("add");
+    setCategoryName("");
+    setCategoryEmoji("😊");
+    setShowEditModal(true);
+    setEditingCategoryId(null);
+  }
+
   async function onReordered(fromIndex, toIndex) {
     const copy = [...incomeCategories];
     setScrollEnabled(true);
@@ -117,25 +133,83 @@ export default function SetupScreen3() {
 
   setShowNavbar(false);
 
+  function getNextId() {
+    if (incomeCategories.length === 0) {
+      return "1";
+    }
+    const maxId = Math.max(
+      ...incomeCategories.map((cat) => parseInt(cat.id, 10))
+    );
+    return String(maxId + 1);
+  }
+
   return (
-    <View style={styles.container}>
-      <Text style={styles.introText}>Set up your Income Categories</Text>
-      <Text style={styles.introSubText}>You can always change these later</Text>
+    <>
+      <View style={styles.container}>
+        <Text style={styles.introText}>Set up your Income Categories</Text>
+        <Text style={styles.introSubText}>
+          You can always change these later
+        </Text>
 
-      <View style={styles.listContainer}>
-        <DragList
-          data={incomeCategories}
-          keyExtractor={keyExtractor}
-          onReordered={onReordered}
-          renderItem={renderItem}
-          scrollEnabled={scrollEnabled}
+        <View style={styles.listContainer}>
+          <DragList
+            data={incomeCategories}
+            keyExtractor={keyExtractor}
+            onReordered={onReordered}
+            renderItem={renderItem}
+            scrollEnabled={scrollEnabled}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={handleAdd}
+          activeOpacity={0.92}
+        >
+          <Ionicons name="add-circle-outline" size={32} color="#fff" />
+          <Text style={styles.addText}>Add Category</Text>
+        </TouchableOpacity>
+
+        <View style={styles.buttons}>
+          <Button enabled={true}>Next</Button>
+        </View>
+      </View>
+      {showEditModal && (
+        <InputModal
+          title={modalMode === "add" ? "Add Category" : "Edit Category"}
+          categoryName={categoryName}
+          categoryEmoji={categoryEmoji}
+          onSave={(newName, newEmoji) => {
+            if (modalMode === "add") {
+              // Add new category with unique id
+              const newCat = {
+                id: getNextId(),
+                name: newName,
+                emoji: newEmoji,
+              };
+              setIncomeCategories((cats) => [...cats, newCat]);
+            } else {
+              // Edit mode: update category
+              setIncomeCategories((cats) =>
+                cats.map((cat) =>
+                  cat.id === editingCategoryId
+                    ? { ...cat, name: newName, emoji: newEmoji }
+                    : cat
+                )
+              );
+            }
+            setShowEditModal(false);
+            setEditingCategoryId(null);
+            setModalMode("edit");
+          }}
+          onClose={() => {
+            setShowEditModal(false);
+            setEditingCategoryId(null);
+            setModalMode("edit");
+          }}
         />
-      </View>
-
-      <View style={styles.buttons}>
-        <Button enabled={true}>Next</Button>
-      </View>
-    </View>
+      )}
+    </>
   );
 }
 
@@ -162,7 +236,29 @@ const styles = StyleSheet.create({
   listContainer: {
     width: "85%",
     marginTop: 10,
-    height: "70%",
+    height: "66%",
+  },
+  addButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2C2E42",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 15,
+    marginTop: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 2,
+    elevation: 2,
+    gap: 8,
+  },
+  addText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+    marginLeft: 2,
+    letterSpacing: 0.5,
   },
   item: {
     backgroundColor: "#2C2E42",
