@@ -24,6 +24,8 @@ export default function SetupScreen1() {
         <Button
           enabled={true}
           function={() => router.push("/setup/SetupScreen2")}
+          backgroundColor={"#2C2E42"}
+          disabledColor={"#33343fff"}
         >
           Get Started!
         </Button>
@@ -56,5 +58,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     marginBottom: 50,
+    width: "80%",
   },
 });

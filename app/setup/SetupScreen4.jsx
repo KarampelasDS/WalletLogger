@@ -147,7 +147,12 @@ export default function SetupScreen3() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Set up your Expense Categories</Text>
+        <Text style={styles.introText}>Configure your</Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Text style={[styles.introText, { color: "#CD5D5D" }]}>Expense</Text>
+          <Text style={styles.introText}>Categories</Text>
+        </View>
+
         <Text style={styles.introSubText}>
           You can always change these later
         </Text>
@@ -174,7 +179,8 @@ export default function SetupScreen3() {
         <View style={styles.buttons}>
           <Button
             enabled={expenseCategories.length >= 1}
-            disabledColor={"#454545ff"}
+            backgroundColor={"#2C2E42"}
+            disabledColor={"#33343fff"}
             functionDisabled={() => {
               Toast.show({
                 type: "error",
@@ -251,7 +257,7 @@ const styles = StyleSheet.create({
   listContainer: {
     width: "85%",
     marginTop: 10,
-    height: "66%",
+    height: "62%",
   },
   addButton: {
     flexDirection: "row",
@@ -307,5 +313,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 0,
     marginBottom: 50,
+    width: "80%",
   },
 });

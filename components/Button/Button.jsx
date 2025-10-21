@@ -23,11 +23,17 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 80,
     borderWidth: 1,
-    borderRadius: 2,
+    borderRadius: 14,
     borderColor: "#fff",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 2,
+    elevation: 2,
   },
   text: {
     fontSize: 20,
     color: "#fff",
+    textAlign: "center",
   },
 });

@@ -1,88 +1,97 @@
 import { View, Text, StyleSheet } from "react-native";
 import { Store } from "../../stores/Store";
-import { Ionicons } from "@expo/vector-icons";
-import Button from "../../components/Button/Button";
 import { useRouter } from "expo-router";
-import SelectionScroller from "../../components/SelectionScroller/SelectionScroller";
-import ScrollerOption from "../../components/SelectionScroller/ScrollerOption";
 import { useState } from "react";
 import Toast from "react-native-toast-message";
+import Button from "../../components/Button/Button";
+import SelectionScroller from "../../components/SelectionScroller/SelectionScroller";
+import ScrollerOption from "../../components/SelectionScroller/ScrollerOption";
 
 export default function SetupScreen2() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
-  const iconSize = Store((state) => state.iconSize);
-
   const [selectedCurrency, setSelectedCurrency] = useState(null);
-
   setShowNavbar(false);
+
+  const currencies = [
+    // 🌍 Global Majors
+    { name: "Euro", symbol: "€" }, // Widely used internationally
+    { name: "US Dollar", symbol: "USD $" }, // Global standard
+    { name: "British Pound", symbol: "£" }, // Major economy
+    { name: "Japanese Yen", symbol: "¥" }, // Major economy
+    { name: "Swiss Franc", symbol: "CHF" }, // Banking & stability
+    { name: "Canadian Dollar", symbol: "C$" },
+    { name: "Australian Dollar", symbol: "A$" },
+    { name: "Chinese Yuan", symbol: "CN¥" },
+    { name: "Indian Rupee", symbol: "₹" },
+    { name: "Mexican Peso", symbol: "MX$" },
+    { name: "Brazilian Real", symbol: "R$" }, // BRL
+    { name: "Argentine Peso", symbol: "AR$" }, // ARS
+    { name: "Chilean Peso", symbol: "CL$" }, // CLP
+
+    // 🇪🇺 Other European currencies
+    { name: "Russian Ruble", symbol: "₽" },
+    { name: "Belarusian Ruble", symbol: "BYN ₽" },
+    { name: "Polish Złoty", symbol: "zł" },
+    { name: "Czech Koruna", symbol: "Kč" },
+    { name: "Hungarian Forint", symbol: "Ft" },
+    { name: "Danish Krone", symbol: "kr" },
+    { name: "Swedish Krona", symbol: "kr" },
+    { name: "Norwegian Krone", symbol: "kr" },
+    { name: "Icelandic Króna", symbol: "kr" },
+    { name: "Bulgarian Lev", symbol: "лв" },
+    { name: "Romanian Leu", symbol: "lei" },
+    { name: "Serbian Dinar", symbol: "din" },
+    { name: "North Macedonia Denar", symbol: "ден" },
+    { name: "Albanian Lek", symbol: "L" },
+    { name: "Bosnia and Herzegovina Convertible Mark", symbol: "KM" },
+    { name: "Moldovan Leu", symbol: "L" },
+    { name: "Georgian Lari", symbol: "₾" },
+    { name: "Armenian Dram", symbol: "֏" },
+    { name: "Azerbaijani Manat", symbol: "₼" },
+
+    // 🏦 Nearby / regionally relevant
+    { name: "Turkish Lira", symbol: "₺" },
+    { name: "Israeli Shekel", symbol: "₪" },
+    { name: "Kazakhstani Tenge", symbol: "₸" },
+
+    // 🧭 Honorable mentions (borderline Europe / globally relevant)
+    { name: "Moroccan Dirham", symbol: "د.م." },
+    { name: "Egyptian Pound", symbol: "E£" },
+    { name: "United Arab Emirates Dirham", symbol: "AED" },
+    { name: "South African Rand", symbol: "R" },
+    { name: "Saudi Riyal", symbol: "SAR" },
+    { name: "Singapore Dollar", symbol: "S$" },
+    { name: "New Zealand Dollar", symbol: "NZ$" },
+    { name: "South Korean Won", symbol: "₩" },
+  ];
 
   return (
     <View style={styles.container}>
       <Text style={styles.introText}>What is your main currency?</Text>
       <Text style={styles.introSubText}>You can always change this later</Text>
+
       <SelectionScroller>
-        <ScrollerOption
-          active={selectedCurrency == "Euro"}
-          function={() => setSelectedCurrency("Euro")}
-        >
-          Euro
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "US Dollar"}
-          function={() => setSelectedCurrency("US Dollar")}
-        >
-          US Dollar
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "British Pound"}
-          function={() => setSelectedCurrency("British Pound")}
-        >
-          British Pound
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Japanese Yen"}
-          function={() => setSelectedCurrency("Japanese Yen")}
-        >
-          Japanese Yen
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Canadian Dollar"}
-          function={() => setSelectedCurrency("Canadian Dollar")}
-        >
-          Canadian Dollar
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Australian Dollar"}
-          function={() => setSelectedCurrency("Australian Dollar")}
-        >
-          Australian Dollar
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Swiss Franc"}
-          function={() => setSelectedCurrency("Swiss Franc")}
-        >
-          Swiss Franc
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Chinese Yuan"}
-          function={() => setSelectedCurrency("Chinese Yuan")}
-        >
-          Chinese Yuan
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Indian Rupee"}
-          function={() => setSelectedCurrency("Indian Rupee")}
-        >
-          Indian Rupee
-        </ScrollerOption>
-        <ScrollerOption
-          active={selectedCurrency == "Mexican Peso"}
-          function={() => setSelectedCurrency("Mexican Peso")}
-        >
-          Mexican Peso
-        </ScrollerOption>
+        {currencies.map((currency, index) => (
+          <ScrollerOption
+            key={currency.name}
+            active={selectedCurrency === currency.name}
+            function={() => setSelectedCurrency(currency.name)}
+            style={[
+              styles.option,
+              selectedCurrency === currency.name && styles.optionActive,
+              index === 0 && styles.optionFirst,
+              index === currencies.length - 1 && styles.optionLast,
+            ]}
+          >
+            <View style={styles.currencyRow}>
+              <Text style={styles.optionSymbol}>{currency.symbol}</Text>
+              <Text style={styles.optionText}>{currency.name}</Text>
+            </View>
+          </ScrollerOption>
+        ))}
       </SelectionScroller>
+
       <View style={styles.buttons}>
         <Button
           functionDisabled={() => {
@@ -91,10 +100,10 @@ export default function SetupScreen2() {
               text1: "Make sure you select a currency before continuing",
             });
           }}
-          function={() => {
-            router.push("/setup/SetupScreen3");
-          }}
-          enabled={selectedCurrency != null}
+          function={() => router.push("/setup/SetupScreen3")}
+          backgroundColor={"#2C2E42"}
+          disabledColor={"#33343fff"}
+          enabled={!!selectedCurrency}
         >
           Next
         </Button>
@@ -104,27 +113,70 @@ export default function SetupScreen2() {
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: "center", justifyContent: "start", flex: 1 },
-  intro: {
-    backgroundColor: "#2C2E42",
-    padding: 20,
-    borderRadius: 20,
-  },
+  container: { alignItems: "center", flex: 1 },
   introText: {
     color: "#fff",
-    fontSize: 30,
+    fontSize: 28,
     textAlign: "center",
     marginTop: "10%",
+    fontWeight: "700",
+    letterSpacing: 0.3,
   },
   introSubText: {
+    color: "#b5b5b5",
+    fontSize: 16,
+    textAlign: "center",
+    marginTop: 12,
+  },
+  option: {
+    width: "85%",
+    marginVertical: 6,
+    backgroundColor: "#2C2E42",
+    borderRadius: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 3,
+    alignSelf: "center",
+  },
+  currencyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  optionSymbol: {
+    color: "#9ac9e3",
+    fontSize: 22,
+    fontWeight: "600",
+    width: "auto",
+    textAlign: "center",
+  },
+  optionText: {
     color: "#fff",
     fontSize: 18,
-    textAlign: "center",
-    marginTop: 20,
+    fontWeight: "500",
+    width: "auto",
+  },
+  optionActive: {
+    backgroundColor: "#3C4360",
+    borderWidth: 1.5,
+    borderColor: "#42A5F5",
+    shadowColor: "#42A5F5",
+    shadowOpacity: 0.4,
+  },
+  optionFirst: {
+    marginTop: 14,
+  },
+  optionLast: {
+    marginBottom: 20,
   },
   buttons: {
     position: "absolute",
     bottom: 0,
     marginBottom: 50,
+    width: "80%",
   },
 });
