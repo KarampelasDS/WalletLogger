@@ -20,18 +20,9 @@ export default function SetupScreen3() {
   const [categoryName, setCategoryName] = useState("");
   const [categoryEmoji, setCategoryEmoji] = useState("");
 
-  const [incomeCategories, setIncomeCategories] = useState([
-    { id: "1", name: "Salary", emoji: "💼" },
-    { id: "2", name: "Business", emoji: "🏢" },
-    { id: "3", name: "Investments", emoji: "📈" },
-    { id: "4", name: "Gift", emoji: "🎁" },
-    { id: "5", name: "Freelance", emoji: "🖥️" },
-    { id: "6", name: "Rental Income", emoji: "🏠" },
-    { id: "7", name: "Savings Withdrawals", emoji: "🏦" },
-    { id: "8", name: "Bonus", emoji: "🎉" },
-    { id: "9", name: "Refund", emoji: "💸" },
-    { id: "10", name: "Allowance", emoji: "💰" },
-    { id: "11", name: "Other", emoji: "🤑" },
+  const [accounts, setAccounts] = useState([
+    { id: "1", name: "Bank", emoji: "🏦" },
+    { id: "2", name: "Cash", emoji: "💵" },
   ]);
 
   function keyExtractor(item) {
@@ -42,7 +33,7 @@ export default function SetupScreen3() {
     const { item, onDragStart, onDragEnd, isActive } = info;
 
     const handleDelete = (id) => {
-      setIncomeCategories((prev) => prev.filter((cat) => cat.id !== id));
+      setAccounts((prev) => prev.filter((cat) => cat.id !== id));
     };
 
     const handleEdit = (cat) => {
@@ -124,36 +115,34 @@ export default function SetupScreen3() {
   }
 
   async function onReordered(fromIndex, toIndex) {
-    const copy = [...incomeCategories];
+    const copy = [...accounts];
     setScrollEnabled(true);
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]);
-    setIncomeCategories(copy);
+    setAccounts(copy);
   }
 
   setShowNavbar(false);
 
   function getNextId() {
-    if (incomeCategories.length === 0) {
+    if (accounts.length === 0) {
       return "1";
     }
-    const maxId = Math.max(
-      ...incomeCategories.map((cat) => parseInt(cat.id, 10))
-    );
+    const maxId = Math.max(...accounts.map((cat) => parseInt(cat.id, 10)));
     return String(maxId + 1);
   }
 
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Set up your Income Categories</Text>
+        <Text style={styles.introText}>Set up your Accounts</Text>
         <Text style={styles.introSubText}>
           You can always change these later
         </Text>
 
         <View style={styles.listContainer}>
           <DragList
-            data={incomeCategories}
+            data={accounts}
             keyExtractor={keyExtractor}
             onReordered={onReordered}
             renderItem={renderItem}
@@ -172,7 +161,7 @@ export default function SetupScreen3() {
 
         <View style={styles.buttons}>
           <Button
-            enabled={incomeCategories.length >= 1}
+            enabled={accounts.length >= 1}
             disabledColor={"#454545ff"}
             functionDisabled={() => {
               Toast.show({
@@ -183,7 +172,7 @@ export default function SetupScreen3() {
               });
             }}
             function={() => {
-              router.push("/setup/SetupScreen4");
+              router.push("/setup/SetupScreen6");
             }}
           >
             Next
@@ -203,10 +192,10 @@ export default function SetupScreen3() {
                 name: newName,
                 emoji: newEmoji,
               };
-              setIncomeCategories((cats) => [...cats, newCat]);
+              setAccounts((cats) => [...cats, newCat]);
             } else {
               // Edit mode: update category
-              setIncomeCategories((cats) =>
+              setAccounts((cats) =>
                 cats.map((cat) =>
                   cat.id === editingCategoryId
                     ? { ...cat, name: newName, emoji: newEmoji }

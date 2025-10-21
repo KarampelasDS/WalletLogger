@@ -20,18 +20,18 @@ export default function SetupScreen3() {
   const [categoryName, setCategoryName] = useState("");
   const [categoryEmoji, setCategoryEmoji] = useState("");
 
-  const [incomeCategories, setIncomeCategories] = useState([
-    { id: "1", name: "Salary", emoji: "💼" },
-    { id: "2", name: "Business", emoji: "🏢" },
-    { id: "3", name: "Investments", emoji: "📈" },
-    { id: "4", name: "Gift", emoji: "🎁" },
-    { id: "5", name: "Freelance", emoji: "🖥️" },
-    { id: "6", name: "Rental Income", emoji: "🏠" },
-    { id: "7", name: "Savings Withdrawals", emoji: "🏦" },
-    { id: "8", name: "Bonus", emoji: "🎉" },
-    { id: "9", name: "Refund", emoji: "💸" },
-    { id: "10", name: "Allowance", emoji: "💰" },
-    { id: "11", name: "Other", emoji: "🤑" },
+  const [expenseCategories, setExpenseCategories] = useState([
+    { id: "1", name: "Rent", emoji: "🏠" },
+    { id: "2", name: "Utilities", emoji: "💡" },
+    { id: "3", name: "Groceries", emoji: "🛒" },
+    { id: "4", name: "Transportation", emoji: "🚗" },
+    { id: "5", name: "Food", emoji: "🍽️" },
+    { id: "6", name: "Entertainment", emoji: "🎬" },
+    { id: "7", name: "Health", emoji: "⚕️" },
+    { id: "8", name: "Insurance", emoji: "🛡️" },
+    { id: "9", name: "Education", emoji: "🎓" },
+    { id: "10", name: "Subscriptions", emoji: "📺" },
+    { id: "11", name: "Miscellaneous", emoji: "🧾" },
   ]);
 
   function keyExtractor(item) {
@@ -42,7 +42,7 @@ export default function SetupScreen3() {
     const { item, onDragStart, onDragEnd, isActive } = info;
 
     const handleDelete = (id) => {
-      setIncomeCategories((prev) => prev.filter((cat) => cat.id !== id));
+      setExpenseCategories((prev) => prev.filter((cat) => cat.id !== id));
     };
 
     const handleEdit = (cat) => {
@@ -124,21 +124,21 @@ export default function SetupScreen3() {
   }
 
   async function onReordered(fromIndex, toIndex) {
-    const copy = [...incomeCategories];
+    const copy = [...expenseCategories];
     setScrollEnabled(true);
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]);
-    setIncomeCategories(copy);
+    setExpenseCategories(copy);
   }
 
   setShowNavbar(false);
 
   function getNextId() {
-    if (incomeCategories.length === 0) {
+    if (expenseCategories.length === 0) {
       return "1";
     }
     const maxId = Math.max(
-      ...incomeCategories.map((cat) => parseInt(cat.id, 10))
+      ...expenseCategories.map((cat) => parseInt(cat.id, 10))
     );
     return String(maxId + 1);
   }
@@ -146,14 +146,14 @@ export default function SetupScreen3() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Set up your Income Categories</Text>
+        <Text style={styles.introText}>Set up your Expense Categories</Text>
         <Text style={styles.introSubText}>
           You can always change these later
         </Text>
 
         <View style={styles.listContainer}>
           <DragList
-            data={incomeCategories}
+            data={expenseCategories}
             keyExtractor={keyExtractor}
             onReordered={onReordered}
             renderItem={renderItem}
@@ -172,18 +172,18 @@ export default function SetupScreen3() {
 
         <View style={styles.buttons}>
           <Button
-            enabled={incomeCategories.length >= 1}
+            enabled={expenseCategories.length >= 1}
             disabledColor={"#454545ff"}
             functionDisabled={() => {
               Toast.show({
                 type: "error",
                 text1: "Error",
                 text2:
-                  "Make sure you have at least one category before continuing",
+                  "Make sure you have at least one account before continuing",
               });
             }}
             function={() => {
-              router.push("/setup/SetupScreen4");
+              router.push("/setup/SetupScreen5");
             }}
           >
             Next
@@ -203,10 +203,10 @@ export default function SetupScreen3() {
                 name: newName,
                 emoji: newEmoji,
               };
-              setIncomeCategories((cats) => [...cats, newCat]);
+              setExpenseCategories((cats) => [...cats, newCat]);
             } else {
               // Edit mode: update category
-              setIncomeCategories((cats) =>
+              setExpenseCategories((cats) =>
                 cats.map((cat) =>
                   cat.id === editingCategoryId
                     ? { ...cat, name: newName, emoji: newEmoji }
