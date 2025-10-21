@@ -12,7 +12,6 @@ export default function SetupScreen3() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
-  const [scrollEnabled, setScrollEnabled] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [modalMode, setModalMode] = useState("edit");
@@ -96,16 +95,17 @@ export default function SetupScreen3() {
 
           {/* Drag Button */}
           <TouchableOpacity
+            hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
-            onLongPress={() => {
-              setScrollEnabled(false);
-              onDragStart();
-            }}
-            onPressOut={() => onDragEnd()}
             onPress={() => {
               onDragEnd();
-              setScrollEnabled(true);
+            }}
+            onPressIn={() => {
+              onDragStart();
+            }}
+            onPressOut={() => {
+              onDragEnd();
             }}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
@@ -125,7 +125,6 @@ export default function SetupScreen3() {
 
   async function onReordered(fromIndex, toIndex) {
     const copy = [...incomeCategories];
-    setScrollEnabled(true);
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]);
     setIncomeCategories(copy);
@@ -157,7 +156,7 @@ export default function SetupScreen3() {
             keyExtractor={keyExtractor}
             onReordered={onReordered}
             renderItem={renderItem}
-            scrollEnabled={scrollEnabled}
+            // No scrollEnabled prop needed
           />
         </View>
 

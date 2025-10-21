@@ -85,18 +85,19 @@ export default function SetupScreen3() {
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
 
-          {/* Drag Button */}
+          {/* Drag Button (expanded touch area) */}
           <TouchableOpacity
+            hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
-            onLongPress={() => {
-              setScrollEnabled(false);
-              onDragStart();
-            }}
-            onPressOut={() => onDragEnd()}
             onPress={() => {
               onDragEnd();
-              setScrollEnabled(true);
+            }}
+            onPressIn={() => {
+              onDragStart();
+            }}
+            onPressOut={() => {
+              onDragEnd();
             }}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
@@ -186,7 +187,6 @@ export default function SetupScreen3() {
           categoryEmoji={categoryEmoji}
           onSave={(newName, newEmoji) => {
             if (modalMode === "add") {
-              // Add new category with unique id
               const newCat = {
                 id: getNextId(),
                 name: newName,
@@ -194,7 +194,6 @@ export default function SetupScreen3() {
               };
               setAccounts((cats) => [...cats, newCat]);
             } else {
-              // Edit mode: update category
               setAccounts((cats) =>
                 cats.map((cat) =>
                   cat.id === editingCategoryId
