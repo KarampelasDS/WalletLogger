@@ -38,6 +38,6 @@ export default function Layout() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#1E1E24",
+    backgroundColor: "#1A1B25",
   },
 });

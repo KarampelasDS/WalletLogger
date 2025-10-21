@@ -6,8 +6,9 @@ import { useRouter } from "expo-router";
 import SelectionScroller from "../../components/SelectionScroller/SelectionScroller";
 import ScrollerOption from "../../components/SelectionScroller/ScrollerOption";
 import { useState } from "react";
+import Toast from "react-native-toast-message";
 
-export default function SetupScreen1() {
+export default function SetupScreen2() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
@@ -83,7 +84,20 @@ export default function SetupScreen1() {
         </ScrollerOption>
       </SelectionScroller>
       <View style={styles.buttons}>
-        <Button>Next</Button>
+        <Button
+          functionDisabled={() => {
+            Toast.show({
+              type: "error",
+              text1: "Make sure you select a currency before continuing",
+            });
+          }}
+          function={() => {
+            router.push("/setup/SetupScreen3");
+          }}
+          enabled={selectedCurrency != null}
+        >
+          Next
+        </Button>
       </View>
     </View>
   );
