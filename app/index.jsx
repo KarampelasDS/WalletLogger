@@ -10,7 +10,6 @@ import AddTransactionButton from "../components/TransactionsPage/AddTransactionB
 import Title from "../components/Title/Title";
 import { Ionicons } from "@expo/vector-icons";
 import { Store } from "../stores/Store";
-import { Redirect } from "expo-router";
 import TransactionDay from "../components/TransactionRecords/TransactionDay";
 
 // Month names for display
@@ -36,7 +35,6 @@ const Home = () => {
   const initDB = Store((state) => state.initDB);
   const dbInitialized = Store((state) => state.dbInitialized);
   const setDbInitialized = Store((state) => state.setDbInitialized);
-  const completedSetup = Store((state) => state.completedSetup);
 
   const [grouped, setGrouped] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -129,8 +127,6 @@ const Home = () => {
       setMonthlyIncome(income);
     });
   };
-
-  if (!completedSetup) return <Redirect href="/setup/SetupScreen1" />;
 
   return (
     <View style={styles.container}>
