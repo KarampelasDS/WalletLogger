@@ -14,7 +14,7 @@ export default function InputModal(props) {
   const [emoji, setEmoji] = useState(props.categoryEmoji || "😊");
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryName, setCategoryName] = useState(props.categoryName || "");
-  const [balance, setBalance] = useState(props.categoryBalance || "0");
+  const [balance, setBalance] = useState(props.categoryBalance || "");
 
   const isSaveAllowed =
     categoryName.trim().length > 0 &&
@@ -24,7 +24,10 @@ export default function InputModal(props) {
   useEffect(() => {
     setEmoji(props.categoryEmoji || "😊");
     setCategoryName(props.categoryName || "");
-    setBalance(props.categoryBalance || "0");
+    setBalance(props.categoryBalance || "");
+    if (props.categoryBalance < 0.01) {
+      setBalance("");
+    }
   }, [props.categoryEmoji, props.categoryName, props.categoryBalance]);
 
   // custom handler to format and enforce decimal precision / length

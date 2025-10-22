@@ -163,7 +163,7 @@ const Home = () => {
             {Number(monthlyIncome).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            {mainCurrency.symbol}
+            {mainCurrency ? mainCurrency.symbol : ""}
           </Text>
         </View>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
@@ -180,7 +180,7 @@ const Home = () => {
             {Number(monthlyExpenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            {mainCurrency.symbol}
+            {mainCurrency ? mainCurrency.symbol : ""}
           </Text>
         </View>
       </View>

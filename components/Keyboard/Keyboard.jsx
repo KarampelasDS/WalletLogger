@@ -1,203 +1,114 @@
-import { View, StyleSheet, Text, TouchableOpacity } from "react-native";
+import {
+  View,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Dimensions,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Store } from "../../stores/Store";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import KeyboardHeader from "../KeyboardHeader/KeyboardHeader";
 import OptionPicker from "../OptionPicker/OptionPicker";
 
+const { height: screenHeight } = Dimensions.get("window");
+const minHeight = 0.38 * screenHeight;
+
 export default function Keyboard(props) {
-  const dimensions = Store((state) => state.dimensions);
   const iconSize = Store((state) => state.iconSize);
   const [showCurrencyPicker, setShowCurrencyPicker] = useState(false);
-  const minHeight = 0.38 * dimensions.height;
-
-  useEffect(() => {
-    props.value.toLocaleString("en-US", {
-      style: "decimal",
-      minimumFractionDigits: 2,
-    });
-  }, [props.value]);
 
   const updateValue = (val) => {
     let str = props.value.toString();
-
-    // Prevent multiple decimals
     if (val === "." && str.includes(".")) return;
-
-    // Preview the new value as a string
     let nextStr = str === "0" && val !== "." ? val : str + val;
-
-    // Check for >2 decimals
-    if (nextStr.includes(".") && nextStr.split(".")[1].length > 2) {
-      nextStr = nextStr.slice(0, -2) + val;
-      props.valueUpdateFunction(nextStr);
-      return;
-    }
-
-    // Manage Extreme Amount Lengths
-    if (nextStr.length > 14 && val != ".") {
-      if (nextStr.includes(".") && nextStr.length <= 17) {
-        props.valueUpdateFunction(nextStr);
-        return;
-      }
-      return;
-    }
-
+    if (nextStr.includes(".") && nextStr.split(".")[1].length > 2) return;
+    if (nextStr.length > 14 && val != ".") return;
     props.valueUpdateFunction(nextStr);
   };
 
-  const backspaceValue = () => {
+  const backspace = () =>
     props.valueUpdateFunction((prev) => prev.slice(0, -1));
-  };
-
-  const trashValue = () => {
-    props.valueUpdateFunction("");
-  };
-
-  const Done = () => {
-    props.closeKeyboard();
-  };
+  const clearAll = () => props.valueUpdateFunction("");
 
   return (
-    <View style={styles.container}>
+    <View style={styles.overlay}>
+      {/* Exit area also visible when currency picker is open */}
       <TouchableOpacity
-        onPress={props.closeKeyboard}
-        style={styles.exitView}
-      ></TouchableOpacity>
+        style={[
+          styles.exitView,
+          showCurrencyPicker && { bottom: minHeight + 85 },
+        ]}
+        onPress={() => {
+          if (showCurrencyPicker) setShowCurrencyPicker(false);
+          else props.closeKeyboard();
+        }}
+        activeOpacity={1}
+      />
+
       {!showCurrencyPicker && (
-        <View style={styles.keyboard}>
+        <View style={styles.container}>
+          <KeyboardHeader
+            text={props.headerText}
+            backgroundColor={props.headerBackgroundColor}
+          />
           <View>
-            <KeyboardHeader
-              text={props.headerText}
-              backgroundColor={props.headerBackgroundColor}
-            />
-          </View>
-          <View>
-            <View style={styles.keyboardRow}>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("1")}
-              >
-                <Text style={styles.keyboardButtonText}>1</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("2")}
-              >
-                <Text style={styles.keyboardButtonText}>2</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("3")}
-              >
-                <Text style={styles.keyboardButtonText}>3</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={backspaceValue}
-              >
-                <Ionicons name="backspace" size={iconSize} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.keyboardRow}>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("4")}
-              >
-                <Text style={styles.keyboardButtonText}>4</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("5")}
-              >
-                <Text style={styles.keyboardButtonText}>5</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("6")}
-              >
-                <Text style={styles.keyboardButtonText}>6</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => setShowCurrencyPicker(true)}
-              >
-                <Ionicons name="cash" size={iconSize} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.keyboardRow}>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("7")}
-              >
-                <Text style={styles.keyboardButtonText}>7</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("8")}
-              >
-                <Text style={styles.keyboardButtonText}>8</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("9")}
-              >
-                <Text style={styles.keyboardButtonText}>9</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.keyboardButton, {}]}>
-                <Ionicons name="calculator" size={iconSize} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.keyboardRow}>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={trashValue}
-              >
-                <Ionicons name="trash" size={iconSize} color="#fff" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue("0")}
-              >
-                <Text style={styles.keyboardButtonText}>0</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.keyboardButton, {}]}
-                onPress={() => updateValue(".")}
-              >
-                <Text style={styles.keyboardButtonText}>.</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.keyboardButton,
-                  { backgroundColor: props.typeColor },
-                ]}
-                onPress={Done}
-              >
-                <Text style={[styles.keyboardButtonText, { fontSize: 18 }]}>
-                  Done
-                </Text>
-              </TouchableOpacity>
-            </View>
+            {[
+              ["1", "2", "3", "backspace"],
+              ["4", "5", "6", "cash"],
+              ["7", "8", "9", "calc"],
+              ["trash", "0", ".", "done"],
+            ].map((row, idx) => (
+              <View key={idx} style={styles.keyboardRow}>
+                {row.map((key) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={styles.keyboardButton}
+                    onPress={() => {
+                      if (key === "backspace") backspace();
+                      else if (key === "cash") setShowCurrencyPicker(true);
+                      else if (key === "trash") clearAll();
+                      else if (key === "done") props.closeKeyboard();
+                      else updateValue(key);
+                    }}
+                  >
+                    {key.match(/[0-9.]/) ? (
+                      <Text style={styles.keyboardButtonText}>{key}</Text>
+                    ) : (
+                      <Ionicons
+                        name={
+                          key === "cash"
+                            ? "cash"
+                            : key === "trash"
+                            ? "trash"
+                            : key === "calc"
+                            ? "calculator"
+                            : "backspace"
+                        }
+                        size={iconSize}
+                        color="#fff"
+                      />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))}
           </View>
         </View>
       )}
+
       {showCurrencyPicker && (
-        <View style={[styles.currencyPicker, { minHeight: minHeight }]}>
-          <View>
-            <KeyboardHeader
-              text={props.headerText}
-              backgroundColor={props.headerBackgroundColor}
-            />
-          </View>
-          <View>
-            <OptionPicker
-              valueUpdateFunction={props.updateCurrency}
-              options={props.currencies}
-              closePicker={() => setShowCurrencyPicker(false)}
-              type="Currencies"
-            />
-          </View>
+        <View style={[styles.currencyPicker, { minHeight: minHeight + 85 }]}>
+          <KeyboardHeader
+            text={props.headerText}
+            backgroundColor={props.headerBackgroundColor}
+          />
+          <OptionPicker
+            valueUpdateFunction={props.updateCurrency}
+            options={props.currencies}
+            closePicker={() => setShowCurrencyPicker(false)}
+            type="Currencies"
+          />
         </View>
       )}
     </View>
@@ -205,22 +116,35 @@ export default function Keyboard(props) {
 }
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     position: "absolute",
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#363642",
+    bottom: 0,
+    zIndex: 1000,
   },
-  keyboardHeader: {
-    color: "white",
-    fontSize: 20,
-    padding: 12,
-    textAlign: "center",
-    borderTopColor: "#fff",
-    borderTopWidth: 2,
-    borderBottomColor: "#fff",
-    borderBottomWidth: 2,
+  exitView: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: minHeight,
+    backgroundColor: "transparent",
+    zIndex: 1001,
+  },
+  container: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    minHeight: minHeight,
+    backgroundColor: "#363642",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+    zIndex: 1002,
+    overflow: "hidden",
+    paddingBottom: 6,
   },
   keyboardRow: {
     flexDirection: "row",
@@ -229,29 +153,23 @@ const styles = StyleSheet.create({
   keyboardButton: {
     padding: 20,
     minWidth: "25%",
-    textAlign: "center",
     alignItems: "center",
     justifyContent: "center",
     borderColor: "#d9d9d925",
     borderWidth: 1,
+    backgroundColor: "transparent",
   },
   keyboardButtonText: {
     color: "#fff",
     fontSize: 24,
   },
-  keyboardCol: {
-    flexDirection: "column",
-  },
-  keyboard: {
-    zIndex: 1002,
-  },
-  exitView: {
+  currencyPicker: {
     position: "absolute",
+    left: 0,
+    right: 0,
     bottom: 0,
-    flex: 1,
-    height: 2000,
-    width: "100%",
-    zIndex: 1001,
+    backgroundColor: "#363642",
+    zIndex: 1002,
+    overflow: "hidden",
   },
-  currencyPicker: { zIndex: 1002 },
 });

@@ -1,9 +1,18 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+} from "react-native";
 import KeyboardHeader from "../KeyboardHeader/KeyboardHeader";
 import Option from "./Option";
 
+const { height: screenHeight } = Dimensions.get("window");
+const pickerHeight = Math.round(screenHeight * 0.41);
+
 export default function OptionPicker(props) {
-  // Determine the word to use based on props.type
   const word =
     props.type === "Account"
       ? "account"
@@ -12,17 +21,25 @@ export default function OptionPicker(props) {
       : "category";
 
   return (
-    <View style={styles.container}>
-      <TouchableOpacity style={styles.exitView} onPress={props.closePicker} />
-      <View style={styles.picker}>
+    <View style={styles.overlay}>
+      <TouchableOpacity
+        style={styles.exitView}
+        onPress={props.closePicker}
+        activeOpacity={1}
+      />
+      <View style={styles.container}>
         {props.headerText && (
           <KeyboardHeader
             text={props.headerText}
             backgroundColor={props.headerBackgroundColor}
           />
         )}
-        <View style={styles.options}>
-          {props.options.map((option) => (
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={styles.options}
+          showsVerticalScrollIndicator={true}
+        >
+          {props.options?.map((option) => (
             <Option
               key={option[`${word}_id`]}
               emoji={option[`${word}_emoji`]}
@@ -32,34 +49,47 @@ export default function OptionPicker(props) {
               valueUpdateFunction={props.valueUpdateFunction}
             />
           ))}
-        </View>
+        </ScrollView>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  overlay: {
     position: "absolute",
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#363642",
-    height: "41%",
+    bottom: 0,
+    zIndex: 1000,
   },
-  picker: {
+  exitView: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: pickerHeight,
+    backgroundColor: "transparent",
+    zIndex: 1001,
+  },
+  container: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: pickerHeight,
+    backgroundColor: "#363642",
     zIndex: 1002,
+    overflow: "hidden",
+  },
+  scrollArea: {
+    flex: 1,
+    width: "100%",
   },
   options: {
     flexDirection: "row",
     flexWrap: "wrap",
-  },
-  exitView: {
-    position: "absolute",
-    bottom: 0,
-    flex: 1,
-    height: 2000,
-    width: "100%",
-    zIndex: 1001,
+    justifyContent: "flex-start",
   },
 });
