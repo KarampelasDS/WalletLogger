@@ -8,23 +8,26 @@ import DragList from "react-native-draglist";
 import InputModal from "../../components/InputModal/InputModal";
 import Toast from "react-native-toast-message";
 
-export default function SetupScreen3() {
+export default function SetupScreen5() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  const mainCurrency = Store((state) => state.mainCurrency);
+
   const [modalMode, setModalMode] = useState("edit");
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState("");
   const [categoryEmoji, setCategoryEmoji] = useState("");
+  const [categoryBalance, setCategoryBalance] = useState("0");
 
   const setSetupAccounts = Store((state) => state.setSetupAccounts);
 
   const [accounts, setAccounts] = useState([
-    { id: "1", name: "Bank", emoji: "🏦" },
-    { id: "2", name: "Cash", emoji: "💵" },
+    { id: "1", name: "Bank", emoji: "🏦", balance: "0" },
+    { id: "2", name: "Cash", emoji: "💵", balance: "0" },
   ]);
 
   function keyExtractor(item) {
@@ -43,6 +46,7 @@ export default function SetupScreen3() {
       setEditingCategoryId(cat.id);
       setCategoryName(cat.name);
       setCategoryEmoji(cat.emoji);
+      setCategoryBalance(String(cat.balance));
       setShowEditModal(true);
     };
 
@@ -59,17 +63,24 @@ export default function SetupScreen3() {
       >
         <View style={styles.itemLeft}>
           <Text style={styles.itemEmoji}>{item.emoji}</Text>
-          <Text
-            style={[styles.itemName, { maxWidth: 120 }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.name}
-          </Text>
+          <View>
+            <Text
+              style={[styles.itemName, { maxWidth: 140 }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.name}
+            </Text>
+            <Text style={styles.balanceText}>
+              {Number(item.balance).toLocaleString("en-US", {
+                maximumFractionDigits: 2,
+              })}{" "}
+              {mainCurrency.symbol}
+            </Text>
+          </View>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
-          {/* Delete Button */}
           <TouchableOpacity
             onPress={() => handleDelete(item.id)}
             style={{ paddingVertical: 10 }}
@@ -78,7 +89,6 @@ export default function SetupScreen3() {
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
 
-          {/* Edit Button */}
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -87,20 +97,13 @@ export default function SetupScreen3() {
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
 
-          {/* Drag Button (expanded touch area) */}
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
-            onPress={() => {
-              onDragEnd();
-            }}
-            onPressIn={() => {
-              onDragStart();
-            }}
-            onPressOut={() => {
-              onDragEnd();
-            }}
+            onPress={() => onDragEnd()}
+            onPressIn={() => onDragStart()}
+            onPressOut={() => onDragEnd()}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
           </TouchableOpacity>
@@ -113,6 +116,7 @@ export default function SetupScreen3() {
     setModalMode("add");
     setCategoryName("");
     setCategoryEmoji("😊");
+    setCategoryBalance("0");
     setShowEditModal(true);
     setEditingCategoryId(null);
   }
@@ -128,9 +132,7 @@ export default function SetupScreen3() {
   setShowNavbar(false);
 
   function getNextId() {
-    if (accounts.length === 0) {
-      return "1";
-    }
+    if (accounts.length === 0) return "1";
     const maxId = Math.max(...accounts.map((cat) => parseInt(cat.id, 10)));
     return String(maxId + 1);
   }
@@ -140,7 +142,7 @@ export default function SetupScreen3() {
       <View style={styles.container}>
         <Text style={styles.introText}>Configure your Accounts</Text>
         <Text style={styles.introSubText}>
-          You can always change these later
+          You can set an initial balance for each
         </Text>
 
         <View style={styles.listContainer}>
@@ -159,7 +161,7 @@ export default function SetupScreen3() {
           activeOpacity={0.92}
         >
           <Ionicons name="add-circle-outline" size={32} color="#fff" />
-          <Text style={styles.addText}>Add Category</Text>
+          <Text style={styles.addText}>Add Account</Text>
         </TouchableOpacity>
 
         <View style={styles.buttons}>
@@ -172,7 +174,7 @@ export default function SetupScreen3() {
                 type: "error",
                 text1: "Error",
                 text2:
-                  "Make sure you have at least one category before continuing",
+                  "Make sure you have at least one account before continuing",
               });
             }}
             function={() => {
@@ -184,24 +186,33 @@ export default function SetupScreen3() {
           </Button>
         </View>
       </View>
+
       {showEditModal && (
         <InputModal
-          title={modalMode === "add" ? "Add Category" : "Edit Category"}
+          title={modalMode === "add" ? "Add Account" : "Edit Account"}
           categoryName={categoryName}
           categoryEmoji={categoryEmoji}
-          onSave={(newName, newEmoji) => {
+          categoryBalance={categoryBalance}
+          accountMode={true}
+          onSave={(newName, newEmoji, newBalance) => {
             if (modalMode === "add") {
-              const newCat = {
+              const newAcc = {
                 id: getNextId(),
                 name: newName,
                 emoji: newEmoji,
+                balance: newBalance || "0",
               };
-              setAccounts((cats) => [...cats, newCat]);
+              setAccounts((cats) => [...cats, newAcc]);
             } else {
               setAccounts((cats) =>
                 cats.map((cat) =>
                   cat.id === editingCategoryId
-                    ? { ...cat, name: newName, emoji: newEmoji }
+                    ? {
+                        ...cat,
+                        name: newName,
+                        emoji: newEmoji,
+                        balance: newBalance || "0",
+                      }
                     : cat
                 )
               );
@@ -295,6 +306,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "500",
+  },
+  balanceText: {
+    color: "#9ac9e3",
+    fontSize: 15,
+    fontWeight: "500",
+    marginTop: 3,
   },
   buttons: {
     position: "absolute",

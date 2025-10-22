@@ -25,16 +25,10 @@ export default function SetupScreen3() {
 
   const [incomeCategories, setIncomeCategories] = useState([
     { id: "1", name: "Salary", emoji: "💼" },
-    { id: "2", name: "Business", emoji: "🏢" },
-    { id: "3", name: "Investments", emoji: "📈" },
-    { id: "4", name: "Gift", emoji: "🎁" },
-    { id: "5", name: "Freelance", emoji: "🖥️" },
-    { id: "6", name: "Rental Income", emoji: "🏠" },
-    { id: "7", name: "Savings Withdrawals", emoji: "🏦" },
-    { id: "8", name: "Bonus", emoji: "🎉" },
-    { id: "9", name: "Refund", emoji: "💸" },
-    { id: "10", name: "Allowance", emoji: "💰" },
-    { id: "11", name: "Other", emoji: "🤑" },
+    { id: "2", name: "Investments", emoji: "📈" },
+    { id: "3", name: "Gift", emoji: "🎁" },
+    { id: "4", name: "Bonus", emoji: "🎉" },
+    { id: "5", name: "Other", emoji: "🤑" },
   ]);
 
   function keyExtractor(item) {

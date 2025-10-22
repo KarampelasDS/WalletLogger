@@ -7,7 +7,6 @@ import Button from "../../components/Button/Button";
 import SelectionScroller from "../../components/SelectionScroller/SelectionScroller";
 import ScrollerOption from "../../components/SelectionScroller/ScrollerOption";
 import * as SQLite from "expo-sqlite";
-import { openDatabaseAsync } from "expo-sqlite";
 
 export default function SetupScreen2() {
   const router = useRouter();
@@ -17,6 +16,8 @@ export default function SetupScreen2() {
   const setMainCurrency = Store((state) => state.setMainCurrency);
   setShowNavbar(false);
 
+  const setSetupCurrencies = Store((state) => state.setSetupCurrencies);
+
   useEffect(() => {
     if (!db) return;
 
@@ -24,53 +25,54 @@ export default function SetupScreen2() {
       await db.execAsync("PRAGMA foreign_keys = ON;");
 
       await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS currencies (
-        currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        currency_name VARCHAR,
-        currency_symbol VARCHAR,
-        currency_order INTEGER
-      )
-    `);
+        CREATE TABLE IF NOT EXISTS currencies (
+          currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          currency_name VARCHAR,
+          currency_symbol VARCHAR,
+          currency_order INTEGER
+        )
+      `);
 
       await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS accounts (
-        account_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_name VARCHAR,
-        account_emoji VARCHAR,
-        account_balance DECIMAL,
-        account_order INTEGER
-      )
-    `);
+        CREATE TABLE IF NOT EXISTS accounts (
+          account_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          account_name VARCHAR,
+          account_emoji VARCHAR,
+          account_balance DECIMAL,
+          account_order INTEGER
+        )
+      `);
 
       await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS categories (
-        category_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        category_name VARCHAR,
-        category_emoji VARCHAR,
-        category_type VARCHAR,
-        category_order INTEGER
-      )
-    `);
+        CREATE TABLE IF NOT EXISTS categories (
+          category_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          category_name VARCHAR,
+          category_emoji VARCHAR,
+          category_type VARCHAR,
+          category_order INTEGER
+        )
+      `);
 
       await db.execAsync(`
-      CREATE TABLE IF NOT EXISTS transactions (
-        transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-        transaction_type VARCHAR,
-        transaction_amount DECIMAL,
-        category_id INTEGER,
-        transaction_date DATETIME,
-        transaction_note VARCHAR,
-        account_id INTEGER,
-        account_from_id INTEGER,
-        account_to_id INTEGER,
-        currency_id INTEGER,
-        FOREIGN KEY (account_id) REFERENCES accounts(account_id),
-        FOREIGN KEY (account_from_id) REFERENCES accounts(account_id),
-        FOREIGN KEY (account_to_id) REFERENCES accounts(account_id),
-        FOREIGN KEY (category_id) REFERENCES categories(category_id),
-        FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
-      )
-    `);
+        CREATE TABLE IF NOT EXISTS transactions (
+          transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+          transaction_type VARCHAR,
+          transaction_amount DECIMAL,
+          category_id INTEGER,
+          transaction_date DATETIME,
+          transaction_note VARCHAR,
+          account_id INTEGER,
+          account_from_id INTEGER,
+          account_to_id INTEGER,
+          currency_id INTEGER,
+          FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+          FOREIGN KEY (account_from_id) REFERENCES accounts(account_id),
+          FOREIGN KEY (account_to_id) REFERENCES accounts(account_id),
+          FOREIGN KEY (category_id) REFERENCES categories(category_id),
+          FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
+        )
+      `);
+
       const accounts = await db.getAllAsync("SELECT * FROM accounts");
       console.log("Accounts:", accounts);
       const categories = await db.getAllAsync("SELECT * FROM categories");
@@ -80,52 +82,52 @@ export default function SetupScreen2() {
     };
 
     createTables();
-  }, []);
+  }, [db]);
 
   const currencies = [
-    { name: "Euro", symbol: "€" },
-    { name: "US Dollar", symbol: "USD $" },
-    { name: "British Pound", symbol: "£" },
-    { name: "Japanese Yen", symbol: "¥" },
-    { name: "Swiss Franc", symbol: "CHF" },
-    { name: "Canadian Dollar", symbol: "C$" },
-    { name: "Australian Dollar", symbol: "A$" },
-    { name: "Chinese Yuan", symbol: "CN¥" },
-    { name: "Indian Rupee", symbol: "₹" },
-    { name: "Mexican Peso", symbol: "MX$" },
-    { name: "Brazilian Real", symbol: "R$" },
-    { name: "Argentine Peso", symbol: "AR$" },
-    { name: "Chilean Peso", symbol: "CL$" },
-    { name: "Russian Ruble", symbol: "₽" },
-    { name: "Belarusian Ruble", symbol: "BYN ₽" },
-    { name: "Polish Złoty", symbol: "zł" },
-    { name: "Czech Koruna", symbol: "Kč" },
-    { name: "Hungarian Forint", symbol: "Ft" },
-    { name: "Danish Krone", symbol: "kr" },
-    { name: "Swedish Krona", symbol: "kr" },
-    { name: "Norwegian Krone", symbol: "kr" },
-    { name: "Icelandic Króna", symbol: "kr" },
-    { name: "Bulgarian Lev", symbol: "лв" },
-    { name: "Romanian Leu", symbol: "lei" },
-    { name: "Serbian Dinar", symbol: "din" },
-    { name: "North Macedonia Denar", symbol: "ден" },
-    { name: "Albanian Lek", symbol: "L" },
-    { name: "Bosnia and Herzegovina Convertible Mark", symbol: "KM" },
-    { name: "Moldovan Leu", symbol: "L" },
-    { name: "Georgian Lari", symbol: "₾" },
-    { name: "Armenian Dram", symbol: "֏" },
-    { name: "Azerbaijani Manat", symbol: "₼" },
-    { name: "Turkish Lira", symbol: "₺" },
-    { name: "Israeli Shekel", symbol: "₪" },
-    { name: "Kazakhstani Tenge", symbol: "₸" },
-    { name: "Moroccan Dirham", symbol: "د.م." },
-    { name: "Egyptian Pound", symbol: "E£" },
-    { name: "United Arab Emirates Dirham", symbol: "AED" },
-    { name: "South African Rand", symbol: "R" },
-    { name: "Saudi Riyal", symbol: "SAR" },
-    { name: "Singapore Dollar", symbol: "S$" },
-    { name: "New Zealand Dollar", symbol: "NZ$" },
-    { name: "South Korean Won", symbol: "₩" },
+    { id: 0, name: "Euro", symbol: "€" },
+    { id: 1, name: "US Dollar", symbol: "USD $" },
+    { id: 2, name: "British Pound", symbol: "£" },
+    { id: 3, name: "Japanese Yen", symbol: "¥" },
+    { id: 4, name: "Swiss Franc", symbol: "CHF" },
+    { id: 5, name: "Canadian Dollar", symbol: "C$" },
+    { id: 6, name: "Australian Dollar", symbol: "A$" },
+    { id: 7, name: "Chinese Yuan", symbol: "CN¥" },
+    { id: 8, name: "Indian Rupee", symbol: "₹" },
+    { id: 9, name: "Mexican Peso", symbol: "MX$" },
+    { id: 10, name: "Brazilian Real", symbol: "R$" },
+    { id: 11, name: "Argentine Peso", symbol: "AR$" },
+    { id: 12, name: "Chilean Peso", symbol: "CL$" },
+    { id: 13, name: "Russian Ruble", symbol: "₽" },
+    { id: 14, name: "Belarusian Ruble", symbol: "BYN ₽" },
+    { id: 15, name: "Polish Złoty", symbol: "zł" },
+    { id: 16, name: "Czech Koruna", symbol: "Kč" },
+    { id: 17, name: "Hungarian Forint", symbol: "Ft" },
+    { id: 18, name: "Danish Krone", symbol: "kr" },
+    { id: 19, name: "Swedish Krona", symbol: "kr" },
+    { id: 20, name: "Norwegian Krone", symbol: "kr" },
+    { id: 21, name: "Icelandic Króna", symbol: "kr" },
+    { id: 22, name: "Bulgarian Lev", symbol: "лв" },
+    { id: 23, name: "Romanian Leu", symbol: "lei" },
+    { id: 24, name: "Serbian Dinar", symbol: "din" },
+    { id: 25, name: "North Macedonia Denar", symbol: "ден" },
+    { id: 26, name: "Albanian Lek", symbol: "L" },
+    { id: 27, name: "Bosnia and Herzegovina Convertible Mark", symbol: "KM" },
+    { id: 28, name: "Moldovan Leu", symbol: "L" },
+    { id: 29, name: "Georgian Lari", symbol: "₾" },
+    { id: 30, name: "Armenian Dram", symbol: "֏" },
+    { id: 31, name: "Azerbaijani Manat", symbol: "₼" },
+    { id: 32, name: "Turkish Lira", symbol: "₺" },
+    { id: 33, name: "Israeli Shekel", symbol: "₪" },
+    { id: 34, name: "Kazakhstani Tenge", symbol: "₸" },
+    { id: 35, name: "Moroccan Dirham", symbol: "د.م." },
+    { id: 36, name: "Egyptian Pound", symbol: "E£" },
+    { id: 37, name: "United Arab Emirates Dirham", symbol: "AED" },
+    { id: 38, name: "South African Rand", symbol: "R" },
+    { id: 39, name: "Saudi Riyal", symbol: "SAR" },
+    { id: 40, name: "Singapore Dollar", symbol: "S$" },
+    { id: 41, name: "New Zealand Dollar", symbol: "NZ$" },
+    { id: 42, name: "South Korean Won", symbol: "₩" },
   ];
 
   return (
@@ -137,11 +139,11 @@ export default function SetupScreen2() {
         {currencies.map((currency, index) => (
           <ScrollerOption
             key={currency.name}
-            active={selectedCurrency === currency.name}
-            function={() => setSelectedCurrency(currency.name)}
+            active={selectedCurrency?.name === currency.name}
+            function={() => setSelectedCurrency(currency)}
             style={[
               styles.option,
-              selectedCurrency === currency.name && styles.optionActive,
+              selectedCurrency?.name === currency.name && styles.optionActive,
               index === 0 && styles.optionFirst,
               index === currencies.length - 1 && styles.optionLast,
             ]}
@@ -164,6 +166,7 @@ export default function SetupScreen2() {
           }}
           function={() => {
             setMainCurrency(selectedCurrency);
+            setSetupCurrencies(currencies);
             router.push("/setup/SetupScreen3");
           }}
           backgroundColor={"#2C2E42"}
@@ -232,12 +235,8 @@ const styles = StyleSheet.create({
     shadowColor: "#42A5F5",
     shadowOpacity: 0.4,
   },
-  optionFirst: {
-    marginTop: 14,
-  },
-  optionLast: {
-    marginBottom: 20,
-  },
+  optionFirst: { marginTop: 14 },
+  optionLast: { marginBottom: 20 },
   buttons: {
     position: "absolute",
     bottom: 0,

@@ -35,6 +35,7 @@ const Home = () => {
   const initDB = Store((state) => state.initDB);
   const dbInitialized = Store((state) => state.dbInitialized);
   const setDbInitialized = Store((state) => state.setDbInitialized);
+  const mainCurrency = Store((state) => state.mainCurrency);
 
   const [grouped, setGrouped] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -162,7 +163,7 @@ const Home = () => {
             {Number(monthlyIncome).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            €
+            {mainCurrency.symbol}
           </Text>
         </View>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
@@ -179,7 +180,7 @@ const Home = () => {
             {Number(monthlyExpenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            €
+            {mainCurrency.symbol}
           </Text>
         </View>
       </View>

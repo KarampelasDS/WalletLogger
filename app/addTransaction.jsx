@@ -16,6 +16,7 @@ import KeyboardComponent from "../components/Keyboard/Keyboard";
 import OptionPicker from "../components/OptionPicker/OptionPicker";
 import Button from "../components/Button/Button";
 import Toast from "react-native-toast-message";
+import { useRouter } from "expo-router";
 
 const AddTransaction = () => {
   const navigation = useNavigation();
@@ -23,6 +24,7 @@ const AddTransaction = () => {
   const [focusedInput, setFocusedInput] = useState(null);
   const db = Store((state) => state.db);
   const setShowNavbar = Store((state) => state.setShowNavbar);
+  const router = useRouter();
 
   //! Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
@@ -65,6 +67,7 @@ const AddTransaction = () => {
     symbol: "",
   });
   const [storedCurrencies, setStoredCurrencies] = useState();
+  const mainCurrency = Store((state) => state.mainCurrency);
 
   const loadCurrencies = async () => {
     if (!db) {
@@ -74,9 +77,9 @@ const AddTransaction = () => {
     const currencies = await db.getAllAsync("SELECT * FROM currencies");
     setStoredCurrencies(currencies);
     setTransactionCurrency({
-      name: currencies[0].currency_name,
-      id: currencies[0].currency_id,
-      symbol: currencies[0].currency_symbol,
+      name: currencies[mainCurrency.id].currency_name,
+      id: currencies[mainCurrency.id].currency_id,
+      symbol: currencies[mainCurrency.id].currency_symbol,
     });
   };
 
@@ -232,6 +235,7 @@ const AddTransaction = () => {
         text2: "Your transaction was added successfully.",
       });
       setDbUpToDate(false);
+      router.replace("/");
     } catch (e) {
       Toast.show({
         type: "error",
@@ -289,6 +293,7 @@ const AddTransaction = () => {
         text2: "Your transaction was added successfully.",
       });
       setDbUpToDate(false);
+      router.replace("/");
     } catch (e) {
       Toast.show({
         type: "error",

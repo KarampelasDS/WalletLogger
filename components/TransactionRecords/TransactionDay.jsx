@@ -3,6 +3,7 @@ import { Store } from "../../stores/Store";
 import { useEffect, useState } from "react";
 
 export default function TransactionDay(props) {
+  const mainCurrency = Store((state) => state.mainCurrency);
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -29,7 +30,7 @@ export default function TransactionDay(props) {
             {Number(props.income).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            €
+            {mainCurrency.symbol}
           </Text>
 
           <Text
@@ -47,7 +48,7 @@ export default function TransactionDay(props) {
             {Number(props.expenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            €
+            {mainCurrency.symbol}
           </Text>
         </View>
       </View>

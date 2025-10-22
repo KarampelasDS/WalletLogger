@@ -8,7 +8,7 @@ import DragList from "react-native-draglist";
 import InputModal from "../../components/InputModal/InputModal";
 import Toast from "react-native-toast-message";
 
-export default function SetupScreen3() {
+export default function SetupScreen4() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
@@ -35,7 +35,7 @@ export default function SetupScreen3() {
     { id: "8", name: "Insurance", emoji: "🛡️" },
     { id: "9", name: "Education", emoji: "🎓" },
     { id: "10", name: "Subscriptions", emoji: "📺" },
-    { id: "11", name: "Miscellaneous", emoji: "🧾" },
+    { id: "11", name: "Other", emoji: "🧾" },
   ]);
 
   function keyExtractor(item) {

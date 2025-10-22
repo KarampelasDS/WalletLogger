@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     minWidth: "33.3%",
     height: 50,
+    maxWidth: "33.3%",
   },
   optionText: {
     color: "white",

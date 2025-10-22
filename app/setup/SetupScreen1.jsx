@@ -1,6 +1,4 @@
 import { useEffect } from "react";
-import * as SQLite from "expo-sqlite";
-import { openDatabaseAsync } from "expo-sqlite";
 import { View, Text, StyleSheet } from "react-native";
 import { Store } from "../../stores/Store";
 import { Ionicons } from "@expo/vector-icons";

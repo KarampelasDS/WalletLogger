@@ -14,13 +14,35 @@ export default function InputModal(props) {
   const [emoji, setEmoji] = useState(props.categoryEmoji || "😊");
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryName, setCategoryName] = useState(props.categoryName || "");
+  const [balance, setBalance] = useState(props.categoryBalance || "0");
+
   const isSaveAllowed =
-    categoryName.trim().length > 0 && emoji.trim().length > 0;
+    categoryName.trim().length > 0 &&
+    emoji.trim().length > 0 &&
+    (!props.accountMode || !isNaN(balance));
 
   useEffect(() => {
     setEmoji(props.categoryEmoji || "😊");
     setCategoryName(props.categoryName || "");
-  }, [props.categoryEmoji, props.categoryName]);
+    setBalance(props.categoryBalance || "0");
+  }, [props.categoryEmoji, props.categoryName, props.categoryBalance]);
+
+  // custom handler to format and enforce decimal precision / length
+  const handleBalanceChange = (val) => {
+    let str = val.replace(/[^0-9.]/g, ""); // only digits and decimals
+
+    // Prevent multiple decimals
+    if ((str.match(/\./g) || []).length > 1) return;
+
+    // Allow max 2 decimal places
+    if (str.includes(".") && str.split(".")[1].length > 2) return;
+
+    // Enforce length limit (same as keyboard)
+    if (str.length > 14 && !str.includes(".")) return;
+    if (str.length > 17 && str.includes(".")) return;
+
+    setBalance(str);
+  };
 
   return (
     <>
@@ -50,20 +72,43 @@ export default function InputModal(props) {
                       style={styles.inputText}
                       value={categoryName}
                       onChangeText={setCategoryName}
-                      placeholder="Category Name"
+                      placeholder="Name"
                     />
                   </View>
                 </View>
+
+                {props.accountMode && (
+                  <View style={styles.balanceInput}>
+                    <Text style={styles.balanceLabel}>Initial Balance:</Text>
+                    <TextInput
+                      keyboardType="numeric"
+                      placeholderTextColor="#bbb"
+                      style={[styles.inputText, { fontSize: 22 }]}
+                      value={balance}
+                      onChangeText={handleBalanceChange}
+                      placeholder="0.00"
+                      maxLength={17}
+                    />
+                  </View>
+                )}
+
                 <TouchableOpacity
                   style={[
                     styles.saveButton,
                     { opacity: isSaveAllowed ? 1 : 0.5 },
                   ]}
                   disabled={!isSaveAllowed}
-                  onPress={() => props.onSave(categoryName, emoji)}
+                  onPress={() =>
+                    props.onSave(
+                      categoryName,
+                      emoji,
+                      props.accountMode ? balance : undefined
+                    )
+                  }
                 >
                   <Text style={styles.saveButtonText}>Save</Text>
                 </TouchableOpacity>
+
                 <TouchableOpacity
                   style={{ marginTop: 12 }}
                   onPress={props.onClose}
@@ -75,33 +120,35 @@ export default function InputModal(props) {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-      {/* Emoji Picker Modal remains as before */}
-      <Modal
-        visible={pickerVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setPickerVisible(false)}
-      >
-        <View style={styles.pickerContainer}>
-          <View style={styles.pickerHeader}>
-            <TouchableOpacity onPress={() => setPickerVisible(false)}>
-              <Text style={styles.closeText}>Close</Text>
-            </TouchableOpacity>
+
+      {pickerVisible && (
+        <Modal
+          visible={pickerVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setPickerVisible(false)}
+        >
+          <View style={styles.pickerContainer}>
+            <View style={styles.pickerHeader}>
+              <TouchableOpacity onPress={() => setPickerVisible(false)}>
+                <Text style={styles.closeText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+            <EmojiSelector
+              category={Categories.all}
+              onEmojiSelected={(selectedEmoji) => {
+                setEmoji(selectedEmoji);
+                setPickerVisible(false);
+              }}
+              showTabs={true}
+              showSearchBar={true}
+              showHistory={true}
+              columns={8}
+              placeholder="Search emoji..."
+            />
           </View>
-          <EmojiSelector
-            category={Categories.all}
-            onEmojiSelected={(selectedEmoji) => {
-              setEmoji(selectedEmoji);
-              setPickerVisible(false);
-            }}
-            showTabs={true}
-            showSearchBar={true}
-            showHistory={true}
-            columns={8}
-            placeholder="Search emoji..."
-          />
-        </View>
-      </Modal>
+        </Modal>
+      )}
     </>
   );
 }
@@ -115,7 +162,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     height: "100%",
-    zIndex: 100,
   },
   modal: {
     backgroundColor: "#1A1B25",
@@ -125,7 +171,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderColor: "#fff",
     borderWidth: 2,
-    minHeight: 260,
+    minHeight: 280,
   },
   title: {
     borderBottomWidth: 1,
@@ -133,8 +179,7 @@ const styles = StyleSheet.create({
     width: "100%",
     alignItems: "center",
     marginBottom: 20,
-    paddingTop: 8,
-    paddingBottom: 10,
+    paddingVertical: 10,
   },
   titleText: {
     color: "white",
@@ -146,9 +191,28 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 10,
     width: "85%",
-    justifyContent: "flex-start",
     alignItems: "center",
-    marginBottom: 36,
+    marginBottom: 20,
+  },
+  balanceInput: {
+    alignItems: "flex-start",
+    width: "85%",
+    marginBottom: 20,
+    borderBottomColor: "#d9d9d925",
+    borderBottomWidth: 1,
+  },
+  balanceLabel: {
+    color: "#bbb",
+    fontSize: 16,
+    marginBottom: 6,
+  },
+  balanceFormatted: {
+    color: "#9ac9e3",
+    fontSize: 16,
+    marginTop: 4,
+    alignSelf: "flex-end",
+    width: "100%",
+    textAlign: "right",
   },
   inputContainer: {
     borderBottomColor: "#d9d9d925",
@@ -156,34 +220,27 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 4,
   },
-  emojiInput: {
-    width: "19%",
-    marginRight: 12,
-  },
-  nameInput: {
-    width: "79%",
-    marginLeft: 0,
-  },
+  emojiInput: { width: "19%", marginRight: 12 },
+  nameInput: { width: "79%", marginLeft: 0 },
   inputText: {
     color: "white",
-    fontSize: 24,
-    textAlign: "left",
-    paddingVertical: 4,
+    fontSize: 22,
+    paddingVertical: 6,
     paddingHorizontal: 8,
+    width: "100%",
   },
   saveButton: {
     backgroundColor: "#282A3B",
     borderRadius: 10,
     width: "90%",
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: "center",
-    marginTop: 8,
     marginBottom: 8,
   },
   saveButtonText: {
     color: "white",
     fontWeight: "bold",
-    fontSize: 24,
+    fontSize: 22,
     letterSpacing: 1,
   },
   pickerContainer: {
