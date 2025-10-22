@@ -20,6 +20,10 @@ export default function SetupScreen3() {
   const [categoryName, setCategoryName] = useState("");
   const [categoryEmoji, setCategoryEmoji] = useState("");
 
+  const setSetupExpenseCategories = Store(
+    (state) => state.setSetupExpenseCategories
+  );
+
   const [expenseCategories, setExpenseCategories] = useState([
     { id: "1", name: "Rent", emoji: "🏠" },
     { id: "2", name: "Utilities", emoji: "💡" },
@@ -190,6 +194,7 @@ export default function SetupScreen3() {
               });
             }}
             function={() => {
+              setSetupExpenseCategories(expenseCategories);
               router.push("/setup/SetupScreen5");
             }}
           >

@@ -20,6 +20,8 @@ export default function SetupScreen3() {
   const [categoryName, setCategoryName] = useState("");
   const [categoryEmoji, setCategoryEmoji] = useState("");
 
+  const setSetupAccounts = Store((state) => state.setSetupAccounts);
+
   const [accounts, setAccounts] = useState([
     { id: "1", name: "Bank", emoji: "🏦" },
     { id: "2", name: "Cash", emoji: "💵" },
@@ -174,6 +176,7 @@ export default function SetupScreen3() {
               });
             }}
             function={() => {
+              setSetupAccounts(accounts);
               router.push("/setup/SetupScreen6");
             }}
           >

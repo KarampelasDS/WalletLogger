@@ -19,6 +19,10 @@ export default function SetupScreen3() {
   const [categoryName, setCategoryName] = useState("");
   const [categoryEmoji, setCategoryEmoji] = useState("");
 
+  const setSetupIncomeCategories = Store(
+    (state) => state.setSetupIncomeCategories
+  );
+
   const [incomeCategories, setIncomeCategories] = useState([
     { id: "1", name: "Salary", emoji: "💼" },
     { id: "2", name: "Business", emoji: "🏢" },
@@ -187,6 +191,7 @@ export default function SetupScreen3() {
               });
             }}
             function={() => {
+              setSetupIncomeCategories(incomeCategories);
               router.push("/setup/SetupScreen4");
             }}
           >

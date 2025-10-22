@@ -14,6 +14,7 @@ export default function SetupScreen2() {
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const [selectedCurrency, setSelectedCurrency] = useState(null);
   const db = Store((state) => state.db);
+  const setMainCurrency = Store((state) => state.setMainCurrency);
   setShowNavbar(false);
 
   useEffect(() => {
@@ -26,7 +27,8 @@ export default function SetupScreen2() {
       CREATE TABLE IF NOT EXISTS currencies (
         currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
         currency_name VARCHAR,
-        currency_symbol VARCHAR
+        currency_symbol VARCHAR,
+        currency_order INTEGER
       )
     `);
 
@@ -35,7 +37,8 @@ export default function SetupScreen2() {
         account_id INTEGER PRIMARY KEY AUTOINCREMENT,
         account_name VARCHAR,
         account_emoji VARCHAR,
-        account_balance DECIMAL
+        account_balance DECIMAL,
+        account_order INTEGER
       )
     `);
 
@@ -80,22 +83,19 @@ export default function SetupScreen2() {
   }, []);
 
   const currencies = [
-    // 🌍 Global Majors
-    { name: "Euro", symbol: "€" }, // Widely used internationally
-    { name: "US Dollar", symbol: "USD $" }, // Global standard
-    { name: "British Pound", symbol: "£" }, // Major economy
-    { name: "Japanese Yen", symbol: "¥" }, // Major economy
-    { name: "Swiss Franc", symbol: "CHF" }, // Banking & stability
+    { name: "Euro", symbol: "€" },
+    { name: "US Dollar", symbol: "USD $" },
+    { name: "British Pound", symbol: "£" },
+    { name: "Japanese Yen", symbol: "¥" },
+    { name: "Swiss Franc", symbol: "CHF" },
     { name: "Canadian Dollar", symbol: "C$" },
     { name: "Australian Dollar", symbol: "A$" },
     { name: "Chinese Yuan", symbol: "CN¥" },
     { name: "Indian Rupee", symbol: "₹" },
     { name: "Mexican Peso", symbol: "MX$" },
-    { name: "Brazilian Real", symbol: "R$" }, // BRL
-    { name: "Argentine Peso", symbol: "AR$" }, // ARS
-    { name: "Chilean Peso", symbol: "CL$" }, // CLP
-
-    // 🇪🇺 Other European currencies
+    { name: "Brazilian Real", symbol: "R$" },
+    { name: "Argentine Peso", symbol: "AR$" },
+    { name: "Chilean Peso", symbol: "CL$" },
     { name: "Russian Ruble", symbol: "₽" },
     { name: "Belarusian Ruble", symbol: "BYN ₽" },
     { name: "Polish Złoty", symbol: "zł" },
@@ -115,13 +115,9 @@ export default function SetupScreen2() {
     { name: "Georgian Lari", symbol: "₾" },
     { name: "Armenian Dram", symbol: "֏" },
     { name: "Azerbaijani Manat", symbol: "₼" },
-
-    // 🏦 Nearby / regionally relevant
     { name: "Turkish Lira", symbol: "₺" },
     { name: "Israeli Shekel", symbol: "₪" },
     { name: "Kazakhstani Tenge", symbol: "₸" },
-
-    // 🧭 Honorable mentions (borderline Europe / globally relevant)
     { name: "Moroccan Dirham", symbol: "د.م." },
     { name: "Egyptian Pound", symbol: "E£" },
     { name: "United Arab Emirates Dirham", symbol: "AED" },
@@ -166,7 +162,10 @@ export default function SetupScreen2() {
               text1: "Make sure you select a currency before continuing",
             });
           }}
-          function={() => router.push("/setup/SetupScreen3")}
+          function={() => {
+            setMainCurrency(selectedCurrency);
+            router.push("/setup/SetupScreen3");
+          }}
           backgroundColor={"#2C2E42"}
           disabledColor={"#33343fff"}
           enabled={!!selectedCurrency}

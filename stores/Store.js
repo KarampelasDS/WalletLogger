@@ -5,6 +5,17 @@ export const Store = create((set) => ({
   db: null,
   dbInitialized: false,
   setDbInitialized: (newState) => set({ dbInitialized: newState }),
+  //setup states
+  setupIncomeCategories: [],
+  setSetupIncomeCategories: (newState) =>
+    set({ setupIncomeCategories: newState }),
+  setupExpenseCategories: [],
+  setSetupExpenseCategories: (newState) =>
+    set({ setupExpenseCategories: newState }),
+  setupAccounts: [],
+  setSetupAccounts: (newState) => set({ setupAccounts: newState }),
+  mainCurrency: null,
+  setMainCurrency: (currency) => set({ mainCurrency: currency }),
   completedSetup: false,
   setCompletedSetup: (completed) => set({ completedSetup: completed }),
   dbUpToDate: false,
