@@ -77,9 +77,9 @@ const AddTransaction = () => {
     const currencies = await db.getAllAsync("SELECT * FROM currencies");
     setStoredCurrencies(currencies);
     setTransactionCurrency({
-      name: currencies[mainCurrency.id].currency_name,
-      id: currencies[mainCurrency.id].currency_id,
-      symbol: currencies[mainCurrency.id].currency_symbol,
+      name: currencies[mainCurrency.id - 1].currency_name,
+      id: currencies[mainCurrency.id - 1].currency_id,
+      symbol: currencies[mainCurrency.id - 1].currency_symbol,
     });
   };
 
@@ -431,36 +431,49 @@ const AddTransaction = () => {
           </View>
 
           {/* Amount */}
-          <View style={styles.TransactionDetailsRow}>
-            <Text style={styles.TransactionDetailName}>Amount</Text>
-            <Text
-              onPress={() => {
-                if (focusedInput == "Note") {
-                  Keyboard.dismiss();
-                }
-                openKeyboard();
-              }}
-              style={[
-                styles.TransactionDetailValue,
-                focusedInput === "Amount" && {
-                  borderBottomColor: colors[transactionType],
-                },
-              ]}
-            >
-              {transactionCurrency.symbol}
-              {transactionAmount === "."
-                ? "0."
-                : Number(transactionAmount).toLocaleString("en-US", {
-                    maximumFractionDigits: 2,
-                  })}
-              {transactionAmount.endsWith(".") && transactionAmount !== "."
-                ? "."
-                : ""}
-              {transactionAmount.endsWith("0") &&
-              transactionAmount.includes(".")
-                ? "0"
-                : ""}
-            </Text>
+          <View
+            style={[styles.TransactionDetailsRow, { flexDirection: "column" }]}
+          >
+            <View style={styles.TransactionDetailsRow}>
+              <Text style={styles.TransactionDetailName}>Amount</Text>
+              <Text
+                onPress={() => {
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  openKeyboard();
+                }}
+                style={[
+                  styles.TransactionDetailValue,
+                  focusedInput === "Amount" && {
+                    borderBottomColor: colors[transactionType],
+                  },
+                ]}
+              >
+                {transactionCurrency.symbol}
+                {transactionAmount === "."
+                  ? "0."
+                  : Number(transactionAmount).toLocaleString("en-US", {
+                      maximumFractionDigits: 2,
+                    })}
+                {transactionAmount.endsWith(".") && transactionAmount !== "."
+                  ? "."
+                  : ""}
+                {transactionAmount.endsWith("0") &&
+                transactionAmount.includes(".")
+                  ? "0"
+                  : ""}
+              </Text>
+            </View>
+            <View>
+              {transactionCurrency.id != mainCurrency.id && (
+                <Text
+                  style={{ color: "white", marginTop: "10", marginBottom: -20 }}
+                >
+                  Exchange Rate
+                </Text>
+              )}
+            </View>
           </View>
 
           {/* Category */}

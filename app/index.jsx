@@ -55,6 +55,15 @@ const Home = () => {
       }
     };
     init();
+    const fetchTables = async () => {
+      const accounts = await db.getAllAsync("SELECT * FROM accounts");
+      console.log("Accounts:", accounts);
+      const categories = await db.getAllAsync("SELECT * FROM categories");
+      console.log("Categories:", categories);
+      const currencies = await db.getAllAsync("SELECT * FROM currencies");
+      console.log("Currencies:", currencies);
+    };
+    fetchTables();
   }, []);
 
   // Fetch transactions whenever month/year or DB state changes

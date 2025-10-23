@@ -139,8 +139,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     minHeight: minHeight,
     backgroundColor: "#363642",
-    borderTopLeftRadius: 12,
-    borderTopRightRadius: 12,
     zIndex: 1002,
     overflow: "hidden",
     paddingBottom: 6,
