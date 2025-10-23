@@ -134,13 +134,17 @@ export default function SetupScreen6() {
   useEffect(() => {
     const initialize = async () => {
       const handler = () => true;
-      BackHandler.addEventListener("hardwareBackPress", handler);
+      const subscription = BackHandler.addEventListener(
+        "hardwareBackPress",
+        handler
+      );
       await initializeAccounts();
       await initializeCurrencies();
       await initializeIncomeCategories();
       await initializeExpenseCategories();
       setCompletedSetup(true);
       setShowNavbar(true);
+      subscription.remove();
       router.replace("/");
     };
 

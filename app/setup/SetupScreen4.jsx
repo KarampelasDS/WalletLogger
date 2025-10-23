@@ -195,7 +195,7 @@ export default function SetupScreen4() {
             }}
             function={() => {
               setSetupExpenseCategories(expenseCategories);
-              router.push("/setup/SetupScreen5");
+              router.replace("/setup/SetupScreen5");
             }}
           >
             Next

@@ -186,7 +186,7 @@ export default function SetupScreen3() {
             }}
             function={() => {
               setSetupIncomeCategories(incomeCategories);
-              router.push("/setup/SetupScreen4");
+              router.replace("/setup/SetupScreen4");
             }}
           >
             Next

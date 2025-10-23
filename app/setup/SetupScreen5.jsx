@@ -179,7 +179,7 @@ export default function SetupScreen5() {
             }}
             function={() => {
               setSetupAccounts(accounts);
-              router.push("/setup/SetupScreen6");
+              router.replace("/setup/SetupScreen6");
             }}
           >
             Next

@@ -36,7 +36,7 @@ export default function SetupScreen1() {
       <View style={styles.buttons}>
         <Button
           enabled={true}
-          function={() => router.push("/setup/SetupScreen2")}
+          function={() => router.replace("/setup/SetupScreen2")}
           backgroundColor={"#2C2E42"}
           disabledColor={"#33343fff"}
         >

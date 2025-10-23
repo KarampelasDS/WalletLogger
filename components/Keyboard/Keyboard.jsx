@@ -33,7 +33,6 @@ export default function Keyboard(props) {
 
   return (
     <View style={styles.overlay}>
-      {/* Exit area also visible when currency picker is open */}
       <TouchableOpacity
         style={[
           styles.exitView,

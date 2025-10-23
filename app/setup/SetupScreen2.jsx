@@ -167,7 +167,7 @@ export default function SetupScreen2() {
           function={() => {
             setMainCurrency(selectedCurrency);
             setSetupCurrencies(currencies);
-            router.push("/setup/SetupScreen3");
+            router.replace("/setup/SetupScreen3");
           }}
           backgroundColor={"#2C2E42"}
           disabledColor={"#33343fff"}
