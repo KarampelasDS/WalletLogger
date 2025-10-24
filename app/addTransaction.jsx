@@ -77,9 +77,9 @@ const AddTransaction = () => {
     const currencies = await db.getAllAsync("SELECT * FROM currencies");
     setStoredCurrencies(currencies);
     setTransactionCurrency({
-      name: currencies[mainCurrency.id - 1].currency_name,
-      id: currencies[mainCurrency.id - 1].currency_id,
-      symbol: currencies[mainCurrency.id - 1].currency_symbol,
+      name: currencies[mainCurrency.id].currency_name,
+      id: currencies[mainCurrency.id].currency_id,
+      symbol: currencies[mainCurrency.id].currency_symbol,
     });
   };
 
