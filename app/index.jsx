@@ -376,7 +376,7 @@ export default Home;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#1E1E24",
+    backgroundColor: "#2C2E42",
     alignItems: "center",
   },
   monthSummary: {
