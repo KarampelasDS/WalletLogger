@@ -65,29 +65,30 @@ export default function SetupScreen2() {
       `);
 
       await db.execAsync(`
-        CREATE TABLE IF NOT EXISTS transactions (
-          transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
-          transaction_type VARCHAR,
-          transaction_amount DECIMAL,
-          category_id INTEGER,
-          transaction_date DATETIME,
-          transaction_note VARCHAR,
-          account_id INTEGER,
-          account_from_id INTEGER,
-          account_to_id INTEGER,
-          currency_id INTEGER,
-          converted_from_currency_id INTEGER,
-          transaction_secondCurrencyAmount DECIMAL,
-          transaction_main_currency_id INTEGER,
-          exchange_rate DECIMAL,
-          FOREIGN KEY (account_id) REFERENCES accounts(account_id),
-          FOREIGN KEY (account_from_id) REFERENCES accounts(account_id),
-          FOREIGN KEY (account_to_id) REFERENCES accounts(account_id),
-          FOREIGN KEY (category_id) REFERENCES categories(category_id),
-          FOREIGN KEY (currency_id) REFERENCES currencies(currency_id),
-          FOREIGN KEY (converted_from_currency_id) REFERENCES currencies(currency_id)
-        )
-      `);
+  CREATE TABLE IF NOT EXISTS transactions (
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT, -- unique Transaction ID
+    transaction_type VARCHAR,                         -- income/expense/transfer
+    transaction_amount DECIMAL,                       -- base amount
+    category_id INTEGER,                              -- category reference
+    transaction_date DATETIME,                        -- when the transaction happened
+    transaction_note VARCHAR,                         -- optional user note
+    account_id INTEGER,                               -- from which account
+    account_from_id INTEGER,                          -- source account for transfers
+    account_to_id INTEGER,                            -- destination account for transfers
+    currency_id INTEGER,                              -- currency of the transaction
+    converted_from_currency_id INTEGER,               -- original currency before conversion
+    transaction_secondCurrencyAmount DECIMAL,         -- amount in secondary currency
+    transaction_main_currency_id INTEGER,             -- user's main currency
+    exchange_rate DECIMAL,                            -- rate used for conversion
+
+    FOREIGN KEY (account_id) REFERENCES accounts(account_id),
+    FOREIGN KEY (account_from_id) REFERENCES accounts(account_id),
+    FOREIGN KEY (account_to_id) REFERENCES accounts(account_id),
+    FOREIGN KEY (category_id) REFERENCES categories(category_id),
+    FOREIGN KEY (currency_id) REFERENCES currencies(currency_id),
+    FOREIGN KEY (converted_from_currency_id) REFERENCES currencies(currency_id)
+  )
+`);
 
       const accounts = await db.getAllAsync("SELECT * FROM accounts");
       console.log("Accounts:", accounts);
