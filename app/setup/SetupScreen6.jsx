@@ -7,17 +7,15 @@ import {
   BackHandler,
 } from "react-native";
 import { Store } from "../../stores/Store";
-import { Ionicons } from "@expo/vector-icons";
-import Button from "../../components/Button/Button";
 import { useRouter } from "expo-router";
 
 export default function SetupScreen6() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
-  const iconSize = Store((state) => state.iconSize);
   setShowNavbar(false);
 
   const mainCurrency = Store((state) => state.mainCurrency);
+  const setMainCurrency = Store((state) => state.setMainCurrency);
   const setupCurrencies = Store((state) => state.setupCurrencies);
   const setupIncomeCategories = Store((state) => state.setupIncomeCategories);
   const setupExpenseCategories = Store((state) => state.setupExpenseCategories);
@@ -74,8 +72,33 @@ export default function SetupScreen6() {
           [currency.name, currency.symbol, i]
         );
       }
+
+      // Get the main currency row from the DB
+      const main = await db.getFirstAsync(
+        `SELECT * FROM currencies WHERE currency_name = ?`,
+        [mainCurrency.name]
+      );
+      setMainCurrency(main);
+      return main; // return for the next step
     } catch (error) {
       console.error("Error initializing currency data:", error);
+    }
+  }
+
+  async function initializeUserCurrencies(main) {
+    if (!db || !main) return;
+    try {
+      setLoading("User Currencies");
+      console.log("Inserting User Currency:", main.currency_id);
+      await db.runAsync(
+        `
+        INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order)
+        VALUES (?, ?, ?, ?)
+        `,
+        [main.currency_id, true, 1, 0]
+      );
+    } catch (error) {
+      console.error("Error initializing user currency data:", error);
     }
   }
 
@@ -138,10 +161,13 @@ export default function SetupScreen6() {
         "hardwareBackPress",
         handler
       );
+
       await initializeAccounts();
-      await initializeCurrencies();
+      const main = await initializeCurrencies();
+      await initializeUserCurrencies(main);
       await initializeIncomeCategories();
       await initializeExpenseCategories();
+
       setCompletedSetup(true);
       setShowNavbar(true);
       subscription.remove();
@@ -162,11 +188,6 @@ export default function SetupScreen6() {
 
 const styles = StyleSheet.create({
   container: { alignItems: "center", justifyContent: "center", flex: 1 },
-  intro: {
-    backgroundColor: "#2C2E42",
-    padding: 20,
-    borderRadius: 20,
-  },
   introText: {
     color: "#fff",
     fontSize: 30,
@@ -177,11 +198,5 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: "center",
     marginTop: 20,
-  },
-  buttons: {
-    position: "absolute",
-    bottom: 0,
-    marginBottom: 50,
-    width: "80%",
   },
 });

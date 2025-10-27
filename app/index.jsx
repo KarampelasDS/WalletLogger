@@ -62,6 +62,10 @@ const Home = () => {
       console.log("Categories:", categories);
       const currencies = await db.getAllAsync("SELECT * FROM currencies");
       console.log("Currencies:", currencies);
+      const userCurrencies = await db.getAllAsync(
+        "SELECT * FROM user_currencies"
+      );
+      console.log("User Currencies:", userCurrencies);
     };
     fetchTables();
   }, []);

@@ -74,12 +74,24 @@ const AddTransaction = () => {
       console.error("Could not open DB");
       return;
     }
-    const currencies = await db.getAllAsync("SELECT * FROM currencies");
+    const currencies = await db.getAllAsync(`
+    SELECT 
+      uc.currency_id, 
+      uc.is_main, 
+      uc.conversion_rate_to_main, 
+      uc.display_order,
+      c.currency_name,
+      c.currency_symbol
+    FROM user_currencies uc
+    JOIN currencies c ON uc.currency_id = c.currency_id
+    ORDER BY uc.display_order ASC
+  `);
+    console.log(currencies);
     setStoredCurrencies(currencies);
     setTransactionCurrency({
-      name: currencies[mainCurrency.id].currency_name,
-      id: currencies[mainCurrency.id].currency_id,
-      symbol: currencies[mainCurrency.id].currency_symbol,
+      name: mainCurrency.currency_name,
+      id: mainCurrency.currency_id,
+      symbol: mainCurrency.currency_symbol,
     });
   };
 
@@ -466,7 +478,7 @@ const AddTransaction = () => {
               </Text>
             </View>
             <View>
-              {transactionCurrency.id != mainCurrency.id && (
+              {transactionCurrency.id != mainCurrency.currency_id && (
                 <Text
                   style={{ color: "white", marginTop: "10", marginBottom: -20 }}
                 >
