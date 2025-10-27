@@ -176,7 +176,7 @@ const Home = () => {
             {Number(monthlyIncome).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            {mainCurrency ? mainCurrency.symbol : ""}
+            {mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
         </View>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
@@ -193,7 +193,7 @@ const Home = () => {
             {Number(monthlyExpenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            {mainCurrency ? mainCurrency.symbol : ""}
+            {mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
         </View>
       </View>
@@ -380,7 +380,7 @@ export default Home;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#2C2E42",
+    backgroundColor: "#1A1B25",
     alignItems: "center",
   },
   monthSummary: {

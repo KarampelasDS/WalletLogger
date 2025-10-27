@@ -30,7 +30,7 @@ export default function TransactionDay(props) {
             {Number(props.income).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            {mainCurrency.symbol}
+            {mainCurrency.currency_symbol}
           </Text>
 
           <Text
@@ -48,7 +48,7 @@ export default function TransactionDay(props) {
             {Number(props.expenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
             })}
-            {mainCurrency.symbol}
+            {mainCurrency.currency_symbol}
           </Text>
         </View>
       </View>
@@ -60,7 +60,7 @@ export default function TransactionDay(props) {
 const styles = StyleSheet.create({
   container: {
     width: "90%",
-    backgroundColor: "#2c2c36",
+    backgroundColor: "#2C2E42",
     borderRadius: 2,
     marginHorizontal: 20,
     marginVertical: 10,

@@ -8,11 +8,16 @@ import {
 } from "react-native";
 import KeyboardHeader from "../KeyboardHeader/KeyboardHeader";
 import Option from "./Option";
+import { useRouter } from "expo-router";
+import { Store } from "../../stores/Store";
 
 const { height: screenHeight } = Dimensions.get("window");
 const pickerHeight = Math.round(screenHeight * 0.41);
 
 export default function OptionPicker(props) {
+  const router = useRouter();
+  const setShowNavbar = Store((state) => state.setShowNavbar);
+
   const word =
     props.type === "Account"
       ? "account"
@@ -49,6 +54,16 @@ export default function OptionPicker(props) {
               valueUpdateFunction={props.valueUpdateFunction}
             />
           ))}
+          {props.type === "Currencies" && (
+            <Option
+              name="Manage Currencies"
+              emoji="🪙"
+              valueUpdateFunction={() => {
+                setShowNavbar(true);
+                router.push("/settings/manageCurrencies");
+              }}
+            />
+          )}
         </ScrollView>
       </View>
     </View>
