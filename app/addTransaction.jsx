@@ -17,6 +17,7 @@ import OptionPicker from "../components/OptionPicker/OptionPicker";
 import Button from "../components/Button/Button";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 
 const AddTransaction = () => {
   const navigation = useNavigation();
@@ -478,12 +479,77 @@ const AddTransaction = () => {
               </Text>
             </View>
             <View>
-              {transactionCurrency.id != mainCurrency.currency_id && (
-                <Text
-                  style={{ color: "white", marginTop: "10", marginBottom: -20 }}
-                >
-                  Exchange Rate
-                </Text>
+              {transactionCurrency.id !== mainCurrency.currency_id && (
+                <View style={{ marginTop: 14 }}>
+                  <Text style={{ color: "white", marginBottom: 8 }}>
+                    Exchange Rate ({transactionCurrency.symbol} →{" "}
+                    {mainCurrency.currency_symbol})
+                  </Text>
+                  <Text
+                    style={{
+                      color: "#9ac9e3",
+                      fontWeight: "bold",
+                      fontSize: 16,
+                    }}
+                  >
+                    {transactionCurrency.conversion_rate_to_main ?? "—"}
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      gap: 10,
+                      marginTop: 10,
+                    }}
+                  >
+                    {/* Refresh Button */}
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#393B60",
+                        paddingVertical: 6,
+                        paddingHorizontal: 16,
+                        borderRadius: 6,
+                        marginRight: 4,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          color: "#9ac9e3",
+                          fontWeight: "600",
+                          marginRight: 4,
+                        }}
+                      >
+                        Refresh
+                      </Text>
+                      <Ionicons name="refresh" size={18} color="#9ac9e3" />
+                    </TouchableOpacity>
+                    {/* Edit Button*/}
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: "#393B60",
+                        paddingVertical: 6,
+                        paddingHorizontal: 16,
+                        borderRadius: 6,
+                        flexDirection: "row",
+                        alignItems: "center",
+                      }}
+                      onPress={() => router.push("settings/manageCurrencies")}
+                    >
+                      <Text
+                        style={{
+                          color: "#9ac9e3",
+                          fontWeight: "600",
+                          marginRight: 4,
+                        }}
+                      >
+                        Edit
+                      </Text>
+                      <Ionicons name="pencil" size={18} color="#9ac9e3" />
+                    </TouchableOpacity>
+                  </View>
+                </View>
               )}
             </View>
           </View>

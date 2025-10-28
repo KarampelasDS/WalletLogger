@@ -60,8 +60,6 @@ const Home = () => {
       console.log("Accounts:", accounts);
       const categories = await db.getAllAsync("SELECT * FROM categories");
       console.log("Categories:", categories);
-      const currencies = await db.getAllAsync("SELECT * FROM currencies");
-      console.log("Currencies:", currencies);
       const userCurrencies = await db.getAllAsync(
         "SELECT * FROM user_currencies"
       );

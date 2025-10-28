@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import DragList from "react-native-draglist";
 import Toast from "react-native-toast-message";
 import ConfirmModal from "../../components/ConfrimModal/ConfirmModal";
+import EditCurrencyModal from "../../components/EditCurrencyModal/EditCurrencyModal";
 
 export default function ManageCurrencies() {
   const router = useRouter();
@@ -13,10 +14,13 @@ export default function ManageCurrencies() {
   const iconSize = Store((state) => state.iconSize);
   const [scrollEnabled, setScrollEnabled] = useState(true);
   const db = Store((state) => state.db);
-
+  const mainCurrency = Store((state) => state.mainCurrency);
   const [userCurrencies, setUserCurrencies] = useState([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [currencyToDelete, setCurrencyToDelete] = useState(null);
+
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [currencyToEdit, setCurrencyToEdit] = useState(null);
 
   const fetchCurrencies = async () => {
     setShowNavbar(true);
@@ -66,13 +70,22 @@ export default function ManageCurrencies() {
           <Text style={[styles.itemEmoji, { color: "#9ac9e3" }]}>
             {item.currency_symbol}
           </Text>
-          <Text
-            style={[styles.itemName, { maxWidth: 120 }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {item.currency_name}
-          </Text>
+          <View style={{ flexDirection: "column" }}>
+            <Text
+              style={[styles.itemName, { maxWidth: 120 }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {item.currency_name}
+            </Text>
+            <Text style={{ color: "#9ac9e3", fontSize: 15, marginTop: 1 }}>
+              {item.conversion_rate_to_main
+                ? `1.00 ${item.currency_symbol} = ${
+                    mainCurrency.currency_symbol
+                  } ${Number(item.conversion_rate_to_main).toFixed(2)}`
+                : "—"}
+            </Text>
+          </View>
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
@@ -102,7 +115,10 @@ export default function ManageCurrencies() {
 
           {/* Edit Button */}
           <TouchableOpacity
-            onPress={() => handleEdit(item)}
+            onPress={() => {
+              setCurrencyToEdit(item);
+              setEditModalVisible(true);
+            }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
           >
@@ -126,6 +142,26 @@ export default function ManageCurrencies() {
 
   const handleAdd = () => {
     router.push("/settings/addCurrency");
+  };
+
+  const handleEditSave = async (newRate) => {
+    await db.runAsync(
+      `UPDATE user_currencies SET conversion_rate_to_main = ? WHERE currency_id = ?`,
+      [newRate, currencyToEdit.currency_id]
+    );
+    setUserCurrencies((prev) =>
+      prev.map((c) =>
+        c.currency_id === currencyToEdit.currency_id
+          ? { ...c, conversion_rate_to_main: newRate }
+          : c
+      )
+    );
+    setEditModalVisible(false);
+    setCurrencyToEdit(null);
+    Toast.show({
+      type: "success",
+      text1: "Exchange rate updated",
+    });
   };
 
   const handleDelete = async (id) => {
@@ -154,6 +190,11 @@ export default function ManageCurrencies() {
     await handleDelete(currencyToDelete.currency_id);
     setDeleteModalVisible(false);
     setCurrencyToDelete(null);
+  };
+
+  const refreshRateAsync = async (currency) => {
+    // For now, im returning a random number cause im tired as shit
+    return (Math.random() * 2 + 0.5).toFixed(2);
   };
 
   const onReordered = async (fromIndex, toIndex) => {
@@ -204,6 +245,19 @@ export default function ManageCurrencies() {
         onConfirm={handleConfirmDelete}
         itemName={currencyToDelete?.currency_name || ""}
       />
+
+      <EditCurrencyModal
+        visible={editModalVisible}
+        onClose={() => {
+          setEditModalVisible(false);
+          setCurrencyToEdit(null);
+        }}
+        currency={currencyToEdit}
+        mainCurrencySymbol={mainCurrency.currency_symbol}
+        initialRate={currencyToEdit?.conversion_rate_to_main}
+        onSave={handleEditSave}
+        refreshRateAsync={refreshRateAsync}
+      />
     </View>
   );
 }
@@ -221,7 +275,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  listContainer: { width: "85%", marginTop: 10, height: "62%" },
+  listContainer: { width: "85%", marginTop: 10, height: "72 %" },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
