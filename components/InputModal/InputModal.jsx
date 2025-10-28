@@ -233,7 +233,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   saveButton: {
-    backgroundColor: "#282A3B",
+    backgroundColor: "#9ac9e3",
     borderRadius: 10,
     width: "90%",
     paddingVertical: 14,
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   saveButtonText: {
-    color: "white",
+    color: "#121325",
     fontWeight: "bold",
     fontSize: 22,
     letterSpacing: 1,
