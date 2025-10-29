@@ -66,6 +66,7 @@ const AddTransaction = () => {
     name: "",
     id: 0,
     symbol: "",
+    conversion_rate_to_main: 1,
   });
   const [storedCurrencies, setStoredCurrencies] = useState();
   const mainCurrency = Store((state) => state.mainCurrency);
@@ -93,6 +94,7 @@ const AddTransaction = () => {
       name: mainCurrency.currency_name,
       id: mainCurrency.currency_id,
       symbol: mainCurrency.currency_symbol,
+      conversion_rate_to_main: mainCurrency.conversion_rate_to_main,
     });
   };
 
@@ -492,7 +494,9 @@ const AddTransaction = () => {
                       fontSize: 16,
                     }}
                   >
-                    {transactionCurrency.conversion_rate_to_main ?? "—"}
+                    {transactionCurrency.conversion_rate_to_main
+                      ? transactionCurrency.conversion_rate_to_main
+                      : "Not found"}
                   </Text>
                   <View
                     style={{

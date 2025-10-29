@@ -10,6 +10,9 @@ export default function Option(props) {
           name: props.name ? props.name : undefined,
           id: props.id ? props.id : undefined,
           symbol: props.symbol ? props.symbol : undefined,
+          conversion_rate_to_main: props.conversion_rate_to_main
+            ? props.conversion_rate_to_main
+            : undefined,
         });
       }}
     >

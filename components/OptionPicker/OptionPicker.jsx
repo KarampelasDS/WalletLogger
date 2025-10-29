@@ -51,6 +51,7 @@ export default function OptionPicker(props) {
               name={option[`${word}_name`]}
               id={option[`${word}_id`]}
               symbol={option[`${word}_symbol`]}
+              conversion_rate_to_main={option["conversion_rate_to_main"]}
               valueUpdateFunction={props.valueUpdateFunction}
             />
           ))}
