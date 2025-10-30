@@ -13,6 +13,7 @@ export default function AddUserCurrency() {
   const [currencies, setCurrencies] = useState([]);
   const [selectedCurrency, setSelectedCurrency] = useState(null);
   const [userCurrencies, setUserCurrencies] = useState([]);
+  const mainCurrency = Store((state) => state.mainCurrency);
 
   const setSetupCurrencies = Store((state) => state.setSetupCurrencies);
 
@@ -52,10 +53,29 @@ export default function AddUserCurrency() {
     }
 
     try {
+      const refreshRateAsync = async (currency) => {
+        try {
+          console.log(currency);
+          let response = await fetch(
+            `https://api.freecurrencyapi.com/v1/latest?apikey=${process.env.EXPO_PUBLIC_CURRENCY_API}&currencies=${currency.currency_shorthand}&base_currency=${mainCurrency.currency_shorthand}`
+          );
+          response = await response.json();
+          const rate = 1 / Object.values(response.data)[0];
+          console.log(rate);
+          return rate;
+        } catch (e) {
+          console.log(e);
+        }
+      };
+
       await db.runAsync(
         `INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order)
-         VALUES (?, 0, 1, ?)`,
-        [selectedCurrency.currency_id, Date.now()]
+         VALUES (?, 0, ?, ?)`,
+        [
+          selectedCurrency.currency_id,
+          await refreshRateAsync(selectedCurrency),
+          Date.now(),
+        ]
       );
 
       setUserCurrencies((prev) => [...prev, selectedCurrency]);

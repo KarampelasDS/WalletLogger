@@ -483,10 +483,6 @@ const AddTransaction = () => {
             <View>
               {transactionCurrency.id !== mainCurrency.currency_id && (
                 <View style={{ marginTop: 14 }}>
-                  <Text style={{ color: "white", marginBottom: 8 }}>
-                    Exchange Rate ({transactionCurrency.symbol} →{" "}
-                    {mainCurrency.currency_symbol})
-                  </Text>
                   <Text
                     style={{
                       color: "#9ac9e3",
@@ -495,9 +491,22 @@ const AddTransaction = () => {
                     }}
                   >
                     {transactionCurrency.conversion_rate_to_main
-                      ? transactionCurrency.conversion_rate_to_main
+                      ? `${Number(
+                          transactionAmount *
+                            transactionCurrency.conversion_rate_to_main
+                        ).toLocaleString("en-US", {
+                          maximumFractionDigits: 2,
+                        })} ${mainCurrency.currency_symbol}`
                       : "Not found"}
                   </Text>
+                  <Text style={{ color: "white", marginTop: 8 }}>
+                    Exchange Rate ({transactionCurrency.symbol} →{" "}
+                    {mainCurrency.currency_symbol})
+                  </Text>
+                  <Text style={{ color: "white", marginBottom: 8 }}>
+                    {transactionCurrency.conversion_rate_to_main}
+                  </Text>
+
                   <View
                     style={{
                       flexDirection: "row",

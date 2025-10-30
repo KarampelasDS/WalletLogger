@@ -32,7 +32,8 @@ export default function ManageCurrencies() {
           uc.conversion_rate_to_main, 
           uc.display_order,
           c.currency_name,
-          c.currency_symbol
+          c.currency_symbol,
+          c.currency_shorthand
         FROM user_currencies uc
         JOIN currencies c ON uc.currency_id = c.currency_id
         ORDER BY uc.display_order ASC
@@ -116,6 +117,15 @@ export default function ManageCurrencies() {
           {/* Edit Button */}
           <TouchableOpacity
             onPress={() => {
+              if (item.is_main) {
+                Toast.show({
+                  type: "error",
+                  text1: "Cannot edit main currency",
+                  text2:
+                    "Set another currency as main before editing this one.",
+                });
+                return;
+              }
               setCurrencyToEdit(item);
               setEditModalVisible(true);
             }}
@@ -193,8 +203,17 @@ export default function ManageCurrencies() {
   };
 
   const refreshRateAsync = async (currency) => {
-    // For now, im returning a random number cause im tired as shit
-    return (Math.random() * 2 + 0.5).toFixed(2);
+    try {
+      let response = await fetch(
+        `https://api.freecurrencyapi.com/v1/latest?apikey=${process.env.EXPO_PUBLIC_CURRENCY_API}&currencies=${currency.currency_shorthand}&base_currency=${mainCurrency.currency_shorthand}`
+      );
+      response = await response.json();
+      const rate = 1 / Object.values(response.data)[0];
+      console.log(rate);
+      return rate;
+    } catch (e) {
+      console.log(e);
+    }
   };
 
   const onReordered = async (fromIndex, toIndex) => {
@@ -275,7 +294,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  listContainer: { width: "85%", marginTop: 10, height: "72 %" },
+  listContainer: { width: "85%", marginTop: 10, height: "72%" },
   addButton: {
     flexDirection: "row",
     alignItems: "center",

@@ -71,10 +71,10 @@ export default function SetupScreen6() {
         console.log("Inserting Currency:", currency.name, currency.symbol, i);
         await db.runAsync(
           `
-        INSERT INTO currencies (currency_name, currency_symbol, currency_order)
-        VALUES (?, ?, ?)
+        INSERT INTO currencies (currency_name, currency_symbol, currency_shorthand,currency_order)
+        VALUES (?, ?, ?, ?)
         `,
-          [currency.name, currency.symbol, i]
+          [currency.name, currency.symbol, currency.shorthand, i]
         );
       }
       main = await db.getFirstAsync(

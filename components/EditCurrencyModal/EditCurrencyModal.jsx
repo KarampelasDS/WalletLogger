@@ -20,12 +20,12 @@ export default function EditCurrencyModal({
   refreshRateAsync,
 }) {
   const [rate, setRate] = useState(
-    initialRate ? Number(initialRate).toFixed(2) : ""
+    initialRate ? Number(initialRate).toFixed(12) : ""
   );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setRate(initialRate ? Number(initialRate).toFixed(2) : "");
+    setRate(initialRate ? Number(initialRate).toFixed(12) : "");
     setLoading(false);
   }, [visible, initialRate]);
 
@@ -33,7 +33,7 @@ export default function EditCurrencyModal({
     setLoading(true);
     try {
       const newRate = await refreshRateAsync(currency);
-      setRate(Number(newRate).toFixed(2));
+      setRate(Number(newRate).toFixed(12));
     } catch (e) {
       console.log(e);
     }
@@ -43,7 +43,7 @@ export default function EditCurrencyModal({
   const handleRateChange = (val) => {
     let str = val.replace(/[^0-9.]/g, "");
     if ((str.match(/\./g) || []).length > 1) return;
-    if (str.includes(".") && str.split(".")[1].length > 2) return;
+    if (str.includes(".") && str.split(".")[1].length > 12) return;
     setRate(str);
   };
 
@@ -83,7 +83,7 @@ export default function EditCurrencyModal({
                   onChangeText={handleRateChange}
                   placeholder="Custom rate"
                   placeholderTextColor="#bbb"
-                  maxLength={10}
+                  maxLength={12}
                 />
                 <TouchableOpacity
                   style={styles.refresh}
