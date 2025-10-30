@@ -47,6 +47,7 @@ const AddTransaction = () => {
 
   //! Amount Picking
   const [transactionAmount, setTransactionAmount] = useState("");
+  const [transactionBaseAmount, setTransactionBaseAmount] = useState("");
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
 
   const openKeyboard = () => {
@@ -70,6 +71,7 @@ const AddTransaction = () => {
   });
   const [storedCurrencies, setStoredCurrencies] = useState();
   const mainCurrency = Store((state) => state.mainCurrency);
+  const [exchangedTransaction, setExchangedTransaction] = useState(false);
 
   const loadCurrencies = async () => {
     if (!db) {
@@ -232,16 +234,29 @@ const AddTransaction = () => {
         transaction_date,
         transaction_note,
         account_id,
-        currency_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        currency_id,
+
+        converted_from_currency_id,
+        transaction_secondCurrencyAmount,
+        exchange_rate
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionType,
-          parseFloat(transactionAmount),
+          exchangedTransaction
+            ? parseFloat(transactionBaseAmount)
+            : parseFloat(transactionAmount),
           transactionCategory.id,
           transactionDate.toISOString(),
           transactionNote,
           transactionAccount.id,
           transactionCurrency.id,
+          mainCurrency.currency_id,
+          exchangedTransaction
+            ? parseFloat(transactionAmount)
+            : parseFloat(transactionBaseAmount),
+          exchangedTransaction
+            ? transactionCurrency.conversion_rate_to_main
+            : 1,
         ]
       );
       Toast.show({
@@ -318,6 +333,20 @@ const AddTransaction = () => {
       console.error("Transaction insert error", e);
     }
   };
+
+  useEffect(() => {
+    if (transactionCurrency.id !== mainCurrency.currency_id) {
+      setExchangedTransaction(true);
+    } else {
+      setExchangedTransaction(false);
+    }
+  }, [transactionCurrency]);
+
+  useEffect(() => {
+    setTransactionBaseAmount(
+      transactionAmount * transactionCurrency.conversion_rate_to_main
+    );
+  }, [transactionAmount, transactionCurrency]);
 
   useEffect(() => {
     if (
@@ -749,6 +778,8 @@ const AddTransaction = () => {
             type="Account"
           />
         )}
+        <Text>{exchangedTransaction ? "True" : "False"}</Text>
+        <Text>{transactionBaseAmount}</Text>
         <View style={{ marginTop: "25%" }}>
           {transactionType != "Transfer" && (
             <Button

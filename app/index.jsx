@@ -56,14 +56,17 @@ const Home = () => {
     };
     init();
     const fetchTables = async () => {
-      const accounts = await db.getAllAsync("SELECT * FROM accounts");
-      console.log("Accounts:", accounts);
-      const categories = await db.getAllAsync("SELECT * FROM categories");
-      console.log("Categories:", categories);
-      const userCurrencies = await db.getAllAsync(
-        "SELECT * FROM user_currencies"
-      );
-      console.log("User Currencies:", userCurrencies);
+      const transactions = await db.getAllAsync("SELECT * FROM transactions");
+      console.log("Transactions:", transactions);
+      console.log("Main Currency:", mainCurrency);
+      //const accounts = await db.getAllAsync("SELECT * FROM accounts");
+      //console.log("Accounts:", accounts);
+      //const categories = await db.getAllAsync("SELECT * FROM categories");
+      //console.log("Categories:", categories);
+      //const userCurrencies = await db.getAllAsync(
+      //  "SELECT * FROM user_currencies"
+      //);
+      //console.log("User Currencies:", userCurrencies);
     };
     fetchTables();
   }, []);
@@ -82,6 +85,7 @@ const Home = () => {
             t.transaction_amount,
             t.transaction_date,
             t.transaction_note,
+            t.transaction_secondCurrencyAmount,
             af.account_name AS account_from_name,
             af.account_emoji AS account_from_emoji,
             at.account_name AS account_to_name,
@@ -252,7 +256,8 @@ const Home = () => {
                   >
                     <View
                       style={{
-                        marginBottom: 8,
+                        marginBottom: 7,
+                        marginTop: 5,
                         flexDirection: "row",
                         justifyContent: "space-between",
                         alignItems: "center",
@@ -322,10 +327,13 @@ const Home = () => {
                             adjustsFontSizeToFit
                             minimumFontScale={0.5}
                           >
-                            {Number(t.transaction_amount).toLocaleString(
-                              "en-US",
-                              { maximumFractionDigits: 2 }
-                            )}{" "}
+                            {Number(
+                              t.transaction_secondCurrencyAmount
+                                ? t.transaction_secondCurrencyAmount
+                                : t.transaction_amount
+                            ).toLocaleString("en-US", {
+                              maximumFractionDigits: 2,
+                            })}{" "}
                             {t.currency_symbol}
                           </Text>
                         )}
@@ -338,10 +346,13 @@ const Home = () => {
                             adjustsFontSizeToFit
                             minimumFontScale={0.5}
                           >
-                            {Number(t.transaction_amount).toLocaleString(
-                              "en-US",
-                              { maximumFractionDigits: 2 }
-                            )}{" "}
+                            {Number(
+                              t.transaction_secondCurrencyAmount
+                                ? t.transaction_secondCurrencyAmount
+                                : t.transaction_amount
+                            ).toLocaleString("en-US", {
+                              maximumFractionDigits: 2,
+                            })}{" "}
                             {t.currency_symbol}
                           </Text>
                         )}

@@ -79,7 +79,6 @@ export default function SetupScreen2() {
     currency_id INTEGER,                              -- currency of the transaction
     converted_from_currency_id INTEGER,               -- original currency before conversion
     transaction_secondCurrencyAmount DECIMAL,         -- amount in secondary currency
-    transaction_main_currency_id INTEGER,             -- user's main currency
     exchange_rate DECIMAL,                            -- rate used for conversion
 
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
