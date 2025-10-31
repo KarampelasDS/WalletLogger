@@ -10,6 +10,7 @@ import { Store } from "../../stores/Store";
 import { useEffect, useState } from "react";
 import KeyboardHeader from "../KeyboardHeader/KeyboardHeader";
 import OptionPicker from "../OptionPicker/OptionPicker";
+import Toast from "react-native-toast-message";
 
 const { height: screenHeight } = Dimensions.get("window");
 const minHeight = 0.38 * screenHeight;
@@ -134,7 +135,16 @@ export default function Keyboard(props) {
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.keyboardButton}
-                onPress={() => setShowCurrencyPicker(true)}
+                onPress={() =>
+                  props.allowExchange
+                    ? setShowCurrencyPicker(true)
+                    : Toast.show({
+                        type: "error",
+                        text1: "Error",
+                        text2:
+                          "You cannot change currency on transfer transactions",
+                      })
+                }
               >
                 <Ionicons name="cash" size={iconSize} color="#fff" />
               </TouchableOpacity>

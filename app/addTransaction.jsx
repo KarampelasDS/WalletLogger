@@ -136,6 +136,19 @@ const AddTransaction = () => {
 
   useEffect(() => {
     setTransactionCategory({ name: "", id: 0, emoji: "" });
+    if (transactionType == "Transfer") {
+      setTransactionCurrency({
+        name: mainCurrency.currency_name,
+        id: mainCurrency.currency_id,
+        symbol: mainCurrency.currency_symbol,
+        conversion_rate_to_main: mainCurrency.conversion_rate_to_main,
+      });
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Cannot change currency on transfer transactions",
+      });
+    }
   }, [transactionType]);
 
   const openCategoryPicker = () => {
@@ -720,6 +733,7 @@ const AddTransaction = () => {
             closeKeyboard={closeKeyboard}
             currencies={storedCurrencies}
             updateCurrency={setTransactionCurrency}
+            allowExchange={transactionType !== "Transfer"}
           />
         )}
 

@@ -91,45 +91,17 @@ export default function SetupScreen6() {
     if (!db) return;
 
     try {
-      setLoading("User Currencies");
+      setLoading("User Currency");
 
-      const top3 = [
-        { id: 1, name: "Euro" },
-        { id: 2, name: "US Dollar" },
-        { id: 3, name: "British Pound" },
-      ];
+      await db.runAsync(
+        `
+      INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order)
+      VALUES (?, ?, ?, ?)
+      `,
+        [main.currency_id, 1, 1, 0]
+      );
 
-      const currenciesToInsert = [];
-
-      // Check if main currency is in top3
-      const isMainInTop3 = top3.some((c) => c.name === main.currency_name);
-
-      // If main currency is NOT in top3, add it first as main
-      if (!isMainInTop3) {
-        currenciesToInsert.push({ id: main.currency_id, isMain: true });
-      }
-
-      // Add top3 currencies
-      top3.forEach((currency) => {
-        const isMain = currency.name === main.currency_name;
-        currenciesToInsert.push({
-          id: currency.id,
-          isMain: isMain,
-        });
-      });
-
-      // Insert into user_currencies table
-      for (let i = 0; i < currenciesToInsert.length; i++) {
-        const { id, isMain } = currenciesToInsert[i];
-        await db.runAsync(
-          `
-        INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order)
-        VALUES (?, ?, ?, ?)
-        `,
-          [id, isMain ? 1 : 0, 1, i]
-        );
-        console.log("Inserted user currency ID:", id, "isMain:", isMain);
-      }
+      console.log("Inserted main user currency ID:", main.currency_id);
     } catch (error) {
       console.error("Error initializing user currency data:", error);
     }

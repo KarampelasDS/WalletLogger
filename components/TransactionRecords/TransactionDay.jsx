@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   container: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 2,
+    borderRadius: 14,
     marginHorizontal: 20,
     marginVertical: 10,
   },
@@ -82,15 +82,15 @@ const styles = StyleSheet.create({
     maxWidth: "20%",
   },
   dateDay: {
-    color: "#fff",
+    color: "#9ac9e3",
     fontSize: 24,
   },
   dateWeekday: {
-    color: "#fff",
+    color: "#9ac9e3",
     fontSize: 24,
   },
   dateMonthYear: {
-    color: "#fff",
+    color: "#9ac9e3",
   },
   amounts: {
     flexDirection: "row",
