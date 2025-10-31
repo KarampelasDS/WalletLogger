@@ -4,6 +4,7 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useState, useEffect } from "react";
 import AddTransactionButton from "../components/TransactionsPage/AddTransactionButton";
@@ -11,6 +12,7 @@ import Title from "../components/Title/Title";
 import { Ionicons } from "@expo/vector-icons";
 import { Store } from "../stores/Store";
 import TransactionDay from "../components/TransactionRecords/TransactionDay";
+import { useRouter } from "expo-router";
 
 // Month names for display
 const months = [
@@ -36,6 +38,10 @@ const Home = () => {
   const dbInitialized = Store((state) => state.dbInitialized);
   const setDbInitialized = Store((state) => state.setDbInitialized);
   const mainCurrency = Store((state) => state.mainCurrency);
+  const editingID = Store((state) => state.editingID);
+  const setEditingID = Store((state) => state.setEditingID);
+
+  const router = useRouter();
 
   const [grouped, setGrouped] = useState([]);
   const [transactions, setTransactions] = useState([]);
@@ -250,9 +256,13 @@ const Home = () => {
                 }}
               >
                 {grouped[date].map((t) => (
-                  <View
+                  <TouchableOpacity
                     key={t.transaction_id}
                     style={{ borderTopColor: "#d9d9d905", borderTopWidth: 2 }}
+                    onPress={() => {
+                      setEditingID(t.transaction_id);
+                      router.push(`/editTransaction`);
+                    }}
                   >
                     <View
                       style={{
@@ -371,7 +381,7 @@ const Home = () => {
                         </Text>
                       </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
                 ))}
               </TransactionDay>
             );

@@ -133,6 +133,7 @@ export default function AddUserCurrency() {
         <Button
           function={handleAddCurrency}
           backgroundColor={"#2C2E42"}
+          disabledColor={"#33343fff"}
           enabled={!!selectedCurrency}
         >
           Add Currency

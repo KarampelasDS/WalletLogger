@@ -55,6 +55,9 @@ export const Store = create(
       showNavbar: true,
       setShowNavbar: (show) => set({ showNavbar: show }),
 
+      editingID: null,
+      setEditingID: (newID) => set({ editingID: newID }),
+
       initDB: async () => {
         try {
           // Open DB with useNewConnection to avoid connection conflicts on re-navigation

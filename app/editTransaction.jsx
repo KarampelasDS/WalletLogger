@@ -19,7 +19,7 @@ import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 
-const AddTransaction = () => {
+const EditTransaction = () => {
   const navigation = useNavigation();
   const [transactionType, setTransactionType] = useState("Expense");
   const [focusedInput, setFocusedInput] = useState(null);
@@ -27,7 +27,11 @@ const AddTransaction = () => {
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const router = useRouter();
 
-  //! Date Picking
+  // Editing context
+  const editingID = Store((state) => state.editingID);
+  const setDbUpToDate = Store((state) => state.setDbUpToDate);
+
+  // Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
   const [datePickerMode, setDatePickerMode] = useState("date");
   const [showDatePickerMode, setShowDatePickerMode] = useState(false);
@@ -45,7 +49,7 @@ const AddTransaction = () => {
   const showDatepicker = () => showMode("date");
   const showTimepicker = () => showMode("time");
 
-  //! Amount Picking
+  // Amount Picking
   const [transactionAmount, setTransactionAmount] = useState("");
   const [transactionBaseAmount, setTransactionBaseAmount] = useState("");
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
@@ -62,7 +66,7 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
-  //! Currency Picking
+  // Currency Picking
   const [transactionCurrency, setTransactionCurrency] = useState({
     name: "",
     id: 0,
@@ -90,21 +94,14 @@ const AddTransaction = () => {
     JOIN currencies c ON uc.currency_id = c.currency_id
     ORDER BY uc.display_order ASC
   `);
-    console.log(currencies);
     setStoredCurrencies(currencies);
-    setTransactionCurrency({
-      name: mainCurrency.currency_name,
-      id: mainCurrency.currency_id,
-      symbol: mainCurrency.currency_symbol,
-      conversion_rate_to_main: mainCurrency.conversion_rate_to_main,
-    });
   };
 
   useEffect(() => {
     loadCurrencies();
-  }, []);
+  }, [db]);
 
-  //! Category Picking
+  // Category Picking
   const [transactionCategory, setTransactionCategory] = useState({
     name: "",
     id: 0,
@@ -132,11 +129,11 @@ const AddTransaction = () => {
 
   useEffect(() => {
     LoadCategories();
-  }, []);
+  }, [db]);
 
   useEffect(() => {
     setTransactionCategory({ name: "", id: 0, emoji: "" });
-    if (transactionType == "Transfer" && exchangedTransaction) {
+    if (transactionType === "Transfer" && exchangedTransaction) {
       setTransactionCurrency({
         name: mainCurrency.currency_name,
         id: mainCurrency.currency_id,
@@ -162,7 +159,7 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
-  //! Account Picking
+  // Account Picking
   const [transactionAccount, setTransactionAccount] = useState({
     name: "",
     id: 0,
@@ -194,7 +191,7 @@ const AddTransaction = () => {
 
   useEffect(() => {
     LoadAccounts();
-  }, []);
+  }, [db]);
 
   const openAccountPicker = () => {
     setShowAccountPicker(true);
@@ -227,32 +224,120 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
-  //! Note
+  // Note
   const [transactionNote, setTransactionNote] = useState("");
 
-  //! Transaction Submission
+  // --- Prepopulate fields from editingID ---
+  const prepopulateFields = async () => {
+    if (!db || !editingID) return;
+    const results = await db.getAllAsync(
+      `SELECT * FROM transactions WHERE transaction_id=?`,
+      [editingID]
+    );
+    if (!results || results.length === 0) return;
+    const tx = results[0];
+
+    setTransactionType(tx.transaction_type);
+    setTransactionDate(new Date(tx.transaction_date));
+    setTransactionAmount(
+      tx.transaction_secondCurrencyAmount != null &&
+        tx.transaction_secondCurrencyAmount !== undefined
+        ? String(tx.transaction_secondCurrencyAmount)
+        : String(tx.transaction_amount)
+    );
+    setTransactionNote(tx.transaction_note || "");
+
+    // Currency
+    if (tx.currency_id) {
+      const currency = await db.getAllAsync(
+        `SELECT * FROM currencies WHERE currency_id=?`,
+        [tx.currency_id]
+      );
+      if (currency.length > 0)
+        setTransactionCurrency({
+          id: currency[0].currency_id,
+          name: currency[0].currency_name,
+          symbol: currency[0].currency_symbol,
+          conversion_rate_to_main: tx.exchange_rate || 1,
+        });
+    }
+
+    // Category
+    if (tx.category_id) {
+      const category = await db.getAllAsync(
+        `SELECT * FROM categories WHERE category_id=?`,
+        [tx.category_id]
+      );
+      if (category.length > 0)
+        setTransactionCategory({
+          id: category[0].category_id,
+          name: category[0].category_name,
+          emoji: category[0].category_emoji || "",
+        });
+    }
+
+    // Accounts
+    if (tx.account_id) {
+      const account = await db.getAllAsync(
+        `SELECT * FROM accounts WHERE account_id=?`,
+        [tx.account_id]
+      );
+      if (account.length > 0)
+        setTransactionAccount({
+          id: account[0].account_id,
+          name: account[0].account_name,
+          emoji: account[0].account_emoji || "",
+        });
+    }
+    if (tx.account_from_id) {
+      const accFrom = await db.getAllAsync(
+        `SELECT * FROM accounts WHERE account_id=?`,
+        [tx.account_from_id]
+      );
+      if (accFrom.length > 0)
+        setTransactionAccountFrom({
+          id: accFrom[0].account_id,
+          name: accFrom[0].account_name,
+          emoji: accFrom[0].account_emoji || "",
+        });
+    }
+    if (tx.account_to_id) {
+      const accTo = await db.getAllAsync(
+        `SELECT * FROM accounts WHERE account_id=?`,
+        [tx.account_to_id]
+      );
+      if (accTo.length > 0)
+        setTransactionAccountTo({
+          id: accTo[0].account_id,
+          name: accTo[0].account_name,
+          emoji: accTo[0].account_emoji || "",
+        });
+    }
+  };
+
+  useEffect(() => {
+    prepopulateFields();
+  }, [db, editingID]);
+
+  // Transaction Submission
   const [canSubmitTransaction, setCanSubmitTransaction] = useState(false);
   const [canSubmitTransferTransaction, setCanSubmitTransferTransaction] =
     useState(false);
 
-  const setDbUpToDate = Store((state) => state.setDbUpToDate);
-
   const submitTransaction = async () => {
     try {
       await db.runAsync(
-        `INSERT INTO transactions (
-        transaction_type,
-        transaction_amount,
-        category_id,
-        transaction_date,
-        transaction_note,
-        account_id,
-        currency_id,
-
-        converted_from_currency_id,
-        transaction_secondCurrencyAmount,
-        exchange_rate
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        `UPDATE transactions SET
+          transaction_type=?,
+          transaction_amount=?,
+          category_id=?,
+          transaction_date=?,
+          transaction_note=?,
+          account_id=?,
+          currency_id=?,
+          converted_from_currency_id=?,
+          transaction_secondCurrencyAmount=?,
+          exchange_rate=? WHERE transaction_id=?`,
         [
           transactionType,
           exchangedTransaction
@@ -270,12 +355,13 @@ const AddTransaction = () => {
           exchangedTransaction
             ? transactionCurrency.conversion_rate_to_main
             : 1,
+          editingID,
         ]
       );
       Toast.show({
         type: "success",
-        text1: "Transaction Saved",
-        text2: "Your transaction was added successfully.",
+        text1: "Transaction Updated",
+        text2: "Your transaction was updated successfully.",
       });
       setDbUpToDate(false);
       router.replace("/");
@@ -283,9 +369,9 @@ const AddTransaction = () => {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to save transaction.",
+        text2: "Failed to update transaction.",
       });
-      console.error("Transaction insert error", e);
+      console.error("Transaction update error", e);
     }
   };
 
@@ -311,15 +397,14 @@ const AddTransaction = () => {
   const submitTransferTransaction = async () => {
     try {
       await db.runAsync(
-        `INSERT INTO transactions (
-        transaction_type,
-        transaction_amount,
-        transaction_date,
-        transaction_note,
-        account_from_id,
-        account_to_id,
-        currency_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        `UPDATE transactions SET
+          transaction_type=?,
+          transaction_amount=?,
+          transaction_date=?,
+          transaction_note=?,
+          account_from_id=?,
+          account_to_id=?,
+          currency_id=? WHERE transaction_id=?`,
         [
           transactionType,
           parseFloat(transactionAmount),
@@ -328,12 +413,13 @@ const AddTransaction = () => {
           transactionAccountFrom.id,
           transactionAccountTo.id,
           transactionCurrency.id,
+          editingID,
         ]
       );
       Toast.show({
         type: "success",
-        text1: "Transaction Saved",
-        text2: "Your transaction was added successfully.",
+        text1: "Transaction Updated",
+        text2: "Your transaction was updated successfully.",
       });
       setDbUpToDate(false);
       router.replace("/");
@@ -341,18 +427,16 @@ const AddTransaction = () => {
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: "Failed to save transaction.",
+        text2: "Failed to update transaction.",
       });
-      console.error("Transaction insert error", e);
+      console.error("Transaction update error", e);
     }
   };
 
   useEffect(() => {
-    if (transactionCurrency.id !== mainCurrency.currency_id) {
-      setExchangedTransaction(true);
-    } else {
-      setExchangedTransaction(false);
-    }
+    setExchangedTransaction(
+      transactionCurrency.id !== mainCurrency.currency_id
+    );
   }, [transactionCurrency]);
 
   useEffect(() => {
@@ -395,7 +479,7 @@ const AddTransaction = () => {
     >
       <View style={styles.container}>
         <Title
-          title="Add Transaction"
+          title="Edit Transaction"
           backIcon="arrow-back-circle-outline"
           onPressBackIcon={() => navigation.goBack()}
         />
@@ -548,7 +632,6 @@ const AddTransaction = () => {
                   <Text style={{ color: "white", marginBottom: 8 }}>
                     {transactionCurrency.conversion_rate_to_main}
                   </Text>
-
                   <View
                     style={{
                       flexDirection: "row",
@@ -557,7 +640,6 @@ const AddTransaction = () => {
                       marginTop: 10,
                     }}
                   >
-                    {/* Refresh Button */}
                     <TouchableOpacity
                       style={{
                         backgroundColor: "#393B60",
@@ -580,7 +662,6 @@ const AddTransaction = () => {
                       </Text>
                       <Ionicons name="refresh" size={18} color="#9ac9e3" />
                     </TouchableOpacity>
-                    {/* Edit Button*/}
                     <TouchableOpacity
                       style={{
                         backgroundColor: "#393B60",
@@ -742,14 +823,14 @@ const AddTransaction = () => {
             value={transactionCategory}
             valueUpdateFunction={setTransactionCategory}
             options={
-              transactionType == "Income"
+              transactionType === "Income"
                 ? storedIncomeCategories
                 : storedExpenseCategories
             }
+            closePicker={closeCategoryPicker}
             headerText={"Category"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
-            closePicker={closeCategoryPicker}
             type="Category"
           />
         )}
@@ -759,10 +840,10 @@ const AddTransaction = () => {
             value={transactionAccount}
             valueUpdateFunction={setTransactionAccount}
             options={storedAccounts}
+            closePicker={closeAccountPicker}
             headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
-            closePicker={closeAccountPicker}
             type="Account"
           />
         )}
@@ -772,10 +853,10 @@ const AddTransaction = () => {
             value={transactionAccountFrom}
             valueUpdateFunction={setTransactionAccountFrom}
             options={storedAccounts}
+            closePicker={closeAccountFromPicker}
             headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
-            closePicker={closeAccountFromPicker}
             type="Account"
           />
         )}
@@ -785,13 +866,14 @@ const AddTransaction = () => {
             value={transactionAccountTo}
             valueUpdateFunction={setTransactionAccountTo}
             options={storedAccounts}
+            closePicker={closeAccountToPicker}
             headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
             typeColor={colors[transactionType]}
-            closePicker={closeAccountToPicker}
             type="Account"
           />
         )}
+
         <View style={{ marginTop: "25%" }}>
           {transactionType != "Transfer" && (
             <Button
@@ -807,7 +889,7 @@ const AddTransaction = () => {
               }}
               backgroundColor={"#2C2E42"}
               disabledColor={"#33343fff"}
-              enabled={canSubmitTransaction && transactionType != "Transfer"}
+              enabled={canSubmitTransaction && transactionType !== "Transfer"}
             >
               Save
             </Button>
@@ -827,19 +909,57 @@ const AddTransaction = () => {
               backgroundColor={"#2C2E42"}
               disabledColor={"#33343fff"}
               enabled={
-                canSubmitTransferTransaction && transactionType == "Transfer"
+                canSubmitTransferTransaction && transactionType === "Transfer"
               }
             >
               Save
             </Button>
           )}
+          <View style={{ marginTop: 10 }}>
+            <Button
+              function={async () => {
+                try {
+                  await db.runAsync(
+                    `DELETE FROM transactions WHERE transaction_id=?`,
+                    [editingID]
+                  );
+                  Toast.show({
+                    type: "success",
+                    text1: "Transaction Deleted",
+                    text2: "Your transaction was deleted successfully.",
+                  });
+                  setDbUpToDate(false);
+                  router.replace("/");
+                } catch (e) {
+                  Toast.show({
+                    type: "error",
+                    text1: "Error",
+                    text2: "Failed to delete transaction.",
+                  });
+                  console.error("Transaction delete error", e);
+                }
+              }}
+              functionDisabled={() => {
+                Toast.show({
+                  type: "error",
+                  text1: "Error",
+                  text2: "Could not delete transaction.",
+                });
+              }}
+              backgroundColor={"#CD5D5D"}
+              disabledColor={"#33343fff"}
+              enabled={!!editingID}
+            >
+              Delete
+            </Button>
+          </View>
         </View>
       </View>
     </TouchableWithoutFeedback>
   );
 };
 
-export default AddTransaction;
+export default EditTransaction;
 
 const styles = StyleSheet.create({
   container: {

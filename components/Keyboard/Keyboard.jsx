@@ -142,7 +142,7 @@ export default function Keyboard(props) {
                         type: "error",
                         text1: "Error",
                         text2:
-                          "You cannot change currency on transfer transactions",
+                          "Cannot change currency on transfer transactions",
                       })
                 }
               >
