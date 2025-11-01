@@ -1,6 +1,7 @@
 import { Text, StyleSheet, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Store } from "../../stores/Store";
+import TotalAssets from "../TotalAssets/TotalAssets";
 
 export default function Title(props) {
   const iconSize = Store((state) => state.iconSize);
@@ -17,6 +18,9 @@ export default function Title(props) {
           <Ionicons name={props.frontIcon} size={iconSize} color="#fff" />
         </TouchableOpacity>
       )}
+      <View style={styles.totalAssets}>
+        <TotalAssets />
+      </View>
     </View>
   );
 }
@@ -40,5 +44,9 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     textAlign: "left",
+  },
+  totalAssets: {
+    marginLeft: "auto",
+    marginRight: 10,
   },
 });

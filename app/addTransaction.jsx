@@ -272,6 +272,15 @@ const AddTransaction = () => {
             : 1,
         ]
       );
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = account_balance ${
+          transactionType == "Income" ? "+" : "-"
+        } ? WHERE account_id = ? `,
+        [
+          exchangedTransaction ? transactionBaseAmount : transactionAmount,
+          transactionAccount.id,
+        ]
+      );
       Toast.show({
         type: "success",
         text1: "Transaction Saved",
