@@ -64,9 +64,9 @@ const Home = () => {
     const fetchTables = async () => {
       const transactions = await db.getAllAsync("SELECT * FROM transactions");
       console.log("Transactions:", transactions);
-      console.log("Main Currency:", mainCurrency);
-      //const accounts = await db.getAllAsync("SELECT * FROM accounts");
-      //console.log("Accounts:", accounts);
+      //console.log("Main Currency:", mainCurrency);
+      const accounts = await db.getAllAsync("SELECT * FROM accounts");
+      console.log("Accounts:", accounts);
       //const categories = await db.getAllAsync("SELECT * FROM categories");
       //console.log("Categories:", categories);
       //const userCurrencies = await db.getAllAsync(
@@ -152,23 +152,26 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      <Title
-        title={`${months[shownMonth]} ${shownYear}`}
-        backIcon={"chevron-back-outline"}
-        onPressBackIcon={() => {
-          if (shownMonth === 0) {
-            setShownYear((y) => y - 1);
-            setShownMonth(11);
-          } else setShownMonth((m) => m - 1);
-        }}
-        frontIcon={"chevron-forward-outline"}
-        onPressFrontIcon={() => {
-          if (shownMonth === 11) {
-            setShownYear((y) => y + 1);
-            setShownMonth(0);
-          } else setShownMonth((m) => m + 1);
-        }}
-      />
+      {dbInitialized && (
+        <Title
+          title={`${months[shownMonth]} ${shownYear}`}
+          showBalance={true}
+          backIcon={"chevron-back-outline"}
+          onPressBackIcon={() => {
+            if (shownMonth === 0) {
+              setShownYear((y) => y - 1);
+              setShownMonth(11);
+            } else setShownMonth((m) => m - 1);
+          }}
+          frontIcon={"chevron-forward-outline"}
+          onPressFrontIcon={() => {
+            if (shownMonth === 11) {
+              setShownYear((y) => y + 1);
+              setShownMonth(0);
+            } else setShownMonth((m) => m + 1);
+          }}
+        />
+      )}
       <View style={styles.monthSummary}>
         <View style={{ alignItems: "center", flexDirection: "row" }}>
           <Text style={[styles.monthSummaryText]}>Income: </Text>

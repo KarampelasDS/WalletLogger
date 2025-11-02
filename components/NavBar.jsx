@@ -33,10 +33,10 @@ export default function NavBar() {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.NavBarItem}
-        onPress={() => router.push("/calendar")}
+        onPress={() => router.push("/accounts")}
       >
-        <Ionicons name="calendar" size={iconSize} color="#fff" />
-        <Text style={{ color: "#fff" }}>Calendar</Text>
+        <Ionicons name="layers" size={iconSize} color="#fff" />
+        <Text style={{ color: "#fff" }}>Accounts</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.NavBarItem}

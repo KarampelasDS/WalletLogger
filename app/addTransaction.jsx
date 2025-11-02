@@ -273,9 +273,9 @@ const AddTransaction = () => {
         ]
       );
       await db.runAsync(
-        `UPDATE accounts SET account_balance = account_balance ${
+        `UPDATE accounts SET account_balance = ROUND(account_balance ${
           transactionType == "Income" ? "+" : "-"
-        } ? WHERE account_id = ? `,
+        } ?,2) WHERE account_id = ? `,
         [
           exchangedTransaction ? transactionBaseAmount : transactionAmount,
           transactionAccount.id,
@@ -339,6 +339,15 @@ const AddTransaction = () => {
           transactionCurrency.id,
         ]
       );
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance - ?, 2) WHERE account_id = ?`,
+        [parseFloat(transactionAmount), transactionAccountFrom.id]
+      );
+
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance + ?, 2) WHERE account_id = ?`,
+        [parseFloat(transactionAmount), transactionAccountTo.id]
+      );
       Toast.show({
         type: "success",
         text1: "Transaction Saved",
@@ -366,7 +375,11 @@ const AddTransaction = () => {
 
   useEffect(() => {
     setTransactionBaseAmount(
-      transactionAmount * transactionCurrency.conversion_rate_to_main
+      parseFloat(
+        (
+          transactionAmount * transactionCurrency.conversion_rate_to_main
+        ).toFixed(2)
+      )
     );
   }, [transactionAmount, transactionCurrency]);
 

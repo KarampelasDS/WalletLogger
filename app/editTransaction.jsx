@@ -30,6 +30,7 @@ const EditTransaction = () => {
   // Editing context
   const editingID = Store((state) => state.editingID);
   const setDbUpToDate = Store((state) => state.setDbUpToDate);
+  const [originalTransaction, setOriginalTransaction] = useState(null);
 
   // Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
@@ -236,7 +237,7 @@ const EditTransaction = () => {
     );
     if (!results || results.length === 0) return;
     const tx = results[0];
-
+    setOriginalTransaction(tx);
     setTransactionType(tx.transaction_type);
     setTransactionDate(new Date(tx.transaction_date));
     setTransactionAmount(
@@ -315,6 +316,42 @@ const EditTransaction = () => {
     }
   };
 
+  const reverseOriginalTransaction = async () => {
+    if (!originalTransaction) return;
+
+    const type = originalTransaction.transaction_type;
+
+    if (type === "Income") {
+      // remove the income from the account
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance - ?,2) WHERE account_id = ?`,
+        [originalTransaction.transaction_amount, originalTransaction.account_id]
+      );
+    } else if (type === "Expense") {
+      // add the expense back to the account
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance + ?,2) WHERE account_id = ?`,
+        [originalTransaction.transaction_amount, originalTransaction.account_id]
+      );
+    } else if (type === "Transfer") {
+      // reverse the transfer
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance + ?,2) WHERE account_id = ?`,
+        [
+          originalTransaction.transaction_amount,
+          originalTransaction.account_from_id,
+        ]
+      );
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance - ?,2) WHERE account_id = ?`,
+        [
+          originalTransaction.transaction_amount,
+          originalTransaction.account_to_id,
+        ]
+      );
+    }
+  };
+
   useEffect(() => {
     prepopulateFields();
   }, [db, editingID]);
@@ -326,6 +363,7 @@ const EditTransaction = () => {
 
   const submitTransaction = async () => {
     try {
+      await reverseOriginalTransaction();
       await db.runAsync(
         `UPDATE transactions SET
           transaction_type=?,
@@ -356,6 +394,15 @@ const EditTransaction = () => {
             ? transactionCurrency.conversion_rate_to_main
             : 1,
           editingID,
+        ]
+      );
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance ${
+          transactionType == "Income" ? "+" : "-"
+        } ?,2) WHERE account_id = ? `,
+        [
+          exchangedTransaction ? transactionBaseAmount : transactionAmount,
+          transactionAccount.id,
         ]
       );
       Toast.show({
@@ -395,6 +442,7 @@ const EditTransaction = () => {
   ]);
 
   const submitTransferTransaction = async () => {
+    await reverseOriginalTransaction();
     try {
       await db.runAsync(
         `UPDATE transactions SET
@@ -415,6 +463,15 @@ const EditTransaction = () => {
           transactionCurrency.id,
           editingID,
         ]
+      );
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance - ?, 2) WHERE account_id = ?`,
+        [parseFloat(transactionAmount), transactionAccountFrom.id]
+      );
+
+      await db.runAsync(
+        `UPDATE accounts SET account_balance = ROUND(account_balance + ?, 2) WHERE account_id = ?`,
+        [parseFloat(transactionAmount), transactionAccountTo.id]
       );
       Toast.show({
         type: "success",
@@ -441,7 +498,11 @@ const EditTransaction = () => {
 
   useEffect(() => {
     setTransactionBaseAmount(
-      transactionAmount * transactionCurrency.conversion_rate_to_main
+      parseFloat(
+        (
+          transactionAmount * transactionCurrency.conversion_rate_to_main
+        ).toFixed(2)
+      )
     );
   }, [transactionAmount, transactionCurrency]);
 
@@ -918,6 +979,7 @@ const EditTransaction = () => {
           <View style={{ marginTop: 10 }}>
             <Button
               function={async () => {
+                await reverseOriginalTransaction();
                 try {
                   await db.runAsync(
                     `DELETE FROM transactions WHERE transaction_id=?`,

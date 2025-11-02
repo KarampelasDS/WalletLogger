@@ -18,9 +18,11 @@ export default function Title(props) {
           <Ionicons name={props.frontIcon} size={iconSize} color="#fff" />
         </TouchableOpacity>
       )}
-      <View style={styles.totalAssets}>
-        <TotalAssets />
-      </View>
+      {props.showBalance && (
+        <View style={styles.totalAssets}>
+          <TotalAssets />
+        </View>
+      )}
     </View>
   );
 }
