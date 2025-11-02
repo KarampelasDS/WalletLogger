@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Store } from "../../stores/Store";
 import { useRouter } from "expo-router";
 import { useState, useEffect } from "react";
@@ -14,6 +14,7 @@ export default function AddUserCurrency() {
   const [selectedCurrency, setSelectedCurrency] = useState(null);
   const [userCurrencies, setUserCurrencies] = useState([]);
   const mainCurrency = Store((state) => state.mainCurrency);
+  const [loading, setLoading] = useState(false);
 
   const setSetupCurrencies = Store((state) => state.setSetupCurrencies);
 
@@ -21,17 +22,22 @@ export default function AddUserCurrency() {
     if (!db) return;
 
     const loadCurrencies = async () => {
-      const allCurrencies = await db.getAllAsync("SELECT * FROM currencies");
-      const ownedCurrencies = await db.getAllAsync(
-        "SELECT * FROM user_currencies"
-      );
+      try {
+        const allCurrencies = await db.getAllAsync("SELECT * FROM currencies");
+        const ownedCurrencies = await db.getAllAsync(
+          "SELECT * FROM user_currencies"
+        );
 
-      const available = allCurrencies.filter(
-        (c) => !ownedCurrencies.some((uc) => uc.currency_id === c.currency_id)
-      );
+        const available = allCurrencies.filter(
+          (c) => !ownedCurrencies.some((uc) => uc.currency_id === c.currency_id)
+        );
 
-      setCurrencies(available);
-      setUserCurrencies(ownedCurrencies);
+        setCurrencies(available);
+        setUserCurrencies(ownedCurrencies);
+      } catch (err) {
+        console.error("Failed to load currencies:", err);
+        Toast.show({ type: "error", text1: "Failed to load currencies" });
+      }
     };
 
     loadCurrencies();
@@ -52,19 +58,26 @@ export default function AddUserCurrency() {
       return;
     }
 
+    setLoading(true);
+
     try {
       const refreshRateAsync = async (currency) => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
         try {
-          console.log(currency);
           let response = await fetch(
-            `https://api.freecurrencyapi.com/v1/latest?apikey=${process.env.EXPO_PUBLIC_CURRENCY_API}&currencies=${currency.currency_shorthand}&base_currency=${mainCurrency.currency_shorthand}`
+            `https://api.freecurrencyapi.com/v1/latest?apikey=${process.env.EXPO_PUBLIC_CURRENCY_API}&currencies=${currency.currency_shorthand}&base_currency=${mainCurrency.currency_shorthand}`,
+            { signal: controller.signal }
           );
           response = await response.json();
           const rate = 1 / Object.values(response.data)[0];
-          console.log(rate);
           return rate;
         } catch (e) {
-          console.log(e);
+          if (e.name === "AbortError") throw new Error("Request timed out");
+          throw e;
+        } finally {
+          clearTimeout(timeout);
         }
       };
 
@@ -92,7 +105,12 @@ export default function AddUserCurrency() {
       router.back();
     } catch (err) {
       console.error(err);
-      Toast.show({ type: "error", text1: "Failed to add currency" });
+      Toast.show({
+        type: "error",
+        text1: err.message || "Failed to add currency, try again",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -134,9 +152,18 @@ export default function AddUserCurrency() {
           function={handleAddCurrency}
           backgroundColor={"#2C2E42"}
           disabledColor={"#33343fff"}
-          enabled={!!selectedCurrency}
+          enabled={!loading && !!selectedCurrency}
         >
-          Add Currency
+          {loading ? (
+            <View
+              style={{ flexDirection: "row", alignItems: "center", gap: 10 }}
+            >
+              <ActivityIndicator color="#fff" size="small" />
+              <Text style={{ color: "#fff", fontSize: 18 }}>Adding...</Text>
+            </View>
+          ) : (
+            "Add Currency"
+          )}
         </Button>
       </View>
     </View>

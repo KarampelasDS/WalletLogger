@@ -80,7 +80,7 @@ export default function InputModal(props) {
                   </View>
                 </View>
 
-                {props.accountMode && (
+                {props.accountMode && props.modalMode === "add" && (
                   <View style={styles.balanceInput}>
                     <Text style={styles.balanceLabel}>Initial Balance:</Text>
                     <TextInput

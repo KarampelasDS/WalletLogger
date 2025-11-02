@@ -118,12 +118,12 @@ const EditTransaction = () => {
       return;
     }
     const incomeCategories = await db.getAllAsync(
-      "SELECT * FROM categories WHERE category_type = 'Income'"
+      "SELECT * FROM categories WHERE category_type = 'Income' ORDER BY category_order ASC"
     );
     setStoredIncomeCategories(incomeCategories);
 
     const expenseCategories = await db.getAllAsync(
-      "SELECT * FROM categories WHERE category_type = 'Expense'"
+      "SELECT * FROM categories WHERE category_type = 'Expense' ORDER BY category_order ASC"
     );
     setStoredExpenseCategories(expenseCategories);
   };
@@ -186,7 +186,9 @@ const EditTransaction = () => {
       console.error("Could not open DB");
       return;
     }
-    const accounts = await db.getAllAsync("SELECT * FROM accounts");
+    const accounts = await db.getAllAsync(
+      "SELECT * FROM accounts ORDER BY account_order ASC"
+    );
     setStoredAccounts(accounts);
   };
 
