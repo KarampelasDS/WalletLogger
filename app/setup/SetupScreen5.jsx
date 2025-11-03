@@ -193,6 +193,7 @@ export default function SetupScreen5() {
           categoryName={categoryName}
           categoryEmoji={categoryEmoji}
           categoryBalance={categoryBalance}
+          modalMode={"add"}
           accountMode={true}
           onSave={(newName, newEmoji, newBalance) => {
             if (modalMode === "add") {
