@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { useEffect, useState } from "react";
+import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
 import { Store } from "../../stores/Store";
 import { Ionicons } from "@expo/vector-icons";
 import Button from "../../components/Button/Button";
@@ -9,18 +9,22 @@ export default function SetupScreen1() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const iconSize = Store((state) => state.iconSize);
-  setShowNavbar(false);
-
   const initDB = Store((state) => state.initDB);
   const dbInitialized = Store((state) => state.dbInitialized);
-  const setDbInitialized = Store((state) => state.setDbInitialized);
-  const db = Store((state) => state.db);
+
+  const [loading, setLoading] = useState(true);
+
+  setShowNavbar(false);
 
   useEffect(() => {
-    if (!dbInitialized) {
-      initDB();
-      console.log("Database initializing...");
-    }
+    const initialize = async () => {
+      if (!dbInitialized) {
+        await initDB();
+        console.log("✅ Database initialized!");
+      }
+      setLoading(false);
+    };
+    initialize();
   }, [dbInitialized, initDB]);
 
   return (
@@ -33,15 +37,24 @@ export default function SetupScreen1() {
       />
       <Text style={styles.introText}>Welcome to Wallet Logger</Text>
       <Text style={styles.introSubText}>Your all-in-one expense manager!</Text>
+
       <View style={styles.buttons}>
-        <Button
-          enabled={true}
-          function={() => router.replace("/setup/SetupScreen2")}
-          backgroundColor={"#2C2E42"}
-          disabledColor={"#33343fff"}
-        >
-          Get Started!
-        </Button>
+        {loading ? (
+          <ActivityIndicator
+            size="large"
+            color="#fff"
+            style={{ marginTop: 20 }}
+          />
+        ) : (
+          <Button
+            enabled={!loading}
+            function={() => router.replace("/setup/SetupScreen2")}
+            backgroundColor={"#2C2E42"}
+            disabledColor={"#33343fff"}
+          >
+            Get Started!
+          </Button>
+        )}
       </View>
     </View>
   );
