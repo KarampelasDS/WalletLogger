@@ -9,9 +9,11 @@ import {
 import { Store } from "../../stores/Store";
 import { useRouter } from "expo-router";
 
+// tiny delay helper
+const delay = (ms) => new Promise((res) => setTimeout(res, ms));
+
 export default function SetupScreen6() {
   const router = useRouter();
-
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const mainCurrency = Store((state) => state.mainCurrency);
   const setMainCurrency = Store((state) => state.setMainCurrency);
@@ -24,10 +26,10 @@ export default function SetupScreen6() {
 
   const [loading, setLoading] = useState("Accounts");
 
-  let main = null; // persist main currency reference
+  let main = null;
 
   useEffect(() => {
-    const handler = () => true; // still block user navigation
+    const handler = () => true; // block back
     const subscription = BackHandler.addEventListener(
       "hardwareBackPress",
       handler
@@ -62,163 +64,114 @@ export default function SetupScreen6() {
     initialize();
   }, []);
 
+  async function insertWithRetry(query, params, name, type) {
+    const maxRetries = 2;
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        await db.runAsync(query, params);
+        await delay(5); // tiny breathing room
+        return;
+      } catch (e) {
+        console.error(
+          `❌ Failed to insert ${type} '${name}', attempt ${attempt + 1}:`,
+          e
+        );
+        if (attempt === maxRetries) throw e;
+        await delay(20);
+      }
+    }
+  }
+
   async function initializeAccounts() {
     setLoading("Accounts");
     if (!db) return;
-
     console.log("🟦 Initializing Accounts...");
-    try {
-      for (let i = 0; i < setupAccounts.length; i++) {
-        const account = setupAccounts[i];
-        try {
-          await db.runAsync(
-            `INSERT INTO accounts (account_name, account_emoji, account_balance, account_order)
-             VALUES (?, ?, ?, ?)`,
-            [account.name, account.emoji, account.balance, i]
-          );
-        } catch (e) {
-          console.error(`❌ Failed to insert account '${account.name}':`, e);
-        }
-      }
-      const count = await db.getAllAsync("SELECT COUNT(*) as c FROM accounts");
-      console.log(
-        `✅ Inserted ${count[0].c} / ${setupAccounts.length} accounts.`
+    for (let i = 0; i < setupAccounts.length; i++) {
+      const acc = setupAccounts[i];
+      await insertWithRetry(
+        `INSERT INTO accounts (account_name, account_emoji, account_balance, account_order) VALUES (?, ?, ?, ?)`,
+        [acc.name, acc.emoji, acc.balance, i],
+        acc.name,
+        "account"
       );
-    } catch (err) {
-      console.error("❌ Account setup error:", err);
+      console.log(`✅ Account inserted: ${acc.name}`);
     }
   }
 
   async function initializeCurrencies() {
     setLoading("Currencies");
     if (!db) return;
-
     console.log("🟨 Initializing Currencies...");
-    try {
-      for (let i = 0; i < setupCurrencies.length; i++) {
-        const currency = setupCurrencies[i];
-        try {
-          await db.runAsync(
-            `INSERT INTO currencies (currency_name, currency_symbol, currency_shorthand, currency_order)
-             VALUES (?, ?, ?, ?)`,
-            [currency.name, currency.symbol, currency.shorthand, i]
-          );
-        } catch (e) {
-          console.error(`❌ Failed to insert currency '${currency.name}':`, e);
-        }
-      }
-
-      const allCurrencies = await db.getAllAsync("SELECT * FROM currencies");
-      console.log(
-        `✅ Inserted ${allCurrencies.length} / ${setupCurrencies.length} currencies.`
+    for (let i = 0; i < setupCurrencies.length; i++) {
+      const cur = setupCurrencies[i];
+      await insertWithRetry(
+        `INSERT INTO currencies (currency_name, currency_symbol, currency_shorthand, currency_order) VALUES (?, ?, ?, ?)`,
+        [cur.name, cur.symbol, cur.shorthand, i],
+        cur.name,
+        "currency"
       );
-
-      main = await db.getFirstAsync(
-        `SELECT * FROM currencies WHERE currency_name = ?`,
-        [mainCurrency?.name]
-      );
-
-      if (!main) {
-        console.error(
-          `❌ Main currency not found: '${mainCurrency?.name}'. Available:`,
-          allCurrencies.map((c) => c.currency_name)
-        );
-        throw new Error("Main currency lookup failed");
-      }
-
-      console.log("✅ Main currency found:", main);
-      setMainCurrency(main);
-    } catch (err) {
-      console.error("❌ Currency setup error:", err);
+      console.log(`✅ Currency inserted: ${cur.name}`);
     }
+
+    const allCurrencies = await db.getAllAsync("SELECT * FROM currencies");
+    main = await db.getFirstAsync(
+      "SELECT * FROM currencies WHERE currency_name = ?",
+      [mainCurrency?.name]
+    );
+
+    if (!main) {
+      console.error(
+        `❌ Main currency '${mainCurrency?.name}' not found. Defaulting to first currency.`
+      );
+      main = allCurrencies[0];
+    }
+
+    console.log("✅ Main currency set:", main);
+    setMainCurrency(main);
   }
 
   async function initializeUserCurrencies() {
     setLoading("User Currency");
-    if (!db) return;
-    if (!main) {
-      console.error("❌ Cannot insert user currency — main is null.");
-      return;
-    }
-
+    if (!db || !main) return;
     console.log("🟩 Initializing User Currency...");
-    try {
-      await db.runAsync(
-        `INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order)
-         VALUES (?, ?, ?, ?)`,
-        [main.currency_id, 1, 1, 0]
-      );
-
-      const allUserCurrencies = await db.getAllAsync(
-        "SELECT * FROM user_currencies"
-      );
-      console.log("✅ User currencies now:", allUserCurrencies.length);
-    } catch (err) {
-      console.error("❌ User currency setup error:", err);
-    }
+    await insertWithRetry(
+      `INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order) VALUES (?, ?, ?, ?)`,
+      [main.currency_id, 1, 1, 0],
+      main.currency_name,
+      "user currency"
+    );
+    console.log("✅ User currency initialized:", main.currency_name);
   }
 
   async function initializeIncomeCategories() {
     setLoading("Income Categories");
     if (!db) return;
-
     console.log("🟦 Initializing Income Categories...");
-    try {
-      for (let i = 0; i < setupIncomeCategories.length; i++) {
-        const category = setupIncomeCategories[i];
-        try {
-          await db.runAsync(
-            `INSERT INTO categories (category_name, category_emoji, category_type, category_order)
-             VALUES (?, ?, ?, ?)`,
-            [category.name, category.emoji, "Income", i]
-          );
-        } catch (e) {
-          console.error(
-            `❌ Failed to insert income category '${category.name}':`,
-            e
-          );
-        }
-      }
-      const count = await db.getAllAsync(
-        "SELECT COUNT(*) as c FROM categories WHERE category_type = 'Income'"
+    for (let i = 0; i < setupIncomeCategories.length; i++) {
+      const cat = setupIncomeCategories[i];
+      await insertWithRetry(
+        `INSERT INTO categories (category_name, category_emoji, category_type, category_order) VALUES (?, ?, ?, ?)`,
+        [cat.name, cat.emoji, "Income", i],
+        cat.name,
+        "income category"
       );
-      console.log(
-        `✅ Inserted ${count[0].c} / ${setupIncomeCategories.length} income categories.`
-      );
-    } catch (err) {
-      console.error("❌ Income category setup error:", err);
+      console.log(`✅ Income category inserted: ${cat.name}`);
     }
   }
 
   async function initializeExpenseCategories() {
     setLoading("Expense Categories");
     if (!db) return;
-
     console.log("🟥 Initializing Expense Categories...");
-    try {
-      for (let i = 0; i < setupExpenseCategories.length; i++) {
-        const category = setupExpenseCategories[i];
-        try {
-          await db.runAsync(
-            `INSERT INTO categories (category_name, category_emoji, category_type, category_order)
-             VALUES (?, ?, ?, ?)`,
-            [category.name, category.emoji, "Expense", i]
-          );
-        } catch (e) {
-          console.error(
-            `❌ Failed to insert expense category '${category.name}':`,
-            e
-          );
-        }
-      }
-      const count = await db.getAllAsync(
-        "SELECT COUNT(*) as c FROM categories WHERE category_type = 'Expense'"
+    for (let i = 0; i < setupExpenseCategories.length; i++) {
+      const cat = setupExpenseCategories[i];
+      await insertWithRetry(
+        `INSERT INTO categories (category_name, category_emoji, category_type, category_order) VALUES (?, ?, ?, ?)`,
+        [cat.name, cat.emoji, "Expense", i],
+        cat.name,
+        "expense category"
       );
-      console.log(
-        `✅ Inserted ${count[0].c} / ${setupExpenseCategories.length} expense categories.`
-      );
-    } catch (err) {
-      console.error("❌ Expense category setup error:", err);
+      console.log(`✅ Expense category inserted: ${cat.name}`);
     }
   }
 
@@ -233,11 +186,7 @@ export default function SetupScreen6() {
 
 const styles = StyleSheet.create({
   container: { alignItems: "center", justifyContent: "center", flex: 1 },
-  introText: {
-    color: "#fff",
-    fontSize: 30,
-    textAlign: "center",
-  },
+  introText: { color: "#fff", fontSize: 30, textAlign: "center" },
   introSubText: {
     color: "#fff",
     fontSize: 18,
