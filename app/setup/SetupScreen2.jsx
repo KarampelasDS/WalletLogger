@@ -71,12 +71,22 @@ export default function SetupScreen2() {
     transaction_type VARCHAR,                         -- income/expense/transfer
     transaction_amount DECIMAL,                       -- base amount
     category_id INTEGER,                              -- category reference
+    category_emoji_snapshot VARCHAR,                  -- snapshot of category emoji (in case it gets deleted)
+    category_name_snapshot VARCHAR,                   -- snapshot of category name (in case it gets deleted)
     transaction_date DATETIME,                        -- when the transaction happened
     transaction_note VARCHAR,                         -- optional user note
     account_id INTEGER,                               -- from which account
+    account_snapshot_emoji VARCHAR,                   -- snapshot of account emoji (in case it gets deleted)
+    account_snapshot_name VARCHAR,                    -- snapshot of account name (in case it gets deleted)
     account_from_id INTEGER,                          -- source account for transfers
+    account_from_snapshot_emoji VARCHAR,              -- snapshot of account emoji (in case of deletion)
+    account_from_snapshot_name VARCHAR,               -- snapshot of account name (in case it gets deleted)
     account_to_id INTEGER,                            -- destination account for transfers
+    account_to_snapshot_emoji VARCHAR,              -- snapshot of account emoji (in case of deletion)
+    account_to_snapshot_name VARCHAR,               -- snapshot of account name (in case it gets deleted)
     currency_id INTEGER,                              -- currency of the transaction
+    currency_snapshot_name VARCHAR,                   -- snapshot of currency name (in case it gets deleted)
+    currency_snapshot_symbol VARCHAR,                 -- snapshot of currency symbol (in case it gets deleted)
     converted_from_currency_id INTEGER,               -- original currency before conversion
     transaction_secondCurrencyAmount DECIMAL,         -- amount in secondary currency
     exchange_rate DECIMAL,                            -- rate used for conversion

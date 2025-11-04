@@ -405,7 +405,7 @@ const AddTransaction = () => {
     transactionType,
   ]);
 
-  // Colors
+  //! Colors
   const colors = {
     Income: "#4EA758",
     Expense: "#CD5D5D",

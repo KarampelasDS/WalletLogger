@@ -8,7 +8,7 @@ import {
   Text,
   Modal,
 } from "react-native";
-import EmojiSelector, { Categories } from "react-native-emoji-selector";
+import EmojiPicker from "rn-emoji-keyboard";
 
 export default function InputModal(props) {
   const [emoji, setEmoji] = useState(props.categoryEmoji || "😊");
@@ -25,25 +25,15 @@ export default function InputModal(props) {
     setEmoji(props.categoryEmoji || "😊");
     setCategoryName(props.categoryName || "");
     setBalance(props.categoryBalance || "");
-    if (props.categoryBalance < 0.01) {
-      setBalance("");
-    }
+    if (props.categoryBalance < 0.01) setBalance("");
   }, [props.categoryEmoji, props.categoryName, props.categoryBalance]);
 
-  // custom handler to format and enforce decimal precision / length
   const handleBalanceChange = (val) => {
-    let str = val.replace(/[^0-9.]/g, ""); // only digits and decimals
-
-    // Prevent multiple decimals
+    let str = val.replace(/[^0-9.]/g, "");
     if ((str.match(/\./g) || []).length > 1) return;
-
-    // Allow max 2 decimal places
     if (str.includes(".") && str.split(".")[1].length > 2) return;
-
-    // Enforce length limit (same as keyboard)
     if (str.length > 14 && !str.includes(".")) return;
     if (str.length > 17 && str.includes(".")) return;
-
     setBalance(str);
   };
 
@@ -57,11 +47,12 @@ export default function InputModal(props) {
       >
         <TouchableWithoutFeedback onPress={props.onClose}>
           <View style={styles.container}>
-            <TouchableWithoutFeedback onPress={() => {}}>
+            <TouchableWithoutFeedback>
               <View style={styles.modal}>
                 <View style={styles.title}>
                   <Text style={styles.titleText}>{props.title}</Text>
                 </View>
+
                 <View style={styles.inputs}>
                   <TouchableOpacity
                     style={[styles.inputContainer, styles.emojiInput]}
@@ -69,6 +60,7 @@ export default function InputModal(props) {
                   >
                     <Text style={{ fontSize: 34 }}>{emoji}</Text>
                   </TouchableOpacity>
+
                   <View style={[styles.inputContainer, styles.nameInput]}>
                     <TextInput
                       placeholderTextColor="#bbb"
@@ -124,34 +116,33 @@ export default function InputModal(props) {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {pickerVisible && (
-        <Modal
-          visible={pickerVisible}
-          animationType="slide"
-          transparent={true}
-          onRequestClose={() => setPickerVisible(false)}
-        >
-          <View style={styles.pickerContainer}>
-            <View style={styles.pickerHeader}>
-              <TouchableOpacity onPress={() => setPickerVisible(false)}>
-                <Text style={styles.closeText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-            <EmojiSelector
-              category={Categories.all}
-              onEmojiSelected={(selectedEmoji) => {
-                setEmoji(selectedEmoji);
-                setPickerVisible(false);
-              }}
-              showTabs={true}
-              showSearchBar={true}
-              showHistory={true}
-              columns={8}
-              placeholder="Search emoji..."
-            />
-          </View>
-        </Modal>
-      )}
+      <EmojiPicker
+        open={pickerVisible}
+        onClose={() => setPickerVisible(false)}
+        onEmojiSelected={(emojiObject) => {
+          setEmoji(emojiObject.emoji);
+          setPickerVisible(false);
+        }}
+        enableSearchBar
+        enableRecentlyUsed
+        categoryPosition="bottom"
+        theme={{
+          backdrop: "rgba(0,0,0,0.6)",
+          knob: "#fff",
+          container: "#1A1B25",
+          header: "#1A1B25",
+          category: {
+            icon: "#fff",
+            iconActive: "#9ac9e3",
+            container: "#1A1B25",
+          },
+          search: {
+            text: "#fff",
+            placeholder: "#aaa",
+            icon: "#9ac9e3",
+          },
+        }}
+      />
     </>
   );
 }
@@ -209,14 +200,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 6,
   },
-  balanceFormatted: {
-    color: "#9ac9e3",
-    fontSize: 16,
-    marginTop: 4,
-    alignSelf: "flex-end",
-    width: "100%",
-    textAlign: "right",
-  },
   inputContainer: {
     borderBottomColor: "#d9d9d925",
     borderBottomWidth: 1,
@@ -245,20 +228,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     fontSize: 22,
     letterSpacing: 1,
-  },
-  pickerContainer: {
-    flex: 1,
-    backgroundColor: "#1A1B25",
-    paddingTop: 40,
-  },
-  pickerHeader: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    paddingHorizontal: 16,
-    marginBottom: 10,
-  },
-  closeText: {
-    color: "white",
-    fontSize: 18,
   },
 });
