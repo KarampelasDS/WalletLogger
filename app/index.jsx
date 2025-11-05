@@ -31,7 +31,6 @@ const months = [
 ];
 
 const Home = () => {
-  // Zustand state accessors
   const currentDate = Store((state) => state.currentDate);
   const db = Store((state) => state.db);
   const initDB = Store((state) => state.initDB);
@@ -64,15 +63,8 @@ const Home = () => {
     const fetchTables = async () => {
       const transactions = await db.getAllAsync("SELECT * FROM transactions");
       console.log("Transactions:", transactions);
-      //console.log("Main Currency:", mainCurrency);
       const accounts = await db.getAllAsync("SELECT * FROM accounts");
       console.log("Accounts:", accounts);
-      //const categories = await db.getAllAsync("SELECT * FROM categories");
-      //console.log("Categories:", categories);
-      //const userCurrencies = await db.getAllAsync(
-      //  "SELECT * FROM user_currencies"
-      //);
-      //console.log("User Currencies:", userCurrencies);
     };
     fetchTables();
   }, []);
@@ -81,7 +73,7 @@ const Home = () => {
   useEffect(() => {
     if (!dbInitialized) return;
     const fetchTransactions = async () => {
-      setLoading(true); // <-- start spinner
+      setLoading(true);
       try {
         const month = String(shownMonth + 1).padStart(2, "0");
         const query = `
@@ -98,9 +90,19 @@ const Home = () => {
             at.account_emoji AS account_to_emoji,
             a.account_name AS account_name,
             a.account_emoji AS account_emoji,
+            t.account_from_snapshot_name,
+            t.account_from_snapshot_emoji,
+            t.account_to_snapshot_name,
+            t.account_to_snapshot_emoji,
+            t.account_snapshot_name,
+            t.account_snapshot_emoji,
             c.category_name AS category_name,
             c.category_emoji AS category_emoji,
-            cur.currency_symbol AS currency_symbol
+            t.category_name_snapshot,
+            t.category_emoji_snapshot,
+            cur.currency_symbol AS currency_symbol,
+            t.currency_snapshot_name,
+            t.currency_snapshot_symbol
           FROM transactions t
           LEFT JOIN accounts a ON t.account_id = a.account_id
           LEFT JOIN accounts af ON t.account_from_id = af.account_id
@@ -126,7 +128,7 @@ const Home = () => {
       } catch (err) {
         console.error("DB read error:", err);
       } finally {
-        setLoading(false); // <-- stop spinner
+        setLoading(false);
       }
     };
     fetchTransactions();
@@ -149,6 +151,10 @@ const Home = () => {
       setMonthlyIncome(income);
     });
   };
+
+  // Helper: fallback to snapshot if live/joined field is null
+  const fallback = (main, snapshot) =>
+    main != null && main !== "" ? main : snapshot;
 
   return (
     <View style={styles.container}>
@@ -287,8 +293,20 @@ const Home = () => {
                         numberOfLines={1}
                       >
                         {t.transaction_type == "Transfer"
-                          ? `${t.account_from_emoji}  ${t.account_from_name}`
-                          : `${t.category_emoji}  ${t.category_name}`}
+                          ? `${fallback(
+                              t.account_from_emoji,
+                              t.account_from_snapshot_emoji
+                            )}  ${fallback(
+                              t.account_from_name,
+                              t.account_from_snapshot_name
+                            )}`
+                          : `${fallback(
+                              t.category_emoji,
+                              t.category_emoji_snapshot
+                            )}  ${fallback(
+                              t.category_name,
+                              t.category_name_snapshot
+                            )}`}
                       </Text>
                       {t.transaction_type == "Transfer" && (
                         <Text
@@ -314,8 +332,20 @@ const Home = () => {
                         numberOfLines={1}
                       >
                         {t.transaction_type == "Transfer"
-                          ? `${t.account_to_emoji}  ${t.account_to_name}`
-                          : `${t.account_emoji}  ${t.account_name}`}
+                          ? `${fallback(
+                              t.account_to_emoji,
+                              t.account_to_snapshot_emoji
+                            )}  ${fallback(
+                              t.account_to_name,
+                              t.account_to_snapshot_name
+                            )}`
+                          : `${fallback(
+                              t.account_emoji,
+                              t.account_snapshot_emoji
+                            )}  ${fallback(
+                              t.account_name,
+                              t.account_snapshot_name
+                            )}`}
                       </Text>
                       {t.transaction_type == "Transfer" && (
                         <View style={{ width: "60%" }}>
@@ -328,7 +358,10 @@ const Home = () => {
                             {`${Number(t.transaction_amount).toLocaleString(
                               "en-US",
                               { maximumFractionDigits: 2 }
-                            )} ${t.currency_symbol}`}
+                            )} ${fallback(
+                              t.currency_symbol,
+                              t.currency_snapshot_symbol
+                            )}`}
                           </Text>
                         </View>
                       )}
@@ -347,7 +380,10 @@ const Home = () => {
                             ).toLocaleString("en-US", {
                               maximumFractionDigits: 2,
                             })}{" "}
-                            {t.currency_symbol}
+                            {fallback(
+                              t.currency_symbol,
+                              t.currency_snapshot_symbol
+                            )}
                           </Text>
                         )}
                       </View>
@@ -366,7 +402,10 @@ const Home = () => {
                             ).toLocaleString("en-US", {
                               maximumFractionDigits: 2,
                             })}{" "}
-                            {t.currency_symbol}
+                            {fallback(
+                              t.currency_symbol,
+                              t.currency_snapshot_symbol
+                            )}
                           </Text>
                         )}
                       </View>

@@ -135,8 +135,18 @@ export default function SetupScreen6() {
     if (!db || !main) return;
     console.log("🟩 Initializing User Currency...");
     await insertWithRetry(
-      `INSERT INTO user_currencies (currency_id, is_main, conversion_rate_to_main, display_order) VALUES (?, ?, ?, ?)`,
-      [main.currency_id, 1, 1, 0],
+      `INSERT INTO user_currencies (
+     currency_id, is_main, conversion_rate_to_main, display_order,
+     currency_snapshot_name, currency_snapshot_symbol
+   ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        main.currency_id,
+        1,
+        1,
+        0,
+        main.currency_name || main.currency_snapshot_name,
+        main.currency_symbol || main.currency_snapshot_symbol,
+      ],
       main.currency_name,
       "user currency"
     );

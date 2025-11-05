@@ -41,6 +41,8 @@ export default function SetupScreen2() {
         is_main BOOLEAN DEFAULT 0,
         conversion_rate_to_main DECIMAL,
         display_order INTEGER,
+          currency_snapshot_name VARCHAR,    -- snapshot of the currency's name
+  currency_snapshot_symbol VARCHAR,  -- snapshot of the currency's symbol
         FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
         )
       `);
@@ -82,8 +84,8 @@ export default function SetupScreen2() {
     account_from_snapshot_emoji VARCHAR,              -- snapshot of account emoji (in case of deletion)
     account_from_snapshot_name VARCHAR,               -- snapshot of account name (in case it gets deleted)
     account_to_id INTEGER,                            -- destination account for transfers
-    account_to_snapshot_emoji VARCHAR,              -- snapshot of account emoji (in case of deletion)
-    account_to_snapshot_name VARCHAR,               -- snapshot of account name (in case it gets deleted)
+    account_to_snapshot_emoji VARCHAR,                -- snapshot of account emoji (in case of deletion)
+    account_to_snapshot_name VARCHAR,                 -- snapshot of account name (in case it gets deleted)
     currency_id INTEGER,                              -- currency of the transaction
     currency_snapshot_name VARCHAR,                   -- snapshot of currency name (in case it gets deleted)
     currency_snapshot_symbol VARCHAR,                 -- snapshot of currency symbol (in case it gets deleted)

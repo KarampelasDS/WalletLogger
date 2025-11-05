@@ -243,28 +243,39 @@ const AddTransaction = () => {
     try {
       await db.runAsync(
         `INSERT INTO transactions (
-        transaction_type,
-        transaction_amount,
-        category_id,
-        transaction_date,
-        transaction_note,
-        account_id,
-        currency_id,
-
-        converted_from_currency_id,
-        transaction_secondCurrencyAmount,
-        exchange_rate
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    transaction_type,
+    transaction_amount,
+    category_id,
+    category_emoji_snapshot,
+    category_name_snapshot,
+    transaction_date,
+    transaction_note,
+    account_id,
+    account_snapshot_emoji,
+    account_snapshot_name,
+    currency_id,
+    currency_snapshot_name,
+    currency_snapshot_symbol,
+    converted_from_currency_id,
+    transaction_secondCurrencyAmount,
+    exchange_rate
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionType,
           exchangedTransaction
             ? parseFloat(transactionBaseAmount)
             : parseFloat(transactionAmount),
           transactionCategory.id,
+          transactionCategory.emoji,
+          transactionCategory.name,
           transactionDate.toISOString(),
           transactionNote,
           transactionAccount.id,
+          transactionAccount.emoji,
+          transactionAccount.name,
           transactionCurrency.id,
+          transactionCurrency.name,
+          transactionCurrency.symbol,
           mainCurrency.currency_id,
           exchangedTransaction
             ? parseFloat(transactionAmount)
@@ -323,22 +334,34 @@ const AddTransaction = () => {
     try {
       await db.runAsync(
         `INSERT INTO transactions (
-        transaction_type,
-        transaction_amount,
-        transaction_date,
-        transaction_note,
-        account_from_id,
-        account_to_id,
-        currency_id
-      ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    transaction_type,
+    transaction_amount,
+    transaction_date,
+    transaction_note,
+    account_from_id,
+    account_from_snapshot_emoji,
+    account_from_snapshot_name,
+    account_to_id,
+    account_to_snapshot_emoji,
+    account_to_snapshot_name,
+    currency_id,
+    currency_snapshot_name,
+    currency_snapshot_symbol
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           transactionType,
           parseFloat(transactionAmount),
           transactionDate.toISOString(),
           transactionNote,
           transactionAccountFrom.id,
+          transactionAccountFrom.emoji,
+          transactionAccountFrom.name,
           transactionAccountTo.id,
+          transactionAccountTo.emoji,
+          transactionAccountTo.name,
           transactionCurrency.id,
+          transactionCurrency.name,
+          transactionCurrency.symbol,
         ]
       );
       await db.runAsync(
