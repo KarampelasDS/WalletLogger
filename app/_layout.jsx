@@ -1,13 +1,14 @@
 import { Slot } from "expo-router";
 import NavBar from "../components/NavBar";
 import { View } from "react-native";
-import { StatusBar } from "expo-status-bar";
 import { Dimensions, StyleSheet } from "react-native";
 import { Store } from "../stores/Store";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
+import { StatusBar } from "expo-status-bar";
+import * as NavigationBar from "expo-navigation-bar";
 
 export default function Layout() {
   const setIconSize = Store((state) => state.setIconSize);
@@ -20,6 +21,15 @@ export default function Layout() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
+  async function setupNavigationBar() {
+    try {
+      await NavigationBar.setVisibilityAsync("hidden");
+      await NavigationBar.setBehaviorAsync("overlay-swipe");
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -30,6 +40,7 @@ export default function Layout() {
 
   useEffect(() => {
     setDimensions(width, height);
+    setupNavigationBar();
   }, []);
 
   useEffect(() => {

@@ -11,12 +11,9 @@ import Toast from "react-native-toast-message";
 export default function SetupScreen5() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
-  const iconSize = Store((state) => state.iconSize);
-  const [scrollEnabled, setScrollEnabled] = useState(true);
-  const [showEditModal, setShowEditModal] = useState(false);
-
   const mainCurrency = Store((state) => state.mainCurrency);
 
+  const [showEditModal, setShowEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("edit");
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState("");
@@ -101,9 +98,9 @@ export default function SetupScreen5() {
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
-            onPress={() => onDragEnd()}
             onPressIn={() => onDragStart()}
             onPressOut={() => onDragEnd()}
+            onPress={() => onDragEnd()}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
           </TouchableOpacity>
@@ -123,7 +120,6 @@ export default function SetupScreen5() {
 
   async function onReordered(fromIndex, toIndex) {
     const copy = [...accounts];
-    setScrollEnabled(true);
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]);
     setAccounts(copy);
@@ -151,7 +147,6 @@ export default function SetupScreen5() {
             keyExtractor={keyExtractor}
             onReordered={onReordered}
             renderItem={renderItem}
-            scrollEnabled={scrollEnabled}
           />
         </View>
 
@@ -169,14 +164,14 @@ export default function SetupScreen5() {
             enabled={accounts.length >= 1}
             backgroundColor={"#2C2E42"}
             disabledColor={"#33343fff"}
-            functionDisabled={() => {
+            functionDisabled={() =>
               Toast.show({
                 type: "error",
                 text1: "Error",
                 text2:
                   "Make sure you have at least one account before continuing",
-              });
-            }}
+              })
+            }
             function={() => {
               setSetupAccounts(accounts);
               router.replace("/setup/SetupScreen6");
@@ -253,12 +248,9 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-  listContainer: {
-    width: "85%",
-    marginTop: 10,
-    height: "62%",
-  },
+  listContainer: { width: "85%", marginTop: 10, height: "62%" },
   addButton: {
+    width: 200,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#2C2E42",
@@ -272,6 +264,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     gap: 8,
+    alignSelf: "center",
+    marginVertical: 10,
   },
   addText: {
     color: "#fff",
@@ -295,29 +289,14 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  itemLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  itemEmoji: {
-    fontSize: 22,
-    marginRight: 10,
-  },
-  itemName: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "500",
-  },
+  itemLeft: { flexDirection: "row", alignItems: "center" },
+  itemEmoji: { fontSize: 22, marginRight: 10 },
+  itemName: { color: "#fff", fontSize: 18, fontWeight: "500" },
   balanceText: {
     color: "#9ac9e3",
     fontSize: 15,
     fontWeight: "500",
     marginTop: 3,
   },
-  buttons: {
-    position: "absolute",
-    bottom: 0,
-    marginBottom: 50,
-    width: "80%",
-  },
+  buttons: { position: "absolute", bottom: 0, marginBottom: 50, width: "80%" },
 });

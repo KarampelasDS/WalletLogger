@@ -162,35 +162,36 @@ export default function SetupScreen3() {
           />
         </View>
 
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAdd}
-          activeOpacity={0.92}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#fff" />
-          <Text style={styles.addText}>Add Category</Text>
-        </TouchableOpacity>
-
         <View style={styles.buttons}>
-          <Button
-            enabled={incomeCategories.length >= 1}
-            backgroundColor={"#2C2E42"}
-            disabledColor={"#33343fff"}
-            functionDisabled={() => {
-              Toast.show({
-                type: "error",
-                text1: "Error",
-                text2:
-                  "Make sure you have at least one category before continuing",
-              });
-            }}
-            function={() => {
-              setSetupIncomeCategories(incomeCategories);
-              router.replace("/setup/SetupScreen4");
-            }}
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAdd}
+            activeOpacity={0.92}
           >
-            Next
-          </Button>
+            <Ionicons name="add-circle-outline" size={32} color="#fff" />
+            <Text style={styles.addText}>Add Category</Text>
+          </TouchableOpacity>
+          <View>
+            <Button
+              enabled={incomeCategories.length >= 1}
+              backgroundColor={"#2C2E42"}
+              disabledColor={"#33343fff"}
+              functionDisabled={() => {
+                Toast.show({
+                  type: "error",
+                  text1: "Error",
+                  text2:
+                    "Make sure you have at least one category before continuing",
+                });
+              }}
+              function={() => {
+                setSetupIncomeCategories(incomeCategories);
+                router.replace("/setup/SetupScreen4");
+              }}
+            >
+              Next
+            </Button>
+          </View>
         </View>
       </View>
       {showEditModal && (
@@ -258,6 +259,7 @@ const styles = StyleSheet.create({
     height: "62%",
   },
   addButton: {
+    width: 200,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#2C2E42",
@@ -271,6 +273,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     gap: 8,
+    alignSelf: "center",
+    marginVertical: 10,
   },
   addText: {
     color: "#fff",

@@ -173,13 +173,20 @@ export default function ManageIncomeCategories() {
 
   const confirmDelete = async () => {
     try {
+      await db.runAsync(
+        "UPDATE transactions SET category_id = NULL WHERE category_id = ?",
+        [categoryToDelete.category_id]
+      );
+
       await db.runAsync("DELETE FROM categories WHERE category_id = ?", [
         categoryToDelete.category_id,
       ]);
+
       setCategories((prev) =>
         prev.filter((cat) => cat.category_id !== categoryToDelete.category_id)
       );
-      Toast.show({ type: "error", text1: "Deleted Category" });
+
+      Toast.show({ type: "success", text1: "Deleted Category" });
     } catch (err) {
       console.error("Delete error:", err);
       Toast.show({ type: "error", text1: "Failed to delete category" });

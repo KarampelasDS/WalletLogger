@@ -33,6 +33,7 @@ export default function TotalAssets(props) {
       >
         {total.toLocaleString("en-US", {
           maximumFractionDigits: 2,
+          minimumFractionDigits: 2,
         })}
         {mainCurrency.currency_symbol}
       </Text>

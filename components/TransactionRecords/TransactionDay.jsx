@@ -29,6 +29,7 @@ export default function TransactionDay(props) {
           >
             {Number(props.income).toLocaleString("en-US", {
               maximumFractionDigits: 2,
+              minimumFractionDigits: 2,
             })}
             {mainCurrency.currency_symbol}
           </Text>
@@ -47,6 +48,7 @@ export default function TransactionDay(props) {
           >
             {Number(props.expenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
+              minimumFractionDigits: 2,
             })}
             {mainCurrency.currency_symbol}
           </Text>

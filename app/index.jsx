@@ -192,6 +192,7 @@ const Home = () => {
           >
             {Number(monthlyIncome).toLocaleString("en-US", {
               maximumFractionDigits: 2,
+              minimumFractionDigits: 2,
             })}
             {mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
@@ -209,6 +210,7 @@ const Home = () => {
           >
             {Number(monthlyExpenses).toLocaleString("en-US", {
               maximumFractionDigits: 2,
+              minimumFractionDigits: 2,
             })}
             {mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>

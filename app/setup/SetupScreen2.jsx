@@ -41,8 +41,8 @@ export default function SetupScreen2() {
         is_main BOOLEAN DEFAULT 0,
         conversion_rate_to_main DECIMAL,
         display_order INTEGER,
-          currency_snapshot_name VARCHAR,    -- snapshot of the currency's name
-  currency_snapshot_symbol VARCHAR,  -- snapshot of the currency's symbol
+        currency_snapshot_name VARCHAR,    -- snapshot of the currency's name
+        currency_snapshot_symbol VARCHAR,  -- snapshot of the currency's symbol
         FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
         )
       `);

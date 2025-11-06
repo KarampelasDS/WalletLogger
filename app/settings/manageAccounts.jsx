@@ -80,13 +80,20 @@ export default function ManageAccounts() {
 
   const confirmDelete = async () => {
     try {
+      await db.runAsync(
+        "UPDATE transactions SET account_id = NULL WHERE account_id = ?",
+        [accountToDelete.account_id]
+      );
+
       await db.runAsync("DELETE FROM accounts WHERE account_id = ?", [
         accountToDelete.account_id,
       ]);
+
       setAccounts((prev) =>
         prev.filter((acc) => acc.account_id !== accountToDelete.account_id)
       );
-      Toast.show({ type: "error", text1: "Deleted Account" });
+
+      Toast.show({ type: "success", text1: "Deleted Account" });
     } catch (err) {
       console.error("Delete error:", err);
       Toast.show({ type: "error", text1: "Failed to delete account" });

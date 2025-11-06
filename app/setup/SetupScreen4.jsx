@@ -11,8 +11,6 @@ import Toast from "react-native-toast-message";
 export default function SetupScreen4() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
-  const iconSize = Store((state) => state.iconSize);
-  const [scrollEnabled, setScrollEnabled] = useState(true);
   const [showEditModal, setShowEditModal] = useState(false);
 
   const [modalMode, setModalMode] = useState("edit");
@@ -80,7 +78,6 @@ export default function SetupScreen4() {
         </View>
 
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
-          {/* Delete Button */}
           <TouchableOpacity
             onPress={() => handleDelete(item.id)}
             style={{ paddingVertical: 10 }}
@@ -89,7 +86,6 @@ export default function SetupScreen4() {
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
 
-          {/* Edit Button */}
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -98,20 +94,13 @@ export default function SetupScreen4() {
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
 
-          {/* Drag Button (now with bigger invisible tap area) */}
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
-            onPress={() => {
-              onDragEnd();
-            }}
-            onPressIn={() => {
-              onDragStart();
-            }}
-            onPressOut={() => {
-              onDragEnd();
-            }}
+            onPressIn={() => onDragStart()}
+            onPressOut={() => onDragEnd()}
+            onPress={() => onDragEnd()}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
           </TouchableOpacity>
@@ -130,7 +119,6 @@ export default function SetupScreen4() {
 
   async function onReordered(fromIndex, toIndex) {
     const copy = [...expenseCategories];
-    setScrollEnabled(true);
     const removed = copy.splice(fromIndex, 1);
     copy.splice(toIndex, 0, removed[0]);
     setExpenseCategories(copy);
@@ -139,9 +127,7 @@ export default function SetupScreen4() {
   setShowNavbar(false);
 
   function getNextId() {
-    if (expenseCategories.length === 0) {
-      return "1";
-    }
+    if (expenseCategories.length === 0) return "1";
     const maxId = Math.max(
       ...expenseCategories.map((cat) => parseInt(cat.id, 10))
     );
@@ -167,7 +153,6 @@ export default function SetupScreen4() {
             keyExtractor={keyExtractor}
             onReordered={onReordered}
             renderItem={renderItem}
-            scrollEnabled={scrollEnabled}
           />
         </View>
 
@@ -190,7 +175,7 @@ export default function SetupScreen4() {
                 type: "error",
                 text1: "Error",
                 text2:
-                  "Make sure you have at least one account before continuing",
+                  "Make sure you have at least one category before continuing",
               });
             }}
             function={() => {
@@ -202,6 +187,7 @@ export default function SetupScreen4() {
           </Button>
         </View>
       </View>
+
       {showEditModal && (
         <InputModal
           title={modalMode === "add" ? "Add Category" : "Edit Category"}
@@ -265,6 +251,7 @@ const styles = StyleSheet.create({
     height: "62%",
   },
   addButton: {
+    width: 200,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#2C2E42",
@@ -278,6 +265,8 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     gap: 8,
+    alignSelf: "center",
+    marginVertical: 10,
   },
   addText: {
     color: "#fff",
