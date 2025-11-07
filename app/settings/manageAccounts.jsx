@@ -190,7 +190,6 @@ export default function ManageAccounts() {
           >
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -198,7 +197,6 @@ export default function ManageAccounts() {
           >
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
-
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
@@ -216,9 +214,10 @@ export default function ManageAccounts() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Manage your Accounts</Text>
-        <Text style={styles.introSubText}>Add, edit or delete accounts</Text>
-
+        <View style={styles.topBlock}>
+          <Text style={styles.introText}>Manage your Accounts</Text>
+          <Text style={styles.introSubText}>Add, edit or delete accounts</Text>
+        </View>
         {loading ? (
           <ActivityIndicator
             size="large"
@@ -235,15 +234,16 @@ export default function ManageAccounts() {
             />
           </View>
         )}
-
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAdd}
-          activeOpacity={0.92}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#fff" />
-          <Text style={styles.addText}>Add Account</Text>
-        </TouchableOpacity>
+        <View style={styles.buttons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAdd}
+            activeOpacity={0.92}
+          >
+            <Ionicons name="add-circle-outline" size={32} color="#fff" />
+            <Text style={styles.addText}>Add Account</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {showEditModal && (
@@ -280,7 +280,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
+    flexDirection: "column",
     paddingTop: 30,
+    justifyContent: "flex-end", // pin the add button!
+  },
+  topBlock: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   introText: {
     color: "#fff",
@@ -295,7 +301,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     textAlign: "center",
   },
-  listContainer: { width: "85%", marginTop: 10, height: "62%" },
+  listContainer: {
+    width: "85%",
+    flex: 1,
+    alignSelf: "center",
+    marginBottom: 6,
+    marginTop: 3,
+  },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -303,13 +315,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    marginTop: 10,
+    marginTop: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
     shadowRadius: 2,
     elevation: 2,
     gap: 8,
+    alignSelf: "center",
+    marginBottom: "20%",
   },
   addText: {
     color: "#fff",
@@ -341,5 +355,12 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "500",
     marginTop: 3,
+  },
+  buttons: {
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 18,
+    gap: 10,
+    justifyContent: "flex-end",
   },
 });

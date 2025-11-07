@@ -11,9 +11,8 @@ import Toast from "react-native-toast-message";
 export default function SetupScreen3() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
-  const iconSize = Store((state) => state.iconSize);
-  const [showEditModal, setShowEditModal] = useState(false);
 
+  const [showEditModal, setShowEditModal] = useState(false);
   const [modalMode, setModalMode] = useState("edit");
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [categoryName, setCategoryName] = useState("");
@@ -71,9 +70,7 @@ export default function SetupScreen3() {
             {item.name}
           </Text>
         </View>
-
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
-          {/* Delete Button */}
           <TouchableOpacity
             onPress={() => handleDelete(item.id)}
             style={{ paddingVertical: 10 }}
@@ -81,8 +78,6 @@ export default function SetupScreen3() {
           >
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
-
-          {/* Edit Button */}
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -90,21 +85,13 @@ export default function SetupScreen3() {
           >
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
-
-          {/* Drag Button */}
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
-            onPress={() => {
-              onDragEnd();
-            }}
-            onPressIn={() => {
-              onDragStart();
-            }}
-            onPressOut={() => {
-              onDragEnd();
-            }}
+            onPress={() => onDragEnd()}
+            onPressIn={() => onDragStart()}
+            onPressOut={() => onDragEnd()}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
           </TouchableOpacity>
@@ -143,16 +130,16 @@ export default function SetupScreen3() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Configure your</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Text style={[styles.introText, { color: "#4EA758" }]}>Income</Text>
-          <Text style={styles.introText}>Categories</Text>
+        <View style={styles.topBlock}>
+          <Text style={styles.introText}>Configure your</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Text style={[styles.introText, { color: "#4EA758" }]}>Income</Text>
+            <Text style={styles.introText}>Categories</Text>
+          </View>
+          <Text style={styles.introSubText}>
+            You can always change these later
+          </Text>
         </View>
-
-        <Text style={styles.introSubText}>
-          You can always change these later
-        </Text>
-
         <View style={styles.listContainer}>
           <DragList
             data={incomeCategories}
@@ -161,7 +148,6 @@ export default function SetupScreen3() {
             renderItem={renderItem}
           />
         </View>
-
         <View style={styles.buttons}>
           <TouchableOpacity
             style={styles.addButton}
@@ -171,27 +157,26 @@ export default function SetupScreen3() {
             <Ionicons name="add-circle-outline" size={32} color="#fff" />
             <Text style={styles.addText}>Add Category</Text>
           </TouchableOpacity>
-          <View>
-            <Button
-              enabled={incomeCategories.length >= 1}
-              backgroundColor={"#2C2E42"}
-              disabledColor={"#33343fff"}
-              functionDisabled={() => {
-                Toast.show({
-                  type: "error",
-                  text1: "Error",
-                  text2:
-                    "Make sure you have at least one category before continuing",
-                });
-              }}
-              function={() => {
-                setSetupIncomeCategories(incomeCategories);
-                router.replace("/setup/SetupScreen4");
-              }}
-            >
-              Next
-            </Button>
-          </View>
+          <Button
+            enabled={incomeCategories.length >= 1}
+            backgroundColor={"#2C2E42"}
+            disabledColor={"#33343fff"}
+            functionDisabled={() => {
+              Toast.show({
+                type: "error",
+                text1: "Error",
+                text2:
+                  "Make sure you have at least one category before continuing",
+              });
+            }}
+            function={() => {
+              setSetupIncomeCategories(incomeCategories);
+              router.replace("/setup/SetupScreen4");
+            }}
+            style={styles.nextButton}
+          >
+            Next
+          </Button>
         </View>
       </View>
       {showEditModal && (
@@ -201,7 +186,6 @@ export default function SetupScreen3() {
           categoryEmoji={categoryEmoji}
           onSave={(newName, newEmoji) => {
             if (modalMode === "add") {
-              // Add new category with unique id
               const newCat = {
                 id: getNextId(),
                 name: newName,
@@ -209,7 +193,6 @@ export default function SetupScreen3() {
               };
               setIncomeCategories((cats) => [...cats, newCat]);
             } else {
-              // Edit mode: update category
               setIncomeCategories((cats) =>
                 cats.map((cat) =>
                   cat.id === editingCategoryId
@@ -238,7 +221,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
+    flexDirection: "column",
     paddingTop: 60,
+    justifyContent: "flex-end", // This puts .buttons at the bottom
+  },
+  topBlock: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   introText: {
     color: "#fff",
@@ -250,13 +239,15 @@ const styles = StyleSheet.create({
     color: "#aaa",
     fontSize: 16,
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: "center",
   },
   listContainer: {
     width: "85%",
-    marginTop: 10,
-    height: "62%",
+    flex: 1,
+    alignSelf: "center",
+    marginBottom: 6,
+    marginTop: 5,
   },
   addButton: {
     width: 200,
@@ -266,7 +257,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    marginTop: 10,
+    marginTop: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
@@ -274,7 +265,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
     alignSelf: "center",
-    marginVertical: 10,
+    marginBottom: 12,
   },
   addText: {
     color: "#fff",
@@ -312,9 +303,14 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   buttons: {
-    position: "absolute",
-    bottom: 0,
-    marginBottom: 50,
-    width: "80%",
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 24,
+    gap: 10,
+    justifyContent: "flex-end",
+  },
+  nextButton: {
+    marginTop: 8,
+    alignSelf: "center",
   },
 });

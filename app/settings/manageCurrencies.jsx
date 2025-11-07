@@ -18,7 +18,6 @@ export default function ManageCurrencies() {
   const [userCurrencies, setUserCurrencies] = useState([]);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [currencyToDelete, setCurrencyToDelete] = useState(null);
-
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currencyToEdit, setCurrencyToEdit] = useState(null);
 
@@ -88,9 +87,7 @@ export default function ManageCurrencies() {
             </Text>
           </View>
         </View>
-
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
-          {/* Delete Button */}
           <TouchableOpacity
             onPress={() => {
               if (item.is_main) {
@@ -113,8 +110,6 @@ export default function ManageCurrencies() {
               color={item.is_main ? "#888" : "#ff5c5c"}
             />
           </TouchableOpacity>
-
-          {/* Edit Button */}
           <TouchableOpacity
             onPress={() => {
               if (item.is_main) {
@@ -134,8 +129,6 @@ export default function ManageCurrencies() {
           >
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
-
-          {/* Drag Button */}
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
@@ -238,7 +231,6 @@ export default function ManageCurrencies() {
   return (
     <View style={styles.container}>
       <Text style={styles.introText}>User Currencies</Text>
-
       <View style={styles.listContainer}>
         <DragList
           data={userCurrencies}
@@ -248,23 +240,22 @@ export default function ManageCurrencies() {
           scrollEnabled={scrollEnabled}
         />
       </View>
-
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={handleAdd}
-        activeOpacity={0.92}
-      >
-        <Ionicons name="add-circle-outline" size={32} color="#fff" />
-        <Text style={styles.addText}>Add Currency</Text>
-      </TouchableOpacity>
-
+      <View style={styles.buttons}>
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={handleAdd}
+          activeOpacity={0.92}
+        >
+          <Ionicons name="add-circle-outline" size={32} color="#fff" />
+          <Text style={styles.addText}>Add Currency</Text>
+        </TouchableOpacity>
+      </View>
       <ConfirmModal
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
         onConfirm={handleConfirmDelete}
         itemName={currencyToDelete?.currency_name || ""}
       />
-
       <EditCurrencyModal
         visible={editModalVisible}
         onClose={() => {
@@ -286,7 +277,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
+    flexDirection: "column",
     paddingTop: 30,
+    justifyContent: "flex-end",
   },
   introText: {
     color: "#fff",
@@ -294,7 +287,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     textAlign: "center",
   },
-  listContainer: { width: "85%", marginTop: 10, height: "72%" },
+  listContainer: {
+    width: "85%",
+    flex: 1,
+    alignSelf: "center",
+    marginBottom: 6,
+    marginTop: 10,
+  },
   addButton: {
     flexDirection: "row",
     alignItems: "center",
@@ -308,8 +307,9 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     gap: 8,
-    position: "absolute",
-    bottom: 100,
+    alignSelf: "center",
+    marginBottom: "20%",
+    marginTop: 4,
   },
   addText: {
     color: "#fff",
@@ -336,4 +336,11 @@ const styles = StyleSheet.create({
   itemLeft: { flexDirection: "row", alignItems: "center" },
   itemEmoji: { fontSize: 22, marginRight: 10 },
   itemName: { color: "#fff", fontSize: 18, fontWeight: "500" },
+  buttons: {
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 18,
+    gap: 10,
+    justifyContent: "flex-end",
+  },
 });

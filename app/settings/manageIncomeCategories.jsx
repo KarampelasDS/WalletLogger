@@ -84,7 +84,6 @@ export default function ManageIncomeCategories() {
             {item.category_name}
           </Text>
         </View>
-
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
           <TouchableOpacity
             onPress={() => handleDeletePress(item)}
@@ -93,7 +92,6 @@ export default function ManageIncomeCategories() {
           >
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -101,7 +99,6 @@ export default function ManageIncomeCategories() {
           >
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
-
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
@@ -199,13 +196,16 @@ export default function ManageIncomeCategories() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Manage your</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Text style={[styles.introText, { color: "#4EA758" }]}>Income</Text>
-          <Text style={styles.introText}>Categories</Text>
+        <View style={styles.topBlock}>
+          <Text style={styles.introText}>Manage your</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Text style={[styles.introText, { color: "#4EA758" }]}>Income</Text>
+            <Text style={styles.introText}>Categories</Text>
+          </View>
+          <Text style={styles.introSubText}>
+            Add, edit or delete categories
+          </Text>
         </View>
-        <Text style={styles.introSubText}>Add, edit or delete categories</Text>
-
         {loading ? (
           <ActivityIndicator
             size="large"
@@ -222,17 +222,17 @@ export default function ManageIncomeCategories() {
             />
           </View>
         )}
-
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAdd}
-          activeOpacity={0.92}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#fff" />
-          <Text style={styles.addText}>Add Category</Text>
-        </TouchableOpacity>
+        <View style={styles.buttons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAdd}
+            activeOpacity={0.92}
+          >
+            <Ionicons name="add-circle-outline" size={32} color="#fff" />
+            <Text style={styles.addText}>Add Category</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-
       {showEditModal && (
         <InputModal
           title={modalMode === "add" ? "Add Category" : "Edit Category"}
@@ -246,7 +246,6 @@ export default function ManageIncomeCategories() {
           }}
         />
       )}
-
       {categoryToDelete && (
         <ConfirmModal
           visible={showDeleteModal}
@@ -264,7 +263,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
+    flexDirection: "column",
     paddingTop: 30,
+    justifyContent: "flex-end",
+  },
+  topBlock: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   introText: {
     color: "#fff",
@@ -281,8 +286,10 @@ const styles = StyleSheet.create({
   },
   listContainer: {
     width: "85%",
-    marginTop: 10,
-    height: "62%",
+    flex: 1,
+    alignSelf: "center",
+    marginBottom: 6,
+    marginTop: 3,
   },
   addButton: {
     flexDirection: "row",
@@ -291,13 +298,15 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    marginTop: 10,
+    marginTop: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
     shadowRadius: 2,
     elevation: 2,
     gap: 8,
+    alignSelf: "center",
+    marginBottom: "20%",
   },
   addText: {
     color: "#fff",
@@ -333,5 +342,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "500",
+  },
+  buttons: {
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 18,
+    gap: 10,
+    justifyContent: "flex-end",
   },
 });

@@ -15,15 +15,12 @@ export default function SetupScreen2() {
   const db = Store((state) => state.db);
   const setMainCurrency = Store((state) => state.setMainCurrency);
   setShowNavbar(false);
-
   const setSetupCurrencies = Store((state) => state.setSetupCurrencies);
 
   useEffect(() => {
     if (!db) return;
-
     const createTables = async () => {
       await db.execAsync("PRAGMA foreign_keys = ON;");
-
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS currencies (
           currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,7 +30,6 @@ export default function SetupScreen2() {
           currency_order INTEGER
         )
       `);
-
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS user_currencies(
         user_currency_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -41,12 +37,11 @@ export default function SetupScreen2() {
         is_main BOOLEAN DEFAULT 0,
         conversion_rate_to_main DECIMAL,
         display_order INTEGER,
-        currency_snapshot_name VARCHAR,    -- snapshot of the currency's name
-        currency_snapshot_symbol VARCHAR,  -- snapshot of the currency's symbol
+        currency_snapshot_name VARCHAR,
+        currency_snapshot_symbol VARCHAR,
         FOREIGN KEY (currency_id) REFERENCES currencies(currency_id)
         )
       `);
-
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS accounts (
           account_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -56,7 +51,6 @@ export default function SetupScreen2() {
           account_order INTEGER
         )
       `);
-
       await db.execAsync(`
         CREATE TABLE IF NOT EXISTS categories (
           category_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,33 +60,31 @@ export default function SetupScreen2() {
           category_order INTEGER
         )
       `);
-
       await db.execAsync(`
   CREATE TABLE IF NOT EXISTS transactions (
-    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT, -- unique Transaction ID
-    transaction_type VARCHAR,                         -- income/expense/transfer
-    transaction_amount DECIMAL,                       -- base amount
-    category_id INTEGER,                              -- category reference
-    category_emoji_snapshot VARCHAR,                  -- snapshot of category emoji (in case it gets deleted)
-    category_name_snapshot VARCHAR,                   -- snapshot of category name (in case it gets deleted)
-    transaction_date DATETIME,                        -- when the transaction happened
-    transaction_note VARCHAR,                         -- optional user note
-    account_id INTEGER,                               -- from which account
-    account_snapshot_emoji VARCHAR,                   -- snapshot of account emoji (in case it gets deleted)
-    account_snapshot_name VARCHAR,                    -- snapshot of account name (in case it gets deleted)
-    account_from_id INTEGER,                          -- source account for transfers
-    account_from_snapshot_emoji VARCHAR,              -- snapshot of account emoji (in case of deletion)
-    account_from_snapshot_name VARCHAR,               -- snapshot of account name (in case it gets deleted)
-    account_to_id INTEGER,                            -- destination account for transfers
-    account_to_snapshot_emoji VARCHAR,                -- snapshot of account emoji (in case of deletion)
-    account_to_snapshot_name VARCHAR,                 -- snapshot of account name (in case it gets deleted)
-    currency_id INTEGER,                              -- currency of the transaction
-    currency_snapshot_name VARCHAR,                   -- snapshot of currency name (in case it gets deleted)
-    currency_snapshot_symbol VARCHAR,                 -- snapshot of currency symbol (in case it gets deleted)
-    converted_from_currency_id INTEGER,               -- original currency before conversion
-    transaction_secondCurrencyAmount DECIMAL,         -- amount in secondary currency
-    exchange_rate DECIMAL,                            -- rate used for conversion
-
+    transaction_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    transaction_type VARCHAR,
+    transaction_amount DECIMAL,
+    category_id INTEGER,
+    category_emoji_snapshot VARCHAR,
+    category_name_snapshot VARCHAR,
+    transaction_date DATETIME,
+    transaction_note VARCHAR,
+    account_id INTEGER,
+    account_snapshot_emoji VARCHAR,
+    account_snapshot_name VARCHAR,
+    account_from_id INTEGER,
+    account_from_snapshot_emoji VARCHAR,
+    account_from_snapshot_name VARCHAR,
+    account_to_id INTEGER,
+    account_to_snapshot_emoji VARCHAR,
+    account_to_snapshot_name VARCHAR,
+    currency_id INTEGER,
+    currency_snapshot_name VARCHAR,
+    currency_snapshot_symbol VARCHAR,
+    converted_from_currency_id INTEGER,
+    transaction_secondCurrencyAmount DECIMAL,
+    exchange_rate DECIMAL,
     FOREIGN KEY (account_id) REFERENCES accounts(account_id),
     FOREIGN KEY (account_from_id) REFERENCES accounts(account_id),
     FOREIGN KEY (account_to_id) REFERENCES accounts(account_id),
@@ -101,7 +93,6 @@ export default function SetupScreen2() {
     FOREIGN KEY (converted_from_currency_id) REFERENCES currencies(currency_id)
   )
 `);
-
       const accounts = await db.getAllAsync("SELECT * FROM accounts");
       console.log("Accounts:", accounts);
       const categories = await db.getAllAsync("SELECT * FROM categories");
@@ -109,7 +100,6 @@ export default function SetupScreen2() {
       const currencies = await db.getAllAsync("SELECT * FROM currencies");
       console.log("Currencies:", currencies);
     };
-
     createTables();
   }, [db]);
 
@@ -151,30 +141,34 @@ export default function SetupScreen2() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.introText}>What is your main currency?</Text>
-      <Text style={styles.introSubText}>You can always change this later</Text>
-
-      <SelectionScroller>
-        {currencies.map((currency, index) => (
-          <ScrollerOption
-            key={currency.name}
-            active={selectedCurrency?.name === currency.name}
-            function={() => setSelectedCurrency(currency)}
-            style={[
-              styles.option,
-              selectedCurrency?.name === currency.name && styles.optionActive,
-              index === 0 && styles.optionFirst,
-              index === currencies.length - 1 && styles.optionLast,
-            ]}
-          >
-            <View style={styles.currencyRow}>
-              <Text style={styles.optionSymbol}>{currency.symbol}</Text>
-              <Text style={styles.optionText}>{currency.name}</Text>
-            </View>
-          </ScrollerOption>
-        ))}
-      </SelectionScroller>
-
+      <View style={styles.topBlock}>
+        <Text style={styles.introText}>What is your main currency?</Text>
+        <Text style={styles.introSubText}>
+          You can always change this later
+        </Text>
+      </View>
+      <View style={styles.scrollerBlock}>
+        <SelectionScroller>
+          {currencies.map((currency, index) => (
+            <ScrollerOption
+              key={currency.name}
+              active={selectedCurrency?.name === currency.name}
+              function={() => setSelectedCurrency(currency)}
+              style={[
+                styles.option,
+                selectedCurrency?.name === currency.name && styles.optionActive,
+                index === 0 && styles.optionFirst,
+                index === currencies.length - 1 && styles.optionLast,
+              ]}
+            >
+              <View style={styles.currencyRow}>
+                <Text style={styles.optionSymbol}>{currency.symbol}</Text>
+                <Text style={styles.optionText}>{currency.name}</Text>
+              </View>
+            </ScrollerOption>
+          ))}
+        </SelectionScroller>
+      </View>
       <View style={styles.buttons}>
         <Button
           functionDisabled={() => {
@@ -200,12 +194,23 @@ export default function SetupScreen2() {
 }
 
 const styles = StyleSheet.create({
-  container: { alignItems: "center", flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: "#1A1B25",
+    alignItems: "center",
+    flexDirection: "column",
+    justifyContent: "flex-end",
+    // Remove paddingTop for full vertical use
+  },
+  topBlock: {
+    alignItems: "center",
+    marginTop: 26, // less
+    marginBottom: 4, // tighter
+  },
   introText: {
     color: "#fff",
-    fontSize: 28,
+    fontSize: 26,
     textAlign: "center",
-    marginTop: "10%",
     fontWeight: "700",
     letterSpacing: 0.3,
   },
@@ -213,14 +218,24 @@ const styles = StyleSheet.create({
     color: "#b5b5b5",
     fontSize: 16,
     textAlign: "center",
-    marginTop: 12,
+    marginTop: 8,
+    marginBottom: 2,
+  },
+  scrollerBlock: {
+    flex: 1,
+    width: "100%",
+    alignItems: "center",
+    justifyContent: "center", // makes scroller stretch in available space
+    marginBottom: 0, // less space below list
+    marginTop: 0, // less space above list
+    minHeight: 240, // always visible enough
   },
   option: {
     width: "85%",
-    marginVertical: 6,
+    marginVertical: 5,
     backgroundColor: "#2C2E42",
     borderRadius: 14,
-    paddingVertical: 16,
+    paddingVertical: 14,
     paddingHorizontal: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -254,12 +269,13 @@ const styles = StyleSheet.create({
     shadowColor: "#42A5F5",
     shadowOpacity: 0.4,
   },
-  optionFirst: { marginTop: 14 },
-  optionLast: { marginBottom: 20 },
+  optionFirst: { marginTop: 6 },
+  optionLast: { marginBottom: 14 },
   buttons: {
-    position: "absolute",
-    bottom: 0,
-    marginBottom: 50,
-    width: "80%",
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 24,
+    gap: 8,
+    justifyContent: "flex-end",
   },
 });

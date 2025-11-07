@@ -85,7 +85,6 @@ export default function SetupScreen5() {
           >
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -93,7 +92,6 @@ export default function SetupScreen5() {
           >
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
-
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
@@ -136,11 +134,12 @@ export default function SetupScreen5() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Configure your Accounts</Text>
-        <Text style={styles.introSubText}>
-          You can set an initial balance for each
-        </Text>
-
+        <View style={styles.topBlock}>
+          <Text style={styles.introText}>Configure your Accounts</Text>
+          <Text style={styles.introSubText}>
+            You can set an initial balance for each
+          </Text>
+        </View>
         <View style={styles.listContainer}>
           <DragList
             data={accounts}
@@ -149,17 +148,15 @@ export default function SetupScreen5() {
             renderItem={renderItem}
           />
         </View>
-
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAdd}
-          activeOpacity={0.92}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#fff" />
-          <Text style={styles.addText}>Add Account</Text>
-        </TouchableOpacity>
-
         <View style={styles.buttons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAdd}
+            activeOpacity={0.92}
+          >
+            <Ionicons name="add-circle-outline" size={32} color="#fff" />
+            <Text style={styles.addText}>Add Account</Text>
+          </TouchableOpacity>
           <Button
             enabled={accounts.length >= 1}
             backgroundColor={"#2C2E42"}
@@ -181,7 +178,6 @@ export default function SetupScreen5() {
           </Button>
         </View>
       </View>
-
       {showEditModal && (
         <InputModal
           title={modalMode === "add" ? "Add Account" : "Edit Account"}
@@ -233,7 +229,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
+    flexDirection: "column",
     paddingTop: 60,
+    justifyContent: "flex-end", // pin the buttons section to the bottom
+  },
+  topBlock: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   introText: {
     color: "#fff",
@@ -245,10 +247,16 @@ const styles = StyleSheet.create({
     color: "#aaa",
     fontSize: 16,
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: "center",
   },
-  listContainer: { width: "85%", marginTop: 10, height: "62%" },
+  listContainer: {
+    width: "85%",
+    flex: 1,
+    alignSelf: "center",
+    marginBottom: 6,
+    marginTop: 5,
+  },
   addButton: {
     width: 200,
     flexDirection: "row",
@@ -257,7 +265,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    marginTop: 10,
+    marginTop: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
@@ -265,7 +273,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
     alignSelf: "center",
-    marginVertical: 10,
+    marginBottom: 12,
   },
   addText: {
     color: "#fff",
@@ -289,7 +297,10 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
     elevation: 2,
   },
-  itemLeft: { flexDirection: "row", alignItems: "center" },
+  itemLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
   itemEmoji: { fontSize: 22, marginRight: 10 },
   itemName: { color: "#fff", fontSize: 18, fontWeight: "500" },
   balanceText: {
@@ -298,5 +309,11 @@ const styles = StyleSheet.create({
     fontWeight: "500",
     marginTop: 3,
   },
-  buttons: { position: "absolute", bottom: 0, marginBottom: 50, width: "80%" },
+  buttons: {
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 24,
+    gap: 10,
+    justifyContent: "flex-end",
+  },
 });

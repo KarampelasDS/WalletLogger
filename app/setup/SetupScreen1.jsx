@@ -83,7 +83,7 @@ const styles = StyleSheet.create({
   buttons: {
     position: "absolute",
     bottom: 0,
-    marginBottom: 50,
+    marginBottom: 24,
     width: "80%",
   },
 });

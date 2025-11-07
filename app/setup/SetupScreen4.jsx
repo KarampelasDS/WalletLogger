@@ -76,7 +76,6 @@ export default function SetupScreen4() {
             {item.name}
           </Text>
         </View>
-
         <View style={{ flexDirection: "row", alignItems: "center", gap: 15 }}>
           <TouchableOpacity
             onPress={() => handleDelete(item.id)}
@@ -85,7 +84,6 @@ export default function SetupScreen4() {
           >
             <Ionicons name="close-outline" size={30} color="#ff5c5c" />
           </TouchableOpacity>
-
           <TouchableOpacity
             onPress={() => handleEdit(item)}
             style={{ paddingVertical: 10 }}
@@ -93,14 +91,13 @@ export default function SetupScreen4() {
           >
             <Ionicons name="create-outline" size={30} color="#aaa" />
           </TouchableOpacity>
-
           <TouchableOpacity
             hitSlop={{ top: 20, bottom: 20, left: 12, right: 20 }}
             style={{ paddingVertical: 10 }}
             activeOpacity={0.9}
+            onPress={() => onDragEnd()}
             onPressIn={() => onDragStart()}
             onPressOut={() => onDragEnd()}
-            onPress={() => onDragEnd()}
           >
             <Ionicons name="menu" size={30} color="#aaa" />
           </TouchableOpacity>
@@ -137,16 +134,18 @@ export default function SetupScreen4() {
   return (
     <>
       <View style={styles.container}>
-        <Text style={styles.introText}>Configure your</Text>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Text style={[styles.introText, { color: "#CD5D5D" }]}>Expense</Text>
-          <Text style={styles.introText}>Categories</Text>
+        <View style={styles.topBlock}>
+          <Text style={styles.introText}>Configure your</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Text style={[styles.introText, { color: "#CD5D5D" }]}>
+              Expense
+            </Text>
+            <Text style={styles.introText}>Categories</Text>
+          </View>
+          <Text style={styles.introSubText}>
+            You can always change these later
+          </Text>
         </View>
-
-        <Text style={styles.introSubText}>
-          You can always change these later
-        </Text>
-
         <View style={styles.listContainer}>
           <DragList
             data={expenseCategories}
@@ -155,17 +154,15 @@ export default function SetupScreen4() {
             renderItem={renderItem}
           />
         </View>
-
-        <TouchableOpacity
-          style={styles.addButton}
-          onPress={handleAdd}
-          activeOpacity={0.92}
-        >
-          <Ionicons name="add-circle-outline" size={32} color="#fff" />
-          <Text style={styles.addText}>Add Category</Text>
-        </TouchableOpacity>
-
         <View style={styles.buttons}>
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAdd}
+            activeOpacity={0.92}
+          >
+            <Ionicons name="add-circle-outline" size={32} color="#fff" />
+            <Text style={styles.addText}>Add Category</Text>
+          </TouchableOpacity>
           <Button
             enabled={expenseCategories.length >= 1}
             backgroundColor={"#2C2E42"}
@@ -187,7 +184,6 @@ export default function SetupScreen4() {
           </Button>
         </View>
       </View>
-
       {showEditModal && (
         <InputModal
           title={modalMode === "add" ? "Add Category" : "Edit Category"}
@@ -230,7 +226,13 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
+    flexDirection: "column",
     paddingTop: 60,
+    justifyContent: "flex-end", // push buttons to bottom
+  },
+  topBlock: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   introText: {
     color: "#fff",
@@ -242,13 +244,15 @@ const styles = StyleSheet.create({
     color: "#aaa",
     fontSize: 16,
     marginTop: 10,
-    marginBottom: 20,
+    marginBottom: 10,
     textAlign: "center",
   },
   listContainer: {
     width: "85%",
-    marginTop: 10,
-    height: "62%",
+    flex: 1,
+    alignSelf: "center",
+    marginBottom: 6,
+    marginTop: 5,
   },
   addButton: {
     width: 200,
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    marginTop: 10,
+    marginTop: 6,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.18,
@@ -266,7 +270,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
     alignSelf: "center",
-    marginVertical: 10,
+    marginBottom: 12,
   },
   addText: {
     color: "#fff",
@@ -304,9 +308,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   buttons: {
-    position: "absolute",
-    bottom: 0,
-    marginBottom: 50,
-    width: "80%",
+    width: "85%",
+    alignSelf: "center",
+    marginBottom: 24,
+    gap: 10,
+    justifyContent: "flex-end",
   },
 });
