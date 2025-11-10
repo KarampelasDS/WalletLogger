@@ -359,7 +359,10 @@ const Home = () => {
                           >
                             {`${Number(t.transaction_amount).toLocaleString(
                               "en-US",
-                              { maximumFractionDigits: 2 }
+                              {
+                                maximumFractionDigits: 2,
+                                minimumFractionDigits: 2,
+                              }
                             )} ${fallback(
                               t.currency_symbol,
                               t.currency_snapshot_symbol
@@ -381,6 +384,7 @@ const Home = () => {
                                 : t.transaction_amount
                             ).toLocaleString("en-US", {
                               maximumFractionDigits: 2,
+                              minimumFractionDigits: 2,
                             })}{" "}
                             {fallback(
                               t.currency_symbol,
@@ -403,6 +407,7 @@ const Home = () => {
                                 : t.transaction_amount
                             ).toLocaleString("en-US", {
                               maximumFractionDigits: 2,
+                              minimumFractionDigits: 2,
                             })}{" "}
                             {fallback(
                               t.currency_symbol,
