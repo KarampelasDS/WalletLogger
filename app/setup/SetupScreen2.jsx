@@ -174,7 +174,7 @@ export default function SetupScreen2() {
           functionDisabled={() => {
             Toast.show({
               type: "error",
-              text1: "Make sure you select a currency before continuing",
+              text1: "Please select a currency",
             });
           }}
           function={() => {
