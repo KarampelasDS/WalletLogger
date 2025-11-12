@@ -18,6 +18,7 @@ import Button from "../components/Button/Button";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import ConfirmModal from "../components/ConfrimModal/ConfirmModal";
 
 const EditTransaction = () => {
   const navigation = useNavigation();
@@ -31,6 +32,7 @@ const EditTransaction = () => {
   const editingID = Store((state) => state.editingID);
   const setDbUpToDate = Store((state) => state.setDbUpToDate);
   const [originalTransaction, setOriginalTransaction] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   // Date Picking
   const [transactionDate, setTransactionDate] = useState(new Date());
@@ -353,6 +355,29 @@ const EditTransaction = () => {
       );
     }
   };
+
+  async function deleteTransaction() {
+    await reverseOriginalTransaction();
+    try {
+      await db.runAsync(`DELETE FROM transactions WHERE transaction_id=?`, [
+        editingID,
+      ]);
+      Toast.show({
+        type: "success",
+        text1: "Transaction Deleted",
+        text2: "Your transaction was deleted successfully.",
+      });
+      setDbUpToDate(false);
+      router.replace("/");
+    } catch (e) {
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Failed to delete transaction.",
+      });
+      console.error("Transaction delete error", e);
+    }
+  }
 
   useEffect(() => {
     prepopulateFields();
@@ -1004,30 +1029,18 @@ const EditTransaction = () => {
               Save
             </Button>
           )}
+          {showModal && (
+            <ConfirmModal
+              visible={showModal}
+              onClose={() => setShowModal(false)}
+              onConfirm={deleteTransaction}
+              itemName={"this transaction"}
+            />
+          )}
           <View style={{ marginTop: 10 }}>
             <Button
-              function={async () => {
-                await reverseOriginalTransaction();
-                try {
-                  await db.runAsync(
-                    `DELETE FROM transactions WHERE transaction_id=?`,
-                    [editingID]
-                  );
-                  Toast.show({
-                    type: "success",
-                    text1: "Transaction Deleted",
-                    text2: "Your transaction was deleted successfully.",
-                  });
-                  setDbUpToDate(false);
-                  router.replace("/");
-                } catch (e) {
-                  Toast.show({
-                    type: "error",
-                    text1: "Error",
-                    text2: "Failed to delete transaction.",
-                  });
-                  console.error("Transaction delete error", e);
-                }
+              function={() => {
+                setShowModal(true);
               }}
               functionDisabled={() => {
                 Toast.show({
