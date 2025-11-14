@@ -199,12 +199,12 @@ export default function ManageExpenseCategories() {
   return (
     <>
       <View style={styles.container}>
+        <Title
+          title="Expense Categories"
+          backIcon="arrow-back-circle-outline"
+          onPressBackIcon={() => navigation.goBack()}
+        />
         <View style={styles.topBlock}>
-          <Title
-            title="Expense Categories"
-            backIcon="arrow-back-circle-outline"
-            onPressBackIcon={() => navigation.goBack()}
-          />
           <Text style={styles.introSubText}>
             Add, edit or delete expense categories
           </Text>
