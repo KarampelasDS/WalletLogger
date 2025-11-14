@@ -7,6 +7,8 @@ import DragList from "react-native-draglist";
 import Toast from "react-native-toast-message";
 import ConfirmModal from "../../components/ConfrimModal/ConfirmModal";
 import EditCurrencyModal from "../../components/EditCurrencyModal/EditCurrencyModal";
+import Title from "../../components/Title/Title";
+import { useNavigation } from "@react-navigation/native";
 
 export default function ManageCurrencies() {
   const router = useRouter();
@@ -20,6 +22,7 @@ export default function ManageCurrencies() {
   const [currencyToDelete, setCurrencyToDelete] = useState(null);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currencyToEdit, setCurrencyToEdit] = useState(null);
+  const navigation = useNavigation();
 
   const fetchCurrencies = async () => {
     setShowNavbar(true);
@@ -230,7 +233,14 @@ export default function ManageCurrencies() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.introText}>User Currencies</Text>
+      <Title
+        title="Manage Currencies"
+        backIcon="arrow-back-circle-outline"
+        onPressBackIcon={() => navigation.goBack()}
+      />
+      <View style={styles.topBlock}>
+        <Text style={styles.introSubText}>Add, edit or delete currencies</Text>
+      </View>
       <View style={styles.listContainer}>
         <DragList
           data={userCurrencies}
@@ -278,13 +288,21 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1B25",
     alignItems: "center",
     flexDirection: "column",
-    paddingTop: 30,
     justifyContent: "flex-end",
+  },
+  topBlock: {
+    alignItems: "center",
+    marginBottom: 8,
   },
   introText: {
     color: "#fff",
     fontSize: 26,
     fontWeight: "700",
+    textAlign: "center",
+  },
+  introSubText: {
+    color: "#aaa",
+    fontSize: 16,
     textAlign: "center",
   },
   listContainer: {
@@ -308,7 +326,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
     alignSelf: "center",
-    marginBottom: "20%",
+    marginBottom: "25%",
     marginTop: 4,
   },
   addText: {

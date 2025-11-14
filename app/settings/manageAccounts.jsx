@@ -13,13 +13,15 @@ import InputModal from "../../components/InputModal/InputModal";
 import ConfirmModal from "../../components/ConfrimModal/ConfirmModal";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
+import Title from "../../components/Title/Title";
+import { useNavigation } from "@react-navigation/native";
 
 export default function ManageAccounts() {
   const router = useRouter();
   const db = Store((state) => state.db);
   const setShowNavbar = Store((state) => state.setShowNavbar);
   const mainCurrency = Store((state) => state.mainCurrency);
-
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState([]);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -214,8 +216,12 @@ export default function ManageAccounts() {
   return (
     <>
       <View style={styles.container}>
+        <Title
+          title="Manage Accounts"
+          backIcon="arrow-back-circle-outline"
+          onPressBackIcon={() => navigation.goBack()}
+        />
         <View style={styles.topBlock}>
-          <Text style={styles.introText}>Manage your Accounts</Text>
           <Text style={styles.introSubText}>Add, edit or delete accounts</Text>
         </View>
         {loading ? (
@@ -281,8 +287,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1B25",
     alignItems: "center",
     flexDirection: "column",
-    paddingTop: 30,
-    justifyContent: "flex-end", // pin the add button!
+    justifyContent: "flex-end",
   },
   topBlock: {
     alignItems: "center",
@@ -297,7 +302,6 @@ const styles = StyleSheet.create({
   introSubText: {
     color: "#aaa",
     fontSize: 16,
-    marginTop: 10,
     marginBottom: 20,
     textAlign: "center",
   },
@@ -323,7 +327,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
     alignSelf: "center",
-    marginBottom: "20%",
+    marginBottom: "25%",
   },
   addText: {
     color: "#fff",

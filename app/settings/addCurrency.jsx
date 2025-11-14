@@ -6,6 +6,8 @@ import Toast from "react-native-toast-message";
 import Button from "../../components/Button/Button";
 import SelectionScroller from "../../components/SelectionScroller/SelectionScroller";
 import ScrollerOption from "../../components/SelectionScroller/ScrollerOption";
+import Title from "../../components/Title/Title";
+import { useNavigation } from "expo-router";
 
 export default function AddUserCurrency() {
   const router = useRouter();
@@ -15,6 +17,7 @@ export default function AddUserCurrency() {
   const [userCurrencies, setUserCurrencies] = useState([]);
   const mainCurrency = Store((state) => state.mainCurrency);
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
 
   const setSetupCurrencies = Store((state) => state.setSetupCurrencies);
 
@@ -116,9 +119,12 @@ export default function AddUserCurrency() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Select a Currency to Add</Text>
-
-      <SelectionScroller>
+      <Title
+        title="Add Currency"
+        backIcon="arrow-back-circle-outline"
+        onPressBackIcon={() => navigation.goBack()}
+      />
+      <SelectionScroller maxHeight={65}>
         {currencies.map((currency, index) => (
           <ScrollerOption
             key={currency.currency_id}
@@ -162,7 +168,7 @@ export default function AddUserCurrency() {
               <Text style={{ color: "#fff", fontSize: 18 }}>Adding...</Text>
             </View>
           ) : (
-            "Add Currency"
+            "Done"
           )}
         </Button>
       </View>
@@ -171,14 +177,7 @@ export default function AddUserCurrency() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", paddingTop: "10%" },
-  title: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 20,
-    textAlign: "center",
-  },
+  container: { flex: 1, alignItems: "center" },
   option: {
     width: "85%",
     marginVertical: 6,
@@ -210,5 +209,5 @@ const styles = StyleSheet.create({
   },
   optionFirst: { marginTop: 14 },
   optionLast: { marginBottom: 20 },
-  buttons: { position: "absolute", bottom: 100, width: "80%" },
+  buttons: { position: "absolute", bottom: "100", width: "80%" },
 });

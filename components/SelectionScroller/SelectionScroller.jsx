@@ -9,7 +9,10 @@ import {
 export default function SelectionScroller(props) {
   return (
     <ScrollView
-      style={styles.container}
+      style={[
+        styles.container,
+        { maxHeight: props.maxHeight ? `${props.maxHeight}%` : "70%" },
+      ]}
       contentContainerStyle={{ alignItems: "center" }}
     >
       {props.children}
@@ -20,7 +23,6 @@ export default function SelectionScroller(props) {
 const styles = StyleSheet.create({
   container: {
     width: "80%",
-    maxHeight: "70%",
-    marginTop: 20,
+    marginTop: 10,
   },
 });

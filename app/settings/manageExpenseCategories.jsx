@@ -13,6 +13,8 @@ import DragList from "react-native-draglist";
 import InputModal from "../../components/InputModal/InputModal";
 import Toast from "react-native-toast-message";
 import ConfirmModal from "../../components/ConfrimModal/ConfirmModal";
+import Title from "../../components/Title/Title";
+import { useNavigation } from "expo-router";
 
 export default function ManageExpenseCategories() {
   const router = useRouter();
@@ -27,6 +29,7 @@ export default function ManageExpenseCategories() {
   const [categoryEmoji, setCategoryEmoji] = useState("");
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
+  const navigation = useNavigation();
 
   setShowNavbar(true);
 
@@ -197,15 +200,13 @@ export default function ManageExpenseCategories() {
     <>
       <View style={styles.container}>
         <View style={styles.topBlock}>
-          <Text style={styles.introText}>Manage your</Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Text style={[styles.introText, { color: "#CD5D5D" }]}>
-              Expense
-            </Text>
-            <Text style={styles.introText}>Categories</Text>
-          </View>
+          <Title
+            title="Expense Categories"
+            backIcon="arrow-back-circle-outline"
+            onPressBackIcon={() => navigation.goBack()}
+          />
           <Text style={styles.introSubText}>
-            Add, edit or delete categories
+            Add, edit or delete expense categories
           </Text>
         </View>
         {loading ? (
@@ -266,7 +267,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1B25",
     alignItems: "center",
     flexDirection: "column",
-    paddingTop: 30,
     justifyContent: "flex-end",
   },
   topBlock: {
@@ -282,8 +282,6 @@ const styles = StyleSheet.create({
   introSubText: {
     color: "#aaa",
     fontSize: 16,
-    marginTop: 10,
-    marginBottom: 20,
     textAlign: "center",
   },
   listContainer: {
@@ -308,7 +306,7 @@ const styles = StyleSheet.create({
     elevation: 2,
     gap: 8,
     alignSelf: "center",
-    marginBottom: "20%",
+    marginBottom: "25%",
   },
   addText: {
     color: "#fff",
