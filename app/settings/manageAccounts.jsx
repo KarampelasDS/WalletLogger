@@ -77,7 +77,10 @@ export default function ManageAccounts() {
 
   const handleDeletePress = (acc) => {
     if (accounts.length <= 1) {
-      Toast.show({ type: "error", text1: "You must have at least one account" });
+      Toast.show({
+        type: "error",
+        text1: "You must have at least one account",
+      });
       return;
     }
     setAccountToDelete(acc);

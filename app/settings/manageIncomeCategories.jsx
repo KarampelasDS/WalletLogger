@@ -58,6 +58,13 @@ export default function ManageIncomeCategories() {
     const { item, onDragStart, onDragEnd, isActive } = info;
 
     const handleDeletePress = (cat) => {
+      if (categories.length <= 1) {
+        Toast.show({
+          type: "error",
+          text1: "You must have at least one income category",
+        });
+        return;
+      }
       setCategoryToDelete(cat);
       setShowDeleteModal(true);
     };
