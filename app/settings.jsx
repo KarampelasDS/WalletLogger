@@ -35,9 +35,6 @@ export default function Settings() {
       icon: "cash-outline",
       route: "/settings/manageCurrencies",
     },
-    //{ name: "Backup & Restore", icon: "cloud-outline", route: "/backup" },
-    //{ name: "Appearance", icon: "color-palette-outline", route: "/appearance" },
-    //{ name: "About", icon: "information-circle-outline", route: "/about" },
   ];
 
   return (
