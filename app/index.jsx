@@ -5,14 +5,17 @@ import {
   ScrollView,
   ActivityIndicator,
   TouchableOpacity,
+  TextInput,
+  Animated,
 } from "react-native";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AddTransactionButton from "../components/TransactionsPage/AddTransactionButton";
 import Title from "../components/Title/Title";
 import { Ionicons } from "@expo/vector-icons";
 import { Store } from "../stores/Store";
 import TransactionDay from "../components/TransactionRecords/TransactionDay";
 import { useRouter } from "expo-router";
+import { fmtAmount } from "../utils/format";
 
 // Month names for display
 const months = [
@@ -48,8 +51,15 @@ const Home = () => {
   const [shownYear, setShownYear] = useState(currentDate.getFullYear());
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
+  const [totalBalance, setTotalBalance] = useState(0);
   const iconSize = Store((state) => state.iconSize);
   const [loading, setLoading] = useState(false);
+
+  // Search state
+  const [searchVisible, setSearchVisible] = useState(false);
+  const [searchText, setSearchText] = useState("");
+  const searchAnim = useRef(new Animated.Value(0)).current;
+  const searchInputRef = useRef(null);
 
   // Initialize database once
   useEffect(() => {
@@ -125,6 +135,9 @@ const Home = () => {
         calculateMonthlyTotals(data);
         setGrouped(grouped);
         setTransactions(data);
+
+        const accs = await db.getAllAsync("SELECT account_balance FROM accounts");
+        setTotalBalance(accs.reduce((s, a) => s + parseFloat(a.account_balance), 0));
       } catch (err) {
         console.error("DB read error:", err);
       } finally {
@@ -143,14 +156,65 @@ const Home = () => {
       return;
     }
     data.forEach((t) => {
-      if (t.transaction_type === "Income")
-        income += parseFloat(t.transaction_amount);
-      else if (t.transaction_type === "Expense")
-        expenses += parseFloat(t.transaction_amount);
-      setMonthlyExpenses(expenses);
-      setMonthlyIncome(income);
+      const amt = parseFloat(
+        t.transaction_secondCurrencyAmount != null
+          ? t.transaction_secondCurrencyAmount
+          : t.transaction_amount
+      );
+      if (t.transaction_type === "Income") income += amt;
+      else if (t.transaction_type === "Expense") expenses += amt;
     });
+    setMonthlyIncome(income);
+    setMonthlyExpenses(expenses);
   };
+
+  const toggleSearch = () => {
+    if (searchVisible) {
+      Animated.timing(searchAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: false,
+      }).start(() => {
+        setSearchVisible(false);
+        setSearchText("");
+      });
+    } else {
+      setSearchVisible(true);
+      Animated.timing(searchAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: false,
+      }).start(() => {
+        searchInputRef.current?.focus();
+      });
+    }
+  };
+
+  const filteredGrouped = (() => {
+    if (!searchText.trim()) return grouped;
+    const q = searchText.toLowerCase();
+    const result = {};
+    Object.keys(grouped).forEach((date) => {
+      const filtered = grouped[date].filter((t) => {
+        const note = (t.transaction_note || "").toLowerCase();
+        const cat = (t.category_name_snapshot || t.category_name || "").toLowerCase();
+        const acc = (t.account_name || t.account_snapshot_name || "").toLowerCase();
+        const accFrom = (t.account_from_name || t.account_from_snapshot_name || "").toLowerCase();
+        const accTo = (t.account_to_name || t.account_to_snapshot_name || "").toLowerCase();
+        const amt = String(t.transaction_amount);
+        return (
+          note.includes(q) ||
+          cat.includes(q) ||
+          acc.includes(q) ||
+          accFrom.includes(q) ||
+          accTo.includes(q) ||
+          amt.includes(q)
+        );
+      });
+      if (filtered.length > 0) result[date] = filtered;
+    });
+    return result;
+  })();
 
   // Helper: fallback to snapshot if live/joined field is null
   const fallback = (main, snapshot) =>
@@ -159,60 +223,82 @@ const Home = () => {
   return (
     <View style={styles.container}>
       {dbInitialized && (
-        <Title
-          title={`${months[shownMonth]} ${shownYear}`}
-          showBalance={true}
-          backIcon={"chevron-back-outline"}
-          onPressBackIcon={() => {
-            if (shownMonth === 0) {
-              setShownYear((y) => y - 1);
-              setShownMonth(11);
-            } else setShownMonth((m) => m - 1);
-          }}
-          frontIcon={"chevron-forward-outline"}
-          onPressFrontIcon={() => {
-            if (shownMonth === 11) {
-              setShownYear((y) => y + 1);
-              setShownMonth(0);
-            } else setShownMonth((m) => m + 1);
-          }}
-        />
+        <>
+          <Title
+            title={`${months[shownMonth]} ${shownYear}`}
+            backIcon={"chevron-back-outline"}
+            onPressBackIcon={() => {
+              if (shownMonth === 0) {
+                setShownYear((y) => y - 1);
+                setShownMonth(11);
+              } else setShownMonth((m) => m - 1);
+            }}
+            frontIcon={"chevron-forward-outline"}
+            onPressFrontIcon={() => {
+              if (shownMonth === 11) {
+                setShownYear((y) => y + 1);
+                setShownMonth(0);
+              } else setShownMonth((m) => m + 1);
+            }}
+            actionButton={
+              <TouchableOpacity onPress={toggleSearch}>
+                <Ionicons
+                  name={searchVisible ? "close-outline" : "search-outline"}
+                  size={iconSize}
+                  color={searchVisible ? "#734BE9" : "#fff"}
+                />
+              </TouchableOpacity>
+            }
+          />
+          {searchVisible && (
+            <Animated.View
+              style={[
+                styles.searchBarContainer,
+                { opacity: searchAnim, transform: [{ scaleY: searchAnim }] },
+              ]}
+            >
+              <Ionicons name="search-outline" size={18} color="#aaa" style={{ marginRight: 8 }} />
+              <TextInput
+                ref={searchInputRef}
+                style={styles.searchInput}
+                placeholder="Search transactions..."
+                placeholderTextColor="#666"
+                value={searchText}
+                onChangeText={setSearchText}
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              {searchText.length > 0 && (
+                <TouchableOpacity onPress={() => setSearchText("")}>
+                  <Ionicons name="close-circle" size={18} color="#aaa" />
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+          )}
+        </>
       )}
-      <View style={styles.monthSummary}>
-        <View style={{ alignItems: "center", flexDirection: "row" }}>
-          <Text style={[styles.monthSummaryText]}>Income: </Text>
-          <Text
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.5}
-            style={[
-              styles.monthSummaryValue,
-              { color: "#4EA758", maxWidth: 100 },
-            ]}
-          >
-            {Number(monthlyIncome).toLocaleString("en-US", {
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 2,
-            })}
-            {mainCurrency ? mainCurrency.currency_symbol : ""}
+      <View style={styles.summaryCard}>
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Income</Text>
+          <Text style={[styles.summaryValue, { color: "#4EA758" }]} numberOfLines={1}>
+            {fmtAmount(monthlyIncome)}{mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
         </View>
-        <View style={{ alignItems: "center", flexDirection: "row" }}>
-          <Text style={[styles.monthSummaryText]}>Expenses: </Text>
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Expenses</Text>
+          <Text style={[styles.summaryValue, { color: "#CD5D5D" }]} numberOfLines={1}>
+            {fmtAmount(monthlyExpenses)}{mainCurrency ? mainCurrency.currency_symbol : ""}
+          </Text>
+        </View>
+        <View style={styles.summaryDivider} />
+        <View style={styles.summaryItem}>
+          <Text style={styles.summaryLabel}>Balance</Text>
           <Text
+            style={[styles.summaryValue, { color: totalBalance < 0 ? "#CD5D5D" : "#4EA758" }]}
             numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.5}
-            style={[
-              styles.monthSummaryValue,
-              { color: "#CD5D5D", maxWidth: 100 },
-            ]}
           >
-            {Number(monthlyExpenses).toLocaleString("en-US", {
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 2,
-            })}
-            {mainCurrency ? mainCurrency.currency_symbol : ""}
+            {fmtAmount(totalBalance)}{mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
         </View>
       </View>
@@ -233,14 +319,17 @@ const Home = () => {
           style={{ width: "100%" }}
           contentContainerStyle={{ paddingBottom: 200 }}
         >
-          {Object.keys(grouped).map((date) => {
+          {Object.keys(filteredGrouped).map((date) => {
             let dailyIncome = 0;
             let dailyExpenses = 0;
-            grouped[date].forEach((t) => {
-              if (t.transaction_type === "Income")
-                dailyIncome += parseFloat(t.transaction_amount);
-              else if (t.transaction_type === "Expense")
-                dailyExpenses += parseFloat(t.transaction_amount);
+            filteredGrouped[date].forEach((t) => {
+              const amt = parseFloat(
+                t.transaction_secondCurrencyAmount != null
+                  ? t.transaction_secondCurrencyAmount
+                  : t.transaction_amount
+              );
+              if (t.transaction_type === "Income") dailyIncome += amt;
+              else if (t.transaction_type === "Expense") dailyExpenses += amt;
             });
             return (
               <TransactionDay
@@ -266,170 +355,81 @@ const Home = () => {
                   alignItems: "center",
                 }}
               >
-                {grouped[date].map((t) => (
+                {filteredGrouped[date].map((t) => (
                   <TouchableOpacity
                     key={t.transaction_id}
-                    style={{ borderTopColor: "#d9d9d905", borderTopWidth: 2 }}
+                    style={styles.txRow}
                     onPress={() => {
                       setEditingID(t.transaction_id);
                       router.push(`/editTransaction`);
                     }}
                   >
-                    <View
-                      style={{
-                        marginBottom: 7,
-                        marginTop: 5,
-                        flexDirection: "row",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        width: "100%",
-                        paddingHorizontal: 10,
-                      }}
-                    >
-                      <Text
-                        style={{
-                          color: "white",
-                          width:
-                            t.transaction_type == "Transfer" ? "auto" : "30%",
-                        }}
-                        numberOfLines={1}
-                      >
-                        {t.transaction_type == "Transfer"
-                          ? `${fallback(
-                              t.account_from_emoji,
-                              t.account_from_snapshot_emoji
-                            )}  ${fallback(
-                              t.account_from_name,
-                              t.account_from_snapshot_name
-                            )}`
-                          : `${fallback(
-                              t.category_emoji,
-                              t.category_emoji_snapshot
-                            )}  ${fallback(
-                              t.category_name,
-                              t.category_name_snapshot
-                            )}`}
-                      </Text>
-                      {t.transaction_type == "Transfer" && (
-                        <Text
-                          style={{
-                            color: "white",
-                            width: "10%",
-                            textAlign: "center",
-                          }}
-                        >
+                    <View style={styles.txMain}>
+                      {t.transaction_type === "Transfer" ? (
+                        <>
+                          <Text style={styles.txLeft} numberOfLines={1}>
+                            {fallback(t.account_from_emoji, t.account_from_snapshot_emoji)}
+                            {"  "}
+                            {fallback(t.account_from_name, t.account_from_snapshot_name)}
+                          </Text>
                           <Ionicons
                             name="arrow-forward-outline"
-                            size={iconSize - 10}
-                            color="#fff"
+                            size={14}
+                            color="#aaa"
+                            style={{ marginHorizontal: 4 }}
                           />
-                        </Text>
-                      )}
-                      <Text
-                        style={{
-                          color: "white",
-                          width: "20%",
-                          textAlign: "center",
-                        }}
-                        numberOfLines={1}
-                      >
-                        {t.transaction_type == "Transfer"
-                          ? `${fallback(
-                              t.account_to_emoji,
-                              t.account_to_snapshot_emoji
-                            )}  ${fallback(
-                              t.account_to_name,
-                              t.account_to_snapshot_name
-                            )}`
-                          : `${fallback(
-                              t.account_emoji,
-                              t.account_snapshot_emoji
-                            )}  ${fallback(
-                              t.account_name,
-                              t.account_snapshot_name
-                            )}`}
-                      </Text>
-                      {t.transaction_type == "Transfer" && (
-                        <View style={{ width: "60%" }}>
+                          <Text style={styles.txMid} numberOfLines={1}>
+                            {fallback(t.account_to_emoji, t.account_to_snapshot_emoji)}
+                            {"  "}
+                            {fallback(t.account_to_name, t.account_to_snapshot_name)}
+                          </Text>
                           <Text
-                            style={{ color: "#734BE9", textAlign: "center" }}
+                            style={[styles.txAmount, { color: "#734BE9" }]}
                             numberOfLines={1}
-                            adjustsFontSizeToFit
-                            minimumFontScale={0.5}
                           >
-                            {`${Number(t.transaction_amount).toLocaleString(
-                              "en-US",
+                            {fmtAmount(t.transaction_amount)}{" "}
+                            {fallback(t.currency_symbol, t.currency_snapshot_symbol)}
+                          </Text>
+                        </>
+                      ) : (
+                        <>
+                          <Text style={styles.txLeft} numberOfLines={1}>
+                            {fallback(t.category_emoji, t.category_emoji_snapshot)}
+                            {"  "}
+                            {fallback(t.category_name, t.category_name_snapshot)}
+                          </Text>
+                          <Text style={styles.txMid} numberOfLines={1}>
+                            {fallback(t.account_emoji, t.account_snapshot_emoji)}
+                            {"  "}
+                            {fallback(t.account_name, t.account_snapshot_name)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.txAmount,
                               {
-                                maximumFractionDigits: 2,
-                                minimumFractionDigits: 2,
-                              }
-                            )} ${fallback(
-                              t.currency_symbol,
-                              t.currency_snapshot_symbol
-                            )}`}
+                                color:
+                                  t.transaction_type === "Income"
+                                    ? "#4EA758"
+                                    : "#CD5D5D",
+                              },
+                            ]}
+                            numberOfLines={1}
+                          >
+                            {fmtAmount(
+                              t.transaction_secondCurrencyAmount != null
+                                ? t.transaction_secondCurrencyAmount
+                                : t.transaction_amount
+                            )}{" "}
+                            {fallback(t.currency_symbol, t.currency_snapshot_symbol)}
                           </Text>
-                        </View>
+                        </>
                       )}
-                      <View style={{ width: "25%" }}>
-                        {t.transaction_type == "Income" && (
-                          <Text
-                            style={{ color: "#4EA758", textAlign: "center" }}
-                            numberOfLines={1}
-                            adjustsFontSizeToFit
-                            minimumFontScale={0.5}
-                          >
-                            {Number(
-                              t.transaction_secondCurrencyAmount
-                                ? t.transaction_secondCurrencyAmount
-                                : t.transaction_amount
-                            ).toLocaleString("en-US", {
-                              maximumFractionDigits: 2,
-                              minimumFractionDigits: 2,
-                            })}{" "}
-                            {fallback(
-                              t.currency_symbol,
-                              t.currency_snapshot_symbol
-                            )}
-                          </Text>
-                        )}
-                      </View>
-                      <View style={{ width: "15%" }}>
-                        {t.transaction_type == "Expense" && (
-                          <Text
-                            style={{ color: "#CD5D5D", textAlign: "center" }}
-                            numberOfLines={1}
-                            adjustsFontSizeToFit
-                            minimumFontScale={0.5}
-                          >
-                            {Number(
-                              t.transaction_secondCurrencyAmount
-                                ? t.transaction_secondCurrencyAmount
-                                : t.transaction_amount
-                            ).toLocaleString("en-US", {
-                              maximumFractionDigits: 2,
-                              minimumFractionDigits: 2,
-                            })}{" "}
-                            {fallback(
-                              t.currency_symbol,
-                              t.currency_snapshot_symbol
-                            )}
-                          </Text>
-                        )}
-                      </View>
                     </View>
-                    {t.transaction_note && (
-                      <View>
-                        <Text
-                          style={{
-                            color: "white",
-                            paddingHorizontal: 20,
-                            paddingVertical: 10,
-                          }}
-                        >
-                          {t.transaction_note}
-                        </Text>
-                      </View>
-                    )}
+                    {t.transaction_note ? (
+                      <Text style={styles.txNote} numberOfLines={2}>
+                        {t.transaction_note}
+                      </Text>
+                    ) : null}
                   </TouchableOpacity>
                 ))}
               </TransactionDay>
@@ -451,19 +451,82 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1B25",
     alignItems: "center",
   },
-  monthSummary: {
-    alignItems: "center",
-    flexDirection: "row",
+  searchBarContainer: {
     width: "90%",
-    justifyContent: "space-around",
+    backgroundColor: "#2C2E42",
+    borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     marginBottom: 10,
   },
-  monthSummaryText: {
-    color: "white",
-    fontSize: 20,
+  searchInput: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 16,
   },
-  monthSummaryValue: {
-    fontSize: 20,
+  summaryCard: {
+    width: "90%",
+    backgroundColor: "#2C2E42",
+    borderRadius: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 10,
+    marginBottom: 10,
+  },
+  summaryItem: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: 8,
+  },
+  summaryLabel: {
+    color: "#aaa",
+    fontSize: 13,
+    marginBottom: 2,
+  },
+  summaryValue: {
+    fontSize: 18,
     fontWeight: "bold",
+    width: "100%",
+    textAlign: "center",
+  },
+  summaryDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: "#d9d9d930",
+  },
+  txRow: {
+    borderTopColor: "#d9d9d910",
+    borderTopWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  txMain: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  txLeft: {
+    flex: 2,
+    color: "#fff",
+    fontSize: 14,
+  },
+  txMid: {
+    flex: 2,
+    color: "#aaa",
+    fontSize: 14,
+    textAlign: "center",
+  },
+  txAmount: {
+    flex: 2,
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "right",
+  },
+  txNote: {
+    color: "#888",
+    fontSize: 12,
+    marginTop: 4,
+    paddingLeft: 2,
   },
 });

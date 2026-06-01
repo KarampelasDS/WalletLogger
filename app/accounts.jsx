@@ -4,18 +4,22 @@ import {
   View,
   ScrollView,
   ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useEffect, useState } from "react";
 import Title from "../components/Title/Title";
 import { Store } from "../stores/Store";
+import { useRouter } from "expo-router";
+import { fmtAmount } from "../utils/format";
+
 
 const Accounts = () => {
   const db = Store((state) => state.db);
   const dbInitialized = Store((state) => state.dbInitialized);
   const mainCurrency = Store((state) => state.mainCurrency);
+  const router = useRouter();
 
   const [accounts, setAccounts] = useState([]);
-  const [totalBalance, setTotalBalance] = useState(0);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -26,12 +30,6 @@ const Accounts = () => {
       try {
         const result = await db.getAllAsync("SELECT * FROM accounts");
         setAccounts(result);
-
-        let total = 0;
-        result.forEach((a) => {
-          total += parseFloat(a.account_balance);
-        });
-        setTotalBalance(total);
       } catch (e) {
         console.error("Error fetching accounts:", e);
       } finally {
@@ -45,21 +43,6 @@ const Accounts = () => {
   return (
     <View style={styles.container}>
       {dbInitialized && <Title title="Accounts" showBalance={true} />}
-
-      <View style={styles.summaryContainer}>
-        <Text style={styles.summaryText}>Total Balance:</Text>
-        <Text
-          style={[
-            styles.summaryValue,
-            totalBalance < 0 ? { color: "#CD5D5D" } : { color: "#4EA758" },
-          ]}
-        >
-          {totalBalance.toLocaleString("en-US", {
-            maximumFractionDigits: 2,
-          })}
-          {mainCurrency ? mainCurrency.currency_symbol : ""}
-        </Text>
-      </View>
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -76,7 +59,12 @@ const Accounts = () => {
             </Text>
           ) : (
             accounts.map((acc) => (
-              <View key={acc.account_id} style={styles.accountCard}>
+              <TouchableOpacity
+                key={acc.account_id}
+                onPress={() => router.push(`/accounts/${acc.account_id}`)}
+                activeOpacity={0.75}
+              >
+              <View style={styles.accountCard}>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <Text style={styles.accountEmoji}>{acc.account_emoji}</Text>
                   <View>
@@ -93,15 +81,12 @@ const Accounts = () => {
                       : { color: "#4EA758" },
                   ]}
                   numberOfLines={1}
-                  adjustsFontSizeToFit
-                  minimumFontScale={0.5}
                 >
-                  {Number(acc.account_balance).toLocaleString("en-US", {
-                    maximumFractionDigits: 2,
-                  })}
+                  {fmtAmount(acc.account_balance)}
                   {mainCurrency ? mainCurrency.currency_symbol : ""}
                 </Text>
               </View>
+              </TouchableOpacity>
             ))
           )}
         </ScrollView>
@@ -117,21 +102,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#1A1B25",
     alignItems: "center",
-  },
-  summaryContainer: {
-    width: "90%",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  summaryText: {
-    color: "white",
-    fontSize: 20,
-  },
-  summaryValue: {
-    fontSize: 20,
-    fontWeight: "bold",
   },
   loadingContainer: {
     flex: 1,

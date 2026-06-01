@@ -1,6 +1,6 @@
-import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Store } from "../../stores/Store";
-import { useEffect, useState } from "react";
+import { fmtAmount } from "../../utils/format";
 
 export default function TransactionDay(props) {
   const mainCurrency = Store((state) => state.mainCurrency);
@@ -15,42 +15,13 @@ export default function TransactionDay(props) {
           </Text>
         </View>
         <View style={styles.amounts}>
-          <Text
-            style={{
-              color: "#4EA758",
-              fontWeight: "bold",
-              fontSize: 20,
-              width: 60,
-              textAlign: "right",
-            }}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.5}
-          >
-            {Number(props.income).toLocaleString("en-US", {
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 2,
-            })}
-            {mainCurrency.currency_symbol}
+          <Text style={styles.incomeText} numberOfLines={1}>
+            {fmtAmount(props.income)}
+            {mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
-
-          <Text
-            style={{
-              color: "#CD5D5D",
-              fontWeight: "bold",
-              fontSize: 20,
-              width: 60,
-              textAlign: "right",
-            }}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.5}
-          >
-            {Number(props.expenses).toLocaleString("en-US", {
-              maximumFractionDigits: 2,
-              minimumFractionDigits: 2,
-            })}
-            {mainCurrency.currency_symbol}
+          <Text style={styles.expenseText} numberOfLines={1}>
+            {fmtAmount(props.expenses)}
+            {mainCurrency ? mainCurrency.currency_symbol : ""}
           </Text>
         </View>
       </View>
@@ -75,29 +46,47 @@ const styles = StyleSheet.create({
     borderRadius: 1,
     alignItems: "center",
     paddingHorizontal: 10,
+    paddingVertical: 4,
   },
   date: {
     flexDirection: "row",
     gap: 5,
     alignItems: "baseline",
-    minWidth: "20%",
-    maxWidth: "20%",
+    flexShrink: 0,
   },
   dateDay: {
     color: "#9ac9e3",
-    fontSize: 24,
+    fontSize: 22,
   },
   dateWeekday: {
     color: "#9ac9e3",
-    fontSize: 24,
+    fontSize: 18,
   },
   dateMonthYear: {
     color: "#9ac9e3",
+    fontSize: 13,
   },
   amounts: {
     flexDirection: "row",
-    gap: 20,
+    gap: 8,
     alignItems: "center",
+    flexShrink: 1,
+    flexGrow: 0,
+    marginLeft: 8,
+  },
+  incomeText: {
+    color: "#4EA758",
+    fontWeight: "bold",
+    fontSize: 16,
+    flexShrink: 1,
+    textAlign: "right",
+  },
+  expenseText: {
+    color: "#CD5D5D",
+    fontWeight: "bold",
+    fontSize: 16,
+    flexShrink: 1,
+    textAlign: "right",
   },
   transaction: {
     flexDirection: "column",

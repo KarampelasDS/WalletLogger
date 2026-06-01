@@ -35,6 +35,11 @@ export default function Settings() {
       icon: "cash-outline",
       route: "/settings/manageCurrencies",
     },
+    {
+      name: "Change Main Currency",
+      icon: "swap-horizontal-outline",
+      route: "/settings/changeMainCurrency",
+    },
   ];
 
   return (

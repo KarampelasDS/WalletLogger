@@ -23,6 +23,9 @@ export default function Title(props) {
           <TotalAssets />
         </View>
       )}
+      {props.actionButton && (
+        <View style={styles.actionButton}>{props.actionButton}</View>
+      )}
     </View>
   );
 }
@@ -46,9 +49,13 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     textAlign: "left",
+    flexShrink: 1,
   },
   totalAssets: {
     marginLeft: "auto",
     marginRight: 10,
+  },
+  actionButton: {
+    marginLeft: "auto",
   },
 });

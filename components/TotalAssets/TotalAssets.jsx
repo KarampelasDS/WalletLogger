@@ -1,17 +1,18 @@
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { Store } from "../../stores/Store";
 import { useEffect, useState } from "react";
+import { fmtAmount } from "../../utils/format";
 
-export default function TotalAssets(props) {
+export default function TotalAssets() {
   const db = Store((state) => state.db);
   const mainCurrency = Store((state) => state.mainCurrency);
-  const [total, setTotal] = useState([""]);
+  const [total, setTotal] = useState(0);
 
   useEffect(() => {
     async function calculateTotal() {
       const dbAccounts = await db.getAllAsync("SELECT * FROM accounts");
       let balanceTotal = 0;
-      dbAccounts.map((account) => {
+      dbAccounts.forEach((account) => {
         balanceTotal += account.account_balance;
       });
       setTotal(balanceTotal);
@@ -21,21 +22,16 @@ export default function TotalAssets(props) {
 
   return (
     <View style={styles.container}>
-      <Text style={{ color: "#fff", fontSize: 15 }}>Total Balance</Text>
+      <Text style={styles.label}>Total Balance</Text>
       <Text
         numberOfLines={1}
-        ellipsizeMode="middle"
-        adjustsFontSizeToFit={true}
         style={[
           styles.amountText,
           total < 0 ? { color: "#CD5D5D" } : { color: "#4EA758" },
         ]}
       >
-        {total.toLocaleString("en-US", {
-          maximumFractionDigits: 2,
-          minimumFractionDigits: 2,
-        })}
-        {mainCurrency.currency_symbol}
+        {fmtAmount(total)}
+        {mainCurrency ? mainCurrency.currency_symbol : ""}
       </Text>
     </View>
   );
@@ -44,17 +40,20 @@ export default function TotalAssets(props) {
 const styles = StyleSheet.create({
   container: {
     alignItems: "center",
-    width: "100%",
-    maxWidth: 130,
+    maxWidth: 140,
+  },
+  label: {
+    color: "#fff",
+    fontSize: 13,
   },
   amountText: {
-    color: "#4EA758",
     backgroundColor: "#2C2E42",
-    borderRadius: 2,
+    borderRadius: 4,
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 20,
-    maxWidth: "100%",
-    paddingHorizontal: 4,
+    fontSize: 16,
+    width: 140,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
   },
 });
