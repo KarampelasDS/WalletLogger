@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   itemSymbol: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 22,
     marginRight: 12,
     minWidth: 30,
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   itemRate: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 14,
     marginTop: 2,
   },

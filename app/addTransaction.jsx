@@ -51,6 +51,7 @@ const AddTransaction = () => {
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
 
   const openKeyboard = () => {
+    closeSheets();
     setShowAmountKeyboard(true);
     setShowNavbar(false);
     setFocusedInput("Amount");
@@ -152,6 +153,7 @@ const AddTransaction = () => {
   }, [transactionType]);
 
   const openCategoryPicker = () => {
+    closeSheets();
     setShowCategoryPicker(true);
     setShowNavbar(false);
     setFocusedInput("Category");
@@ -198,7 +200,27 @@ const AddTransaction = () => {
     LoadAccounts();
   }, []);
 
+  // Close every custom sheet — used so tapping a different field switches in one tap
+  const closeSheets = () => {
+    setShowAmountKeyboard(false);
+    setShowCategoryPicker(false);
+    setShowAccountPicker(false);
+    setShowAccountFromPicker(false);
+    setShowAccountToPicker(false);
+    setShowDatePickerMode(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
+  };
+
+  const anySheetOpen =
+    showAmountKeyboard ||
+    showCategoryPicker ||
+    showAccountPicker ||
+    showAccountFromPicker ||
+    showAccountToPicker;
+
   const openAccountPicker = () => {
+    closeSheets();
     setShowAccountPicker(true);
     setShowNavbar(false);
     setFocusedInput("Account");
@@ -209,6 +231,7 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
   const openAccountFromPicker = () => {
+    closeSheets();
     setShowAccountFromPicker(true);
     setShowNavbar(false);
     setFocusedInput("From");
@@ -219,6 +242,7 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
   const openAccountToPicker = () => {
+    closeSheets();
     setShowAccountToPicker(true);
     setShowNavbar(false);
     setFocusedInput("To");
@@ -483,9 +507,10 @@ const AddTransaction = () => {
             >
               <Text
                 onPress={() => {
-                  showDatepicker();
-                  closeKeyboard();
+                  closeSheets();
+                  setShowNavbar(true);
                   setFocusedInput("Date");
+                  showDatepicker();
                 }}
               >
                 {"("}
@@ -497,9 +522,10 @@ const AddTransaction = () => {
                   if (focusedInput == "Note") {
                     Keyboard.dismiss();
                   }
-                  showDatepicker();
-                  closeKeyboard();
+                  closeSheets();
+                  setShowNavbar(true);
                   setFocusedInput("Date");
+                  showDatepicker();
                 }}
               >
                 {transactionDate.toLocaleString("en-GB", {
@@ -510,10 +536,13 @@ const AddTransaction = () => {
               </Text>
               <Text
                 onPress={() => {
-                  showTimepicker();
-                  closeKeyboard();
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  closeSheets();
                   setShowNavbar(true);
                   setFocusedInput("Date");
+                  showTimepicker();
                 }}
               >
                 {transactionDate.toLocaleString("en-GB", {
@@ -574,7 +603,7 @@ const AddTransaction = () => {
                 <View style={{ marginTop: 14 }}>
                   <Text
                     style={{
-                      color: "#9ac9e3",
+                      color: "#A78BFA",
                       fontWeight: "bold",
                       fontSize: 16,
                     }}
@@ -618,14 +647,14 @@ const AddTransaction = () => {
                     >
                       <Text
                         style={{
-                          color: "#9ac9e3",
+                          color: "#A78BFA",
                           fontWeight: "600",
                           marginRight: 4,
                         }}
                       >
                         Refresh
                       </Text>
-                      <Ionicons name="refresh" size={18} color="#9ac9e3" />
+                      <Ionicons name="refresh" size={18} color="#A78BFA" />
                     </TouchableOpacity>
                     {/* Edit Button*/}
                     <TouchableOpacity
@@ -641,14 +670,14 @@ const AddTransaction = () => {
                     >
                       <Text
                         style={{
-                          color: "#9ac9e3",
+                          color: "#A78BFA",
                           fontWeight: "600",
                           marginRight: 4,
                         }}
                       >
                         Edit
                       </Text>
-                      <Ionicons name="pencil" size={18} color="#9ac9e3" />
+                      <Ionicons name="pencil" size={18} color="#A78BFA" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -756,7 +785,10 @@ const AddTransaction = () => {
           <View style={styles.TransactionDetailsRow}>
             <Text style={styles.TransactionDetailName}>Note</Text>
             <TextInput
-              onFocus={() => setFocusedInput("Note")}
+              onFocus={() => {
+                closeSheets();
+                setFocusedInput("Note");
+              }}
               value={transactionNote}
               onChangeText={setTransactionNote}
               style={[
@@ -768,6 +800,16 @@ const AddTransaction = () => {
             />
           </View>
         </View>
+
+        {/* Backdrop — closes any open sheet on outside tap (sits below the input
+            card so fields stay tappable, above the sheet content z-wise it is lower) */}
+        {anySheetOpen && (
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={closeSheets}
+          />
+        )}
 
         {/* Custom Keyboards / Pickers */}
         {showAmountKeyboard && (
@@ -916,6 +958,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 20,
     padding: 20,
+    // sits above the close backdrop (so fields stay tappable) but below the sheet
+    zIndex: 1001,
   },
   TransactionDetailsRow: {
     flexDirection: "row",
@@ -937,5 +981,13 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "left",
     paddingVertical: 2,
+  },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
   },
 });

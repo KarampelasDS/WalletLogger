@@ -26,13 +26,8 @@ export default function OptionPicker(props) {
       : "category";
 
   return (
-    <View style={styles.overlay}>
-      <TouchableOpacity
-        style={styles.exitView}
-        onPress={props.closePicker}
-        activeOpacity={1}
-      />
-      <View style={styles.container}>
+    <View style={styles.overlay} pointerEvents="box-none">
+      <View style={styles.container} onStartShouldSetResponder={() => true}>
         {props.headerText && (
           <KeyboardHeader
             text={props.headerText}
@@ -78,16 +73,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: 1000,
-  },
-  exitView: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: pickerHeight,
-    backgroundColor: "transparent",
-    zIndex: 1001,
+    zIndex: 1002,
   },
   container: {
     position: "absolute",

@@ -55,15 +55,15 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   dateDay: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 22,
   },
   dateWeekday: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 18,
   },
   dateMonthYear: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 13,
   },
   amounts: {

@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   itemEmoji: { fontSize: 22, marginRight: 10 },
   itemName: { color: "#fff", fontSize: 18, fontWeight: "500" },
   balanceText: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 15,
     fontWeight: "500",
     marginTop: 3,

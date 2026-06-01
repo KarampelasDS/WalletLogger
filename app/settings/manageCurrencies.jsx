@@ -70,7 +70,7 @@ export default function ManageCurrencies() {
         ]}
       >
         <View style={styles.itemLeft}>
-          <Text style={[styles.itemEmoji, { color: "#9ac9e3" }]}>
+          <Text style={[styles.itemEmoji, { color: "#A78BFA" }]}>
             {item.currency_symbol}
           </Text>
           <View style={{ flexDirection: "column" }}>
@@ -81,7 +81,7 @@ export default function ManageCurrencies() {
             >
               {item.currency_name}
             </Text>
-            <Text style={{ color: "#9ac9e3", fontSize: 15, marginTop: 1 }}>
+            <Text style={{ color: "#A78BFA", fontSize: 15, marginTop: 1 }}>
               {item.conversion_rate_to_main
                 ? `1.00 ${item.currency_symbol} = ${
                     mainCurrency.currency_symbol
@@ -315,15 +315,11 @@ const styles = StyleSheet.create({
   addButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2C2E42",
+    backgroundColor: "#734BE9",
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.18,
-    shadowRadius: 2,
-    elevation: 2,
+    boxShadow: "0px 2px 6px rgba(0,0,0,0.25)",
     gap: 8,
     alignSelf: "center",
     marginBottom: "25%",

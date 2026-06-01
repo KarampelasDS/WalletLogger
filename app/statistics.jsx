@@ -11,16 +11,19 @@ import {
 } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import Title from "../components/Title/Title";
+import InfoTip from "../components/InfoTip/InfoTip";
 import { Store } from "../stores/Store";
 import { fmtAmount } from "../utils/format";
+import PieChart from "../components/PieChart/PieChart";
 
 const months = [
   "Jan","Feb","Mar","Apr","May","Jun",
   "Jul","Aug","Sep","Oct","Nov","Dec",
 ];
 const BAR_COLORS = [
-  "#734BE9","#4EA758","#9ac9e3","#f0a500",
+  "#734BE9","#4EA758","#A78BFA","#f0a500",
   "#e96b9a","#4db8c0","#a07edc","#7ec47e","#dc9e7e","#5cc8e9",
 ];
 const WEEKDAYS  = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
@@ -30,6 +33,23 @@ const TYPE_META = {
   Income:   { color: "#4EA758", icon: "trending-up-outline" },
   Expense:  { color: "#CD5D5D", icon: "trending-down-outline" },
   Transfer: { color: "#734BE9", icon: "swap-horizontal-outline" },
+};
+
+// Explanations shown in the ⓘ tooltips
+const INFO = {
+  savingsRate: "The share of your income you kept this period: (Income − Expenses) ÷ Income. Higher means you saved more.",
+  transactions: "How many transactions (income, expenses and transfers) were recorded in this period and match your active filters.",
+  avgDay: "Average spending per day this month — total expenses divided by the number of days in the month.",
+  avgMonth: "Average spending per month this year — total expenses divided by 12.",
+  netWorth: "Your all-time income minus all-time expenses, summed across every account.",
+  calendar: "A day-by-day view of the month. A coloured dot marks days with activity — green = income only, red = expenses only, amber = both — with that day's net amount.",
+  expenses: "How your spending splits across categories. The donut shows each category's share; the bars list exact amounts and percentages.",
+  income: "How your income splits across categories, by share and exact amount.",
+  monthlyTrend: "Income (green) vs expenses (red) for each month of the selected year, so you can spot trends at a glance.",
+  yearlyTrend: "Income (green) vs expenses (red) for each of the last several years.",
+  transfers: "Money moved between your own accounts. Transfers aren't income or expenses — this shows the total volume moved and the most common routes.",
+  balances: "The current balance of each account, converted to your main currency.",
+  summary: "Income and expenses for this period (in your main currency), and the Net — how much you gained or lost overall.",
 };
 
 // ── SQL helpers ──────────────────────────────────────────────────────────────
@@ -59,6 +79,8 @@ const Statistics = () => {
   const mainCurrency  = Store((s) => s.mainCurrency);
   const currentDate   = Store((s) => s.currentDate);
   const iconSize      = Store((s) => s.iconSize);
+  const setEditingID  = Store((s) => s.setEditingID);
+  const router        = useRouter();
 
   // ── Navigation ───────────────────────────────────────────────────────────────
   const [shownMonth, setShownMonth] = useState(new Date(currentDate).getMonth());
@@ -99,6 +121,8 @@ const Statistics = () => {
   const [expenseCategories, setExpenseCategories] = useState([]);
   const [incomeCategories,  setIncomeCategories]  = useState([]);
   const [calendarData,      setCalendarData]      = useState({});
+  const [monthCount,        setMonthCount]        = useState(0);
+  const [monthBiggest,      setMonthBiggest]      = useState(null);
 
   // ── Year data ────────────────────────────────────────────────────────────────
   const [yearIncome,      setYearIncome]      = useState(0);
@@ -106,6 +130,8 @@ const Statistics = () => {
   const [monthlyTrend,    setMonthlyTrend]    = useState([]);
   const [yearExpenseCats, setYearExpenseCats] = useState([]);
   const [yearIncomeCats,  setYearIncomeCats]  = useState([]);
+  const [yearCount,       setYearCount]       = useState(0);
+  const [yearBiggest,     setYearBiggest]     = useState(null);
 
   // ── All-time data ────────────────────────────────────────────────────────────
   const [allIncome,      setAllIncome]      = useState(0);
@@ -114,6 +140,16 @@ const Statistics = () => {
   const [allIncomeCats,  setAllIncomeCats]   = useState([]);
   const [yearlyTrend,    setYearlyTrend]     = useState([]);
   const [accounts,       setAccounts]        = useState([]);
+  const [allCount,       setAllCount]        = useState(0);
+  const [allBiggest,     setAllBiggest]      = useState(null);
+
+  // ── Transfers (shared across tabs — only one tab renders at a time) ──────────
+  const [transferTotal,  setTransferTotal]  = useState(0);
+  const [transferCount,  setTransferCount]  = useState(0);
+  const [transferRoutes, setTransferRoutes] = useState([]);
+
+  // ── Live search results (actual matching transactions) ──────────────────────
+  const [searchResults, setSearchResults] = useState([]);
 
   const sym = mainCurrency ? mainCurrency.currency_symbol : "";
 
@@ -149,9 +185,29 @@ const Statistics = () => {
     const { catSQL, accSQL } = buildFilters(selectedCategories, selectedAccounts);
     const srchSQL = buildSearchSQL(appliedSearch);
     const types   = selectedTypes;
-    if (activeTab === "month")     fetchMonthStats(catSQL, accSQL, srchSQL, types);
-    else if (activeTab === "year") fetchYearStats(catSQL, accSQL, srchSQL, types);
-    else                           fetchAllTimeStats(catSQL, accSQL, srchSQL, types);
+
+    // Transfers use account_from_id / account_to_id (not account_id) and have no
+    // category, so they need their own account clause and are excluded entirely
+    // when a category filter is active.
+    const transferAccSQL = selectedAccounts.length > 0
+      ? `AND (account_from_id IN (${selectedAccounts.map(Number).join(",")}) OR account_to_id IN (${selectedAccounts.map(Number).join(",")}))`
+      : "";
+    const transferAllowed =
+      selectedTypes.includes("Transfer") && selectedCategories.length === 0;
+
+    // period clause for the active tab (drives both stats and the live results list)
+    let periodSQL = "";
+    if (activeTab === "month") {
+      const m = String(shownMonth + 1).padStart(2, "0");
+      periodSQL = `AND strftime('%Y',transaction_date)='${shownYear}' AND strftime('%m',transaction_date)='${m}'`;
+    } else if (activeTab === "year") {
+      periodSQL = `AND strftime('%Y',transaction_date)='${shownYear}'`;
+    }
+    loadSearchResults(periodSQL, types, srchSQL);
+
+    if (activeTab === "month")     fetchMonthStats(catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL);
+    else if (activeTab === "year") fetchYearStats(catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL);
+    else                           fetchAllTimeStats(catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbInitialized, shownMonth, shownYear, activeTab,
       selectedCategories, selectedAccounts, selectedTypes, appliedSearch]);
@@ -160,16 +216,74 @@ const Statistics = () => {
 
   const amtExpr = "COALESCE(transaction_secondCurrencyAmount, transaction_amount)";
 
-  const fetchMonthStats = async (catSQL, accSQL, srchSQL, types) => {
+  // Live search results — actual matching transactions for the current period + types
+  const loadSearchResults = async (periodSQL, types, srchSQL) => {
+    if (!srchSQL) {
+      setSearchResults([]);
+      return;
+    }
+    const typeSQL = types.length
+      ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
+    try {
+      const rows = await db.getAllAsync(
+        `SELECT transaction_id, transaction_type, transaction_date,
+                ${amtExpr} as amt, transaction_amount, currency_snapshot_symbol,
+                category_emoji_snapshot, category_name_snapshot,
+                account_snapshot_emoji, account_snapshot_name,
+                account_from_snapshot_emoji, account_from_snapshot_name,
+                account_to_snapshot_emoji, account_to_snapshot_name,
+                transaction_note
+         FROM transactions
+         WHERE 1=1 ${periodSQL} ${typeSQL} ${srchSQL}
+         ORDER BY transaction_date DESC LIMIT 50`
+      );
+      setSearchResults(rows);
+    } catch (e) {
+      console.error("loadSearchResults:", e);
+    }
+  };
+
+  // Shared transfer loader — `periodSQL` is the date clause for the active tab ("" = all time)
+  const loadTransfers = async (periodSQL, allowed, transferAccSQL, srchSQL) => {
+    if (!allowed) {
+      setTransferTotal(0);
+      setTransferCount(0);
+      setTransferRoutes([]);
+      return;
+    }
+    try {
+      const where = `WHERE transaction_type='Transfer' ${periodSQL} ${transferAccSQL} ${srchSQL}`;
+      const [agg, routes] = await Promise.all([
+        db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total, COUNT(*) as cnt FROM transactions ${where}`),
+        db.getAllAsync(
+          `SELECT account_from_snapshot_name as fromName, account_from_snapshot_emoji as fromEmoji,
+                  account_to_snapshot_name as toName, account_to_snapshot_emoji as toEmoji,
+                  SUM(${amtExpr}) as total, COUNT(*) as cnt
+           FROM transactions ${where}
+           GROUP BY fromName, toName ORDER BY total DESC LIMIT 8`
+        ),
+      ]);
+      setTransferTotal(agg?.total || 0);
+      setTransferCount(agg?.cnt || 0);
+      setTransferRoutes(routes);
+    } catch (e) {
+      console.error("loadTransfers:", e);
+    }
+  };
+
+  const fetchMonthStats = async (catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL) => {
     setLoading(true);
     try {
       const m  = String(shownMonth + 1).padStart(2, "0");
       const y  = String(shownYear);
       const dw = `AND strftime('%Y',transaction_date)='${y}' AND strftime('%m',transaction_date)='${m}'`;
+      loadTransfers(dw, transferAllowed, transferAccSQL, srchSQL);
       const doInc = types.includes("Income");
       const doExp = types.includes("Expense");
+      const typeSQL = types.length
+        ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
 
-      const [inc, exp, expCats, incCats, calRows] = await Promise.all([
+      const [inc, exp, expCats, incCats, calRows, cnt, biggest] = await Promise.all([
         doInc
           ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${dw} ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
@@ -191,12 +305,18 @@ const Statistics = () => {
            WHERE transaction_type IN ('Income','Expense') ${dw} ${catSQL} ${accSQL} ${srchSQL}
            GROUP BY day ORDER BY day`
         ),
+        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${dw} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
+        doExp
+          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${dw} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
+          : Promise.resolve(null),
       ]);
 
       setTotalIncome(inc?.total || 0);
       setTotalExpense(exp?.total || 0);
       setExpenseCategories(expCats);
       setIncomeCategories(incCats);
+      setMonthCount(cnt?.cnt || 0);
+      setMonthBiggest(biggest || null);
       const map = {};
       calRows.forEach((r) => { map[r.day] = r; });
       setCalendarData(map);
@@ -205,17 +325,18 @@ const Statistics = () => {
     } finally { setLoading(false); }
   };
 
-  const fetchYearStats = async (catSQL, accSQL, srchSQL, types) => {
+  const fetchYearStats = async (catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL) => {
     setLoading(true);
     try {
       const y  = String(shownYear);
       const yw = `AND strftime('%Y',transaction_date)='${y}'`;
+      loadTransfers(yw, transferAllowed, transferAccSQL, srchSQL);
       const doInc = types.includes("Income");
       const doExp = types.includes("Expense");
       const typeSQL = types.length
         ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
 
-      const [inc, exp, trend, expCats, incCats] = await Promise.all([
+      const [inc, exp, trend, expCats, incCats, cnt, biggest] = await Promise.all([
         doInc
           ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${yw} ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
@@ -235,6 +356,10 @@ const Statistics = () => {
         doInc
           ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Income' ${yw} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC LIMIT 10`)
           : Promise.resolve([]),
+        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${yw} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
+        doExp
+          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${yw} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
+          : Promise.resolve(null),
       ]);
 
       setYearIncome(inc?.total || 0);
@@ -242,19 +367,23 @@ const Statistics = () => {
       setMonthlyTrend(trend);
       setYearExpenseCats(expCats);
       setYearIncomeCats(incCats);
+      setYearCount(cnt?.cnt || 0);
+      setYearBiggest(biggest || null);
     } catch (e) {
       console.error("fetchYearStats:", e);
     } finally { setLoading(false); }
   };
 
-  const fetchAllTimeStats = async (catSQL, accSQL, srchSQL, types) => {
+  const fetchAllTimeStats = async (catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL) => {
     setLoading(true);
     try {
       const doInc = types.includes("Income");
       const doExp = types.includes("Expense");
-      const typeSQL = `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})`;
+      const typeSQL = types.length
+        ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
+      loadTransfers("", transferAllowed, transferAccSQL, srchSQL);
 
-      const [inc, exp, expCats, incCats, yt, accs] = await Promise.all([
+      const [inc, exp, expCats, incCats, yt, accs, cnt, biggest] = await Promise.all([
         doInc
           ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
@@ -275,6 +404,10 @@ const Statistics = () => {
            GROUP BY year ORDER BY year DESC LIMIT 7`
         ),
         db.getAllAsync("SELECT * FROM accounts ORDER BY account_order ASC"),
+        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
+        doExp
+          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
+          : Promise.resolve(null),
       ]);
 
       setAllIncome(inc?.total || 0);
@@ -283,6 +416,8 @@ const Statistics = () => {
       setAllIncomeCats(incCats);
       setYearlyTrend(yt.reverse());
       setAccounts(accs);
+      setAllCount(cnt?.cnt || 0);
+      setAllBiggest(biggest || null);
     } catch (e) {
       console.error("fetchAllTimeStats:", e);
     } finally { setLoading(false); }
@@ -383,6 +518,106 @@ const Statistics = () => {
     );
   };
 
+  const renderTransfers = () => {
+    // Hide entirely unless Transfer is selected and there is transfer activity
+    if (!selectedTypes.includes("Transfer") || transferCount === 0) return null;
+    return (
+      <>
+        <SectionTitle title="Transfers" info={INFO.transfers} />
+        <View style={styles.card}>
+          <View style={styles.transferHeader}>
+            <View style={styles.transferStat}>
+              <Text style={[styles.transferStatValue, { color: "#734BE9" }]} numberOfLines={1}>
+                {fmtAmount(transferTotal)}{sym}
+              </Text>
+              <Text style={styles.transferStatLabel}>Volume moved</Text>
+            </View>
+            <View style={styles.summaryDivider} />
+            <View style={styles.transferStat}>
+              <Text style={[styles.transferStatValue, { color: "#fff" }]} numberOfLines={1}>
+                {transferCount}
+              </Text>
+              <Text style={styles.transferStatLabel}>Transfers</Text>
+            </View>
+          </View>
+          <View style={{ marginTop: 6 }}>
+            {transferRoutes.map((r, i) => (
+              <View
+                key={i}
+                style={[styles.transferRow, i < transferRoutes.length - 1 && styles.accountRowBorder]}
+              >
+                <Text style={styles.transferRoute} numberOfLines={1}>
+                  {r.fromEmoji || ""} {r.fromName || "?"}
+                  {"  →  "}
+                  {r.toEmoji || ""} {r.toName || "?"}
+                  {r.cnt > 1 ? `   ×${r.cnt}` : ""}
+                </Text>
+                <Text style={styles.transferAmt} numberOfLines={1}>
+                  {fmtAmount(r.total)}{sym}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </>
+    );
+  };
+
+  const renderSearchResults = () => {
+    const scope =
+      activeTab === "month" ? `${months[shownMonth]} ${shownYear}`
+      : activeTab === "year" ? shownYear
+      : "all time";
+    return (
+      <>
+        <Text style={styles.sectionTitle}>
+          Results · {searchResults.length}{searchResults.length === 50 ? "+" : ""}
+        </Text>
+        <View style={styles.card}>
+          {searchResults.length === 0 ? (
+            <Text style={styles.emptyText}>
+              No transactions match "{appliedSearch}" in {scope}
+            </Text>
+          ) : (
+            searchResults.map((t, i) => {
+              const isTransfer = t.transaction_type === "Transfer";
+              const color =
+                t.transaction_type === "Income" ? "#4EA758"
+                : t.transaction_type === "Expense" ? "#CD5D5D"
+                : "#734BE9";
+              const left = isTransfer
+                ? `${t.account_from_snapshot_emoji || ""} ${t.account_from_snapshot_name || "?"}  →  ${t.account_to_snapshot_emoji || ""} ${t.account_to_snapshot_name || "?"}`
+                : `${t.category_emoji_snapshot || ""} ${t.category_name_snapshot || "Uncategorized"}`;
+              const dateStr = new Date(t.transaction_date).toLocaleDateString("en-GB", {
+                day: "2-digit", month: "short",
+              });
+              const sub = [
+                dateStr,
+                !isTransfer && t.account_snapshot_name ? t.account_snapshot_name : null,
+                t.transaction_note || null,
+              ].filter(Boolean).join("  ·  ");
+              return (
+                <TouchableOpacity
+                  key={t.transaction_id}
+                  style={[styles.resultRow, i < searchResults.length - 1 && styles.accountRowBorder]}
+                  onPress={() => { setEditingID(t.transaction_id); router.push("/editTransaction"); }}
+                >
+                  <View style={{ flex: 1, marginRight: 8 }}>
+                    <Text style={styles.resultTitle} numberOfLines={1}>{left}</Text>
+                    <Text style={styles.resultSub} numberOfLines={1}>{sub}</Text>
+                  </View>
+                  <Text style={[styles.resultAmt, { color }]} numberOfLines={1}>
+                    {fmtAmount(isTransfer ? t.transaction_amount : t.amt)}{sym}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })
+          )}
+        </View>
+      </>
+    );
+  };
+
   const renderBars = (cats, total, emptyMsg) => {
     if (!cats.length)
       return <Text style={styles.emptyText}>{emptyMsg || "No data"}</Text>;
@@ -407,6 +642,89 @@ const Statistics = () => {
       );
     });
   };
+
+  // ── Donut chart with centre total + legend ──────────────────────────────────
+  const renderDonut = (cats, total, centerLabel, emptyMsg) => {
+    if (!cats.length || total <= 0)
+      return <Text style={styles.emptyText}>{emptyMsg || "No data"}</Text>;
+
+    const slices = cats.map((c, i) => ({
+      value: c.total,
+      color: BAR_COLORS[i % BAR_COLORS.length],
+      label: c.category_name_snapshot || "Unknown",
+      emoji: c.category_emoji_snapshot || "",
+    }));
+
+    return (
+      <View style={styles.donutWrap}>
+        <PieChart data={slices} size={150} holeRatio={0.62} holeColor="#2C2E42">
+          <Text style={styles.donutCenterLabel}>{centerLabel}</Text>
+          <Text style={styles.donutCenterValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
+            {fmtAmount(total)}{sym}
+          </Text>
+        </PieChart>
+
+        <View style={styles.donutLegend}>
+          {slices.map((s, i) => {
+            const pct = total > 0 ? (s.value / total) * 100 : 0;
+            return (
+              <View key={i} style={styles.donutLegendRow}>
+                <View style={[styles.donutLegendDot, { backgroundColor: s.color }]} />
+                <Text style={styles.donutLegendLabel} numberOfLines={1}>
+                  {s.emoji} {s.label}
+                </Text>
+                <Text style={styles.donutLegendPct}>{pct.toFixed(0)}%</Text>
+              </View>
+            );
+          })}
+        </View>
+      </View>
+    );
+  };
+
+  // ── KPI / insight cards row ──────────────────────────────────────────────────
+  const renderKpiRow = (items) => (
+    <View style={styles.kpiRow}>
+      {items.map((it, i) => {
+        const card = (
+          <>
+            <Ionicons name={it.icon} size={18} color={it.color} />
+            <Text style={[styles.kpiValue, { color: it.color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>
+              {it.value}
+            </Text>
+            <Text style={styles.kpiLabel} numberOfLines={1}>{it.label}</Text>
+          </>
+        );
+        return it.info ? (
+          <InfoTip key={i} title={it.label} text={it.info} style={styles.kpiCard} layout="corner" badgeSize={15}>
+            {card}
+          </InfoTip>
+        ) : (
+          <View key={i} style={styles.kpiCard}>{card}</View>
+        );
+      })}
+    </View>
+  );
+
+  // Section title — the whole row is tappable when it carries a tooltip
+  const SectionTitle = ({ title, info }) =>
+    info ? (
+      <InfoTip title={title} text={info} style={styles.sectionTitleRow} layout="inline">
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
+      </InfoTip>
+    ) : (
+      <View style={styles.sectionTitleRow}>
+        <Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
+      </View>
+    );
+
+  // savings rate %, biggest expense label, avg helper
+  const savingsRate = (income, expense) => {
+    if (income <= 0) return expense > 0 ? "—" : "0%";
+    return `${Math.round(((income - expense) / income) * 100)}%`;
+  };
+  const biggestLabel = (b) =>
+    b ? `${b.category_emoji_snapshot || ""} ${fmtAmount(b.amt)}${sym}` : "—";
 
   const BAR_H = 80;
 
@@ -535,67 +853,132 @@ const Statistics = () => {
 
   // ─── Tab content ──────────────────────────────────────────────────────────────
 
-  const renderMonthTab = () => (
-    <>
-      {renderSummaryCard(totalIncome, totalExpense)}
-      <Text style={styles.sectionTitle}>Calendar</Text>
-      {renderCalendar()}
-      {selectedTypes.includes("Expense") && (
-        <>
-          <Text style={styles.sectionTitle}>Expenses by Category</Text>
-          <View style={styles.card}>{renderBars(expenseCategories, totalExpense, "No expenses this month")}</View>
-        </>
-      )}
-      {selectedTypes.includes("Income") && (
-        <>
-          <Text style={styles.sectionTitle}>Income by Category</Text>
-          <View style={styles.card}>{renderBars(incomeCategories, totalIncome, "No income this month")}</View>
-        </>
-      )}
-    </>
-  );
+  const renderMonthTab = () => {
+    const daysInMonth = new Date(shownYear, shownMonth + 1, 0).getDate();
+    return (
+      <>
+        {renderSummaryCard(totalIncome, totalExpense)}
+        {renderKpiRow([
+          { label: "Savings Rate", value: savingsRate(totalIncome, totalExpense), color: "#4EA758", icon: "wallet-outline", info: INFO.savingsRate },
+          { label: "Transactions", value: String(monthCount), color: "#A78BFA", icon: "receipt-outline", info: INFO.transactions },
+          { label: "Avg / Day", value: `${fmtAmount(totalExpense / daysInMonth)}${sym}`, color: "#f0a500", icon: "calendar-outline", info: INFO.avgDay },
+        ])}
+        {monthBiggest && (
+          <View style={styles.highlightCard}>
+            <Ionicons name="flame-outline" size={20} color="#CD5D5D" />
+            <Text style={styles.highlightText}>
+              Biggest expense: <Text style={styles.highlightStrong}>{biggestLabel(monthBiggest)}</Text>
+              {monthBiggest.category_name_snapshot ? ` · ${monthBiggest.category_name_snapshot}` : ""}
+            </Text>
+          </View>
+        )}
+        <SectionTitle title="Calendar" info={INFO.calendar} />
+        {renderCalendar()}
+        {selectedTypes.includes("Expense") && (
+          <>
+            <SectionTitle title="Expense Breakdown" info={INFO.expenses} />
+            <View style={styles.card}>{renderDonut(expenseCategories, totalExpense, "Spent", "No expenses this month")}</View>
+            {expenseCategories.length > 0 && (
+              <View style={styles.card}>{renderBars(expenseCategories, totalExpense, "No expenses this month")}</View>
+            )}
+          </>
+        )}
+        {selectedTypes.includes("Income") && (
+          <>
+            <SectionTitle title="Income Breakdown" info={INFO.income} />
+            <View style={styles.card}>{renderDonut(incomeCategories, totalIncome, "Earned", "No income this month")}</View>
+            {incomeCategories.length > 0 && (
+              <View style={styles.card}>{renderBars(incomeCategories, totalIncome, "No income this month")}</View>
+            )}
+          </>
+        )}
+        {renderTransfers()}
+      </>
+    );
+  };
 
   const renderYearTab = () => (
     <>
       {renderSummaryCard(yearIncome, yearExpense)}
-      <Text style={styles.sectionTitle}>Monthly Trend</Text>
+      {renderKpiRow([
+        { label: "Savings Rate", value: savingsRate(yearIncome, yearExpense), color: "#4EA758", icon: "wallet-outline", info: INFO.savingsRate },
+        { label: "Transactions", value: String(yearCount), color: "#A78BFA", icon: "receipt-outline", info: INFO.transactions },
+        { label: "Avg / Month", value: `${fmtAmount(yearExpense / 12)}${sym}`, color: "#f0a500", icon: "calendar-outline", info: INFO.avgMonth },
+      ])}
+      {yearBiggest && (
+        <View style={styles.highlightCard}>
+          <Ionicons name="flame-outline" size={20} color="#CD5D5D" />
+          <Text style={styles.highlightText}>
+            Biggest expense: <Text style={styles.highlightStrong}>{biggestLabel(yearBiggest)}</Text>
+            {yearBiggest.category_name_snapshot ? ` · ${yearBiggest.category_name_snapshot}` : ""}
+          </Text>
+        </View>
+      )}
+      <SectionTitle title="Monthly Trend" info={INFO.monthlyTrend} />
       <View style={styles.card}>{renderMonthlyTrend()}{trendLegend}</View>
       {selectedTypes.includes("Expense") && (
         <>
-          <Text style={styles.sectionTitle}>Expenses by Category</Text>
-          <View style={styles.card}>{renderBars(yearExpenseCats, yearExpense, "No expenses this year")}</View>
+          <SectionTitle title="Expense Breakdown" info={INFO.expenses} />
+          <View style={styles.card}>{renderDonut(yearExpenseCats, yearExpense, "Spent", "No expenses this year")}</View>
+          {yearExpenseCats.length > 0 && (
+            <View style={styles.card}>{renderBars(yearExpenseCats, yearExpense, "No expenses this year")}</View>
+          )}
         </>
       )}
       {selectedTypes.includes("Income") && (
         <>
-          <Text style={styles.sectionTitle}>Income by Category</Text>
-          <View style={styles.card}>{renderBars(yearIncomeCats, yearIncome, "No income this year")}</View>
+          <SectionTitle title="Income Breakdown" info={INFO.income} />
+          <View style={styles.card}>{renderDonut(yearIncomeCats, yearIncome, "Earned", "No income this year")}</View>
+          {yearIncomeCats.length > 0 && (
+            <View style={styles.card}>{renderBars(yearIncomeCats, yearIncome, "No income this year")}</View>
+          )}
         </>
       )}
+      {renderTransfers()}
     </>
   );
 
   const renderAllTimeTab = () => (
     <>
       {renderSummaryCard(allIncome, allExpense)}
-      <Text style={styles.sectionTitle}>Yearly Trend</Text>
+      {renderKpiRow([
+        { label: "Savings Rate", value: savingsRate(allIncome, allExpense), color: "#4EA758", icon: "wallet-outline", info: INFO.savingsRate },
+        { label: "Transactions", value: String(allCount), color: "#A78BFA", icon: "receipt-outline", info: INFO.transactions },
+        { label: "Net Worth", value: `${fmtAmount(allIncome - allExpense)}${sym}`, color: (allIncome - allExpense) >= 0 ? "#4EA758" : "#CD5D5D", icon: "trending-up-outline", info: INFO.netWorth },
+      ])}
+      {allBiggest && (
+        <View style={styles.highlightCard}>
+          <Ionicons name="flame-outline" size={20} color="#CD5D5D" />
+          <Text style={styles.highlightText}>
+            Biggest expense ever: <Text style={styles.highlightStrong}>{biggestLabel(allBiggest)}</Text>
+            {allBiggest.category_name_snapshot ? ` · ${allBiggest.category_name_snapshot}` : ""}
+          </Text>
+        </View>
+      )}
+      <SectionTitle title="Yearly Trend" info={INFO.yearlyTrend} />
       <View style={styles.card}>
         {renderYearlyTrend()}
         {yearlyTrend.length > 0 && trendLegend}
       </View>
       {selectedTypes.includes("Expense") && (
         <>
-          <Text style={styles.sectionTitle}>Top Expenses (All Time)</Text>
-          <View style={styles.card}>{renderBars(allExpenseCats, allExpense, "No expense data")}</View>
+          <SectionTitle title="Top Expenses (All Time)" info={INFO.expenses} />
+          <View style={styles.card}>{renderDonut(allExpenseCats, allExpense, "Spent", "No expense data")}</View>
+          {allExpenseCats.length > 0 && (
+            <View style={styles.card}>{renderBars(allExpenseCats, allExpense, "No expense data")}</View>
+          )}
         </>
       )}
       {selectedTypes.includes("Income") && (
         <>
-          <Text style={styles.sectionTitle}>Top Income (All Time)</Text>
-          <View style={styles.card}>{renderBars(allIncomeCats, allIncome, "No income data")}</View>
+          <SectionTitle title="Top Income (All Time)" info={INFO.income} />
+          <View style={styles.card}>{renderDonut(allIncomeCats, allIncome, "Earned", "No income data")}</View>
+          {allIncomeCats.length > 0 && (
+            <View style={styles.card}>{renderBars(allIncomeCats, allIncome, "No income data")}</View>
+          )}
         </>
       )}
-      <Text style={styles.sectionTitle}>Account Balances</Text>
+      <SectionTitle title="Account Balances" info={INFO.balances} />
       <View style={styles.card}>
         {accounts.length === 0 ? (
           <Text style={styles.emptyText}>No accounts</Text>
@@ -618,6 +1001,7 @@ const Statistics = () => {
           ))
         )}
       </View>
+      {renderTransfers()}
     </>
   );
 
@@ -900,14 +1284,14 @@ const Statistics = () => {
             if (!acc) return null;
             return (
               <View key={id} style={[styles.activePill, { borderColor: "#734BE980" }]}>
-                <Text style={[styles.activePillText, { color: "#9ac9e3" }]}>
+                <Text style={[styles.activePillText, { color: "#A78BFA" }]}>
                   {acc.account_emoji || ""} {acc.account_name}
                 </Text>
                 <TouchableOpacity
                   onPress={() => setSelectedAccounts((prev) => prev.filter((a) => a !== id))}
                   hitSlop={{ top: 8, bottom: 8, left: 4, right: 8 }}
                 >
-                  <Ionicons name="close" size={12} color="#9ac9e3" style={{ marginLeft: 4 }} />
+                  <Ionicons name="close" size={12} color="#A78BFA" style={{ marginLeft: 4 }} />
                 </TouchableOpacity>
               </View>
             );
@@ -939,6 +1323,7 @@ const Statistics = () => {
           style={{ width: "100%" }}
           contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16 }}
         >
+          {appliedSearch.trim().length > 0 && renderSearchResults()}
           {activeTab === "month"   && renderMonthTab()}
           {activeTab === "year"    && renderYearTab()}
           {activeTab === "alltime" && renderAllTimeTab()}
@@ -1003,6 +1388,28 @@ const styles = StyleSheet.create({
   sectionTitle: { color: "#fff", fontSize: 17, fontWeight: "700", marginBottom: 8 },
   card:         { backgroundColor: "#2C2E42", borderRadius: 14, padding: 14, marginBottom: 18 },
 
+  // ── KPI cards ───────────────────────────────────────────────────────────────
+  kpiRow:    { flexDirection: "row", gap: 10, marginBottom: 12 },
+  kpiCard:   { flex: 1, backgroundColor: "#2C2E42", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center", gap: 4 },
+  kpiValue:  { fontSize: 16, fontWeight: "bold", width: "100%", textAlign: "center" },
+  kpiLabel:  { color: "#888", fontSize: 11, textAlign: "center" },
+  kpiInfo:   { position: "absolute", top: 6, right: 6 },
+
+  // ── Highlight (biggest expense) card ──────────────────────────────────────────
+  highlightCard:   { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#2C2E42", borderRadius: 14, padding: 14, marginBottom: 18, borderLeftWidth: 3, borderLeftColor: "#CD5D5D" },
+  highlightText:   { color: "#ccc", fontSize: 13, flex: 1 },
+  highlightStrong: { color: "#fff", fontWeight: "700" },
+
+  // ── Donut chart ───────────────────────────────────────────────────────────────
+  donutWrap:        { flexDirection: "row", alignItems: "center", gap: 14 },
+  donutCenterLabel: { color: "#888", fontSize: 11 },
+  donutCenterValue: { color: "#fff", fontSize: 15, fontWeight: "bold", paddingHorizontal: 6 },
+  donutLegend:      { flex: 1, gap: 7 },
+  donutLegendRow:   { flexDirection: "row", alignItems: "center", gap: 7 },
+  donutLegendDot:   { width: 10, height: 10, borderRadius: 5 },
+  donutLegendLabel: { color: "#ddd", fontSize: 13, flex: 1 },
+  donutLegendPct:   { color: "#888", fontSize: 12, fontWeight: "600" },
+
   // ── Bar charts ────────────────────────────────────────────────────────────────
   barRow:     { marginBottom: 14 },
   barLabelRow:{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5, alignItems: "center" },
@@ -1037,6 +1444,24 @@ const styles = StyleSheet.create({
   accountRowBorder: { borderBottomColor: "#d9d9d920", borderBottomWidth: 1 },
   accountName:      { color: "#fff", fontSize: 15, flex: 1 },
   accountBalance:   { fontSize: 15, fontWeight: "bold", marginLeft: 8 },
+
+  // ── Transfers ─────────────────────────────────────────────────────────────────
+  transferHeader:     { flexDirection: "row", alignItems: "center", paddingBottom: 6 },
+  transferStat:       { flex: 1, alignItems: "center" },
+  transferStatValue:  { fontSize: 18, fontWeight: "bold" },
+  transferStatLabel:  { color: "#888", fontSize: 12, marginTop: 2 },
+  transferRow:        { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 9 },
+  transferRoute:      { color: "#ddd", fontSize: 13, flex: 1, marginRight: 8 },
+  transferAmt:        { color: "#734BE9", fontSize: 14, fontWeight: "600" },
+
+  // ── Search results ──────────────────────────────────────────────────────────
+  resultRow:    { flexDirection: "row", alignItems: "center", paddingVertical: 10 },
+  resultTitle:  { color: "#fff", fontSize: 14, fontWeight: "500" },
+  resultSub:    { color: "#888", fontSize: 12, marginTop: 2 },
+  resultAmt:    { fontSize: 14, fontWeight: "700" },
+
+  // ── Section title with info ─────────────────────────────────────────────────
+  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 8 },
 
   // ── Filter modal ──────────────────────────────────────────────────────────────
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
@@ -1073,6 +1498,6 @@ const styles = StyleSheet.create({
 
   // Apply button
   filterApply:         { backgroundColor: "#734BE9", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 12 },
-  filterApplyDisabled: { backgroundColor: "#2C2E42" },
+  filterApplyDisabled: { backgroundColor: "#3A3556" },
   filterApplyText:     { color: "#fff", fontSize: 17, fontWeight: "700" },
 });

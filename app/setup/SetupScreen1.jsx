@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator } from "react-native";
-import { Store } from "../../stores/Store";
 import { Ionicons } from "@expo/vector-icons";
+import { Store } from "../../stores/Store";
 import Button from "../../components/Button/Button";
 import { useRouter } from "expo-router";
 
 export default function SetupScreen1() {
   const router = useRouter();
   const setShowNavbar = Store((state) => state.setShowNavbar);
-  const iconSize = Store((state) => state.iconSize);
   const initDB = Store((state) => state.initDB);
   const dbInitialized = Store((state) => state.dbInitialized);
 
@@ -29,12 +28,9 @@ export default function SetupScreen1() {
 
   return (
     <View style={styles.container}>
-      <Ionicons
-        style={styles.intro}
-        name="wallet-outline"
-        size={iconSize + 150}
-        color="#fff"
-      />
+      <View style={styles.logoTile}>
+        <Ionicons name="wallet" size={116} color="#fff" />
+      </View>
       <Text style={styles.introText}>Welcome to Wallet Logger</Text>
       <Text style={styles.introSubText}>Your all-in-one expense manager!</Text>
 
@@ -62,10 +58,13 @@ export default function SetupScreen1() {
 
 const styles = StyleSheet.create({
   container: { alignItems: "center", justifyContent: "center", flex: 1 },
-  intro: {
-    backgroundColor: "#2C2E42",
-    padding: 20,
-    borderRadius: 20,
+  logoTile: {
+    width: 168,
+    height: 168,
+    borderRadius: 42,
+    backgroundColor: "#734BE9",
+    alignItems: "center",
+    justifyContent: "center",
     marginTop: "-40%",
   },
   introText: {

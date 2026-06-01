@@ -36,6 +36,10 @@ yarn-error.*
 # typescript
 *.tsbuildinfo
 
+# build artifacts (publish these as GitHub Release assets, not in the repo)
+*.apk
+*.aab
+
 # generated native folders
 /ios
 /android

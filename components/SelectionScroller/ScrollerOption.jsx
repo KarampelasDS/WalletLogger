@@ -6,7 +6,7 @@ export default function ScrollerOption(props) {
       onPress={props.function}
       style={[
         styles.option,
-        props.active ? { backgroundColor: "#3193c0ff" } : null,
+        props.active ? styles.optionActive : null,
       ]}
     >
       <Text style={[styles.optionText]}>{props.children}</Text>
@@ -28,6 +28,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.18,
     shadowRadius: 2,
     elevation: 2,
+  },
+  optionActive: {
+    backgroundColor: "#734BE9",
+    shadowColor: "#734BE9",
+    shadowOpacity: 0.45,
+    shadowRadius: 6,
   },
   optionText: {
     color: "#fff",

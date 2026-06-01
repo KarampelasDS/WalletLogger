@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import Title from "../components/Title/Title";
 import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Store } from "../stores/Store";
 import KeyboardComponent from "../components/Keyboard/Keyboard";
@@ -58,6 +58,7 @@ const EditTransaction = () => {
   const [showAmountKeyboard, setShowAmountKeyboard] = useState(false);
 
   const openKeyboard = () => {
+    closeSheets();
     setShowAmountKeyboard(true);
     setShowNavbar(false);
     setFocusedInput("Amount");
@@ -134,7 +135,12 @@ const EditTransaction = () => {
     LoadCategories();
   }, [db]);
 
+  // Only react to USER-initiated type changes, not the programmatic one that
+  // happens while loading an existing transaction into the edit screen.
+  const userChangedType = useRef(false);
+
   useEffect(() => {
+    if (!userChangedType.current) return;
     setTransactionCategory({ name: "", id: 0, emoji: "" });
     if (transactionType === "Transfer" && exchangedTransaction) {
       setTransactionCurrency({
@@ -152,6 +158,7 @@ const EditTransaction = () => {
   }, [transactionType]);
 
   const openCategoryPicker = () => {
+    closeSheets();
     setShowCategoryPicker(true);
     setShowNavbar(false);
     setFocusedInput("Category");
@@ -198,7 +205,27 @@ const EditTransaction = () => {
     LoadAccounts();
   }, [db]);
 
+  // Close every custom sheet — used so tapping a different field switches in one tap
+  const closeSheets = () => {
+    setShowAmountKeyboard(false);
+    setShowCategoryPicker(false);
+    setShowAccountPicker(false);
+    setShowAccountFromPicker(false);
+    setShowAccountToPicker(false);
+    setShowDatePickerMode(false);
+    setShowNavbar(true);
+    setFocusedInput(null);
+  };
+
+  const anySheetOpen =
+    showAmountKeyboard ||
+    showCategoryPicker ||
+    showAccountPicker ||
+    showAccountFromPicker ||
+    showAccountToPicker;
+
   const openAccountPicker = () => {
+    closeSheets();
     setShowAccountPicker(true);
     setShowNavbar(false);
     setFocusedInput("Account");
@@ -209,6 +236,7 @@ const EditTransaction = () => {
     setFocusedInput(null);
   };
   const openAccountFromPicker = () => {
+    closeSheets();
     setShowAccountFromPicker(true);
     setShowNavbar(false);
     setFocusedInput("From");
@@ -219,6 +247,7 @@ const EditTransaction = () => {
     setFocusedInput(null);
   };
   const openAccountToPicker = () => {
+    closeSheets();
     setShowAccountToPicker(true);
     setShowNavbar(false);
     setFocusedInput("To");
@@ -602,7 +631,10 @@ const EditTransaction = () => {
           {["Income", "Expense", "Transfer"].map((type) => (
             <TouchableOpacity
               key={type}
-              onPress={() => setTransactionType(type)}
+              onPress={() => {
+                userChangedType.current = true;
+                setTransactionType(type);
+              }}
             >
               <Text
                 style={[
@@ -634,9 +666,10 @@ const EditTransaction = () => {
             >
               <Text
                 onPress={() => {
-                  showDatepicker();
-                  closeKeyboard();
+                  closeSheets();
+                  setShowNavbar(true);
                   setFocusedInput("Date");
+                  showDatepicker();
                 }}
               >
                 {"("}
@@ -648,9 +681,10 @@ const EditTransaction = () => {
                   if (focusedInput == "Note") {
                     Keyboard.dismiss();
                   }
-                  showDatepicker();
-                  closeKeyboard();
+                  closeSheets();
+                  setShowNavbar(true);
                   setFocusedInput("Date");
+                  showDatepicker();
                 }}
               >
                 {transactionDate.toLocaleString("en-GB", {
@@ -661,10 +695,13 @@ const EditTransaction = () => {
               </Text>
               <Text
                 onPress={() => {
-                  showTimepicker();
-                  closeKeyboard();
+                  if (focusedInput == "Note") {
+                    Keyboard.dismiss();
+                  }
+                  closeSheets();
                   setShowNavbar(true);
                   setFocusedInput("Date");
+                  showTimepicker();
                 }}
               >
                 {transactionDate.toLocaleString("en-GB", {
@@ -725,7 +762,7 @@ const EditTransaction = () => {
                 <View style={{ marginTop: 14 }}>
                   <Text
                     style={{
-                      color: "#9ac9e3",
+                      color: "#A78BFA",
                       fontWeight: "bold",
                       fontSize: 16,
                     }}
@@ -767,14 +804,14 @@ const EditTransaction = () => {
                     >
                       <Text
                         style={{
-                          color: "#9ac9e3",
+                          color: "#A78BFA",
                           fontWeight: "600",
                           marginRight: 4,
                         }}
                       >
                         Refresh
                       </Text>
-                      <Ionicons name="refresh" size={18} color="#9ac9e3" />
+                      <Ionicons name="refresh" size={18} color="#A78BFA" />
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={{
@@ -789,14 +826,14 @@ const EditTransaction = () => {
                     >
                       <Text
                         style={{
-                          color: "#9ac9e3",
+                          color: "#A78BFA",
                           fontWeight: "600",
                           marginRight: 4,
                         }}
                       >
                         Edit
                       </Text>
-                      <Ionicons name="pencil" size={18} color="#9ac9e3" />
+                      <Ionicons name="pencil" size={18} color="#A78BFA" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -904,7 +941,10 @@ const EditTransaction = () => {
           <View style={styles.TransactionDetailsRow}>
             <Text style={styles.TransactionDetailName}>Note</Text>
             <TextInput
-              onFocus={() => setFocusedInput("Note")}
+              onFocus={() => {
+                closeSheets();
+                setFocusedInput("Note");
+              }}
               value={transactionNote}
               onChangeText={setTransactionNote}
               style={[
@@ -916,6 +956,16 @@ const EditTransaction = () => {
             />
           </View>
         </View>
+
+        {/* Backdrop — closes any open sheet on outside tap (sits below the input
+            card so fields stay tappable) */}
+        {anySheetOpen && (
+          <TouchableOpacity
+            style={styles.backdrop}
+            activeOpacity={1}
+            onPress={closeSheets}
+          />
+        )}
 
         {/* Custom Keyboards / Pickers */}
         {showAmountKeyboard && (
@@ -1049,8 +1099,7 @@ const EditTransaction = () => {
                   text2: "Could not delete transaction.",
                 });
               }}
-              backgroundColor={"#CD5D5D"}
-              disabledColor={"#33343fff"}
+              variant="danger"
               enabled={!!editingID}
             >
               Delete
@@ -1092,6 +1141,8 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 20,
     padding: 20,
+    // sits above the close backdrop (so fields stay tappable) but below the sheet
+    zIndex: 1001,
   },
   TransactionDetailsRow: {
     flexDirection: "row",
@@ -1113,5 +1164,13 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: "left",
     paddingVertical: 2,
+  },
+  backdrop: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 1000,
   },
 });

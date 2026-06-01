@@ -194,7 +194,7 @@ const styles = StyleSheet.create({
   },
   currencyRow: { flexDirection: "row", alignItems: "center", gap: 10 },
   optionSymbol: {
-    color: "#9ac9e3",
+    color: "#A78BFA",
     fontSize: 22,
     fontWeight: "600",
     width: "auto",

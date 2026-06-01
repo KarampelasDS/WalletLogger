@@ -59,17 +59,17 @@ export default function EditCurrencyModal({
       <View style={styles.bg}>
         <View style={styles.modal}>
           {!currency ? (
-            <ActivityIndicator size="large" color="#9ac9e3" />
+            <ActivityIndicator size="large" color="#A78BFA" />
           ) : (
             <>
               <Text style={styles.title}>Edit Exchange Rate</Text>
               <Text style={styles.label}>
                 1.00{" "}
-                <Text style={{ color: "#9ac9e3" }}>
+                <Text style={{ color: "#A78BFA" }}>
                   {currency.currency_symbol}
                 </Text>{" "}
                 =
-                <Text style={{ color: "#9ac9e3", fontWeight: "bold" }}>
+                <Text style={{ color: "#A78BFA", fontWeight: "bold" }}>
                   {" "}
                   {mainCurrencySymbol}
                 </Text>{" "}
@@ -91,9 +91,9 @@ export default function EditCurrencyModal({
                   disabled={loading}
                 >
                   {loading ? (
-                    <ActivityIndicator color="#9ac9e3" />
+                    <ActivityIndicator color="#A78BFA" />
                   ) : (
-                    <Ionicons name="reload-outline" size={28} color="#9ac9e3" />
+                    <Ionicons name="reload-outline" size={28} color="#A78BFA" />
                   )}
                 </TouchableOpacity>
               </View>
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   saveButton: {
-    backgroundColor: "#9ac9e3",
+    backgroundColor: "#734BE9",
     borderRadius: 8,
     paddingVertical: 12,
     width: "90%",
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   saveText: {
-    color: "#121325",
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 21,
   },

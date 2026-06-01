@@ -133,13 +133,13 @@ export default function InputModal(props) {
           header: "#1A1B25",
           category: {
             icon: "#fff",
-            iconActive: "#9ac9e3",
+            iconActive: "#A78BFA",
             container: "#1A1B25",
           },
           search: {
             text: "#fff",
             placeholder: "#aaa",
-            icon: "#9ac9e3",
+            icon: "#A78BFA",
           },
         }}
       />
@@ -216,7 +216,7 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   saveButton: {
-    backgroundColor: "#9ac9e3",
+    backgroundColor: "#734BE9",
     borderRadius: 10,
     width: "90%",
     paddingVertical: 14,
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   saveButtonText: {
-    color: "#121325",
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 22,
     letterSpacing: 1,
