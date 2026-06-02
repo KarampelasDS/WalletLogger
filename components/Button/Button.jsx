@@ -36,7 +36,7 @@ const styles = StyleSheet.create({
   container: {
     paddingVertical: 13,
     paddingHorizontal: 80,
-    borderRadius: 14,
+    borderRadius: 6,
     // boxShadow follows borderRadius (square shadow* / elevation does not)
     boxShadow: "0px 3px 8px rgba(0,0,0,0.28)",
   },

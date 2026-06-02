@@ -1,14 +1,17 @@
-import {
-  StyleSheet,
-  Text,
-  View,
-  Dimensions,
-  TouchableOpacity,
-} from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
 import { Store } from "../stores/Store";
-const { width, height } = Dimensions.get("window");
+
+const ITEMS = [
+  { label: "History", icon: "book", path: "/" },
+  { label: "Statistics", icon: "pie-chart", path: "/statistics" },
+  { label: "Accounts", icon: "layers", path: "/accounts" },
+  { label: "Settings", icon: "cog", path: "/settings" },
+];
+
+const ACTIVE = "#A78BFA";
+const INACTIVE = "#8E8FA3";
 
 export default function NavBar() {
   const router = useRouter();
@@ -17,34 +20,29 @@ export default function NavBar() {
 
   return (
     <View style={styles.NavBar}>
-      <TouchableOpacity
-        style={styles.NavBarItem}
-        onPress={() => (pathName == "/" ? "" : router.push("/"))}
-      >
-        <Ionicons name="book" size={iconSize} color="#fff" />
-        <Text style={{ color: "#fff" }}>History</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.NavBarItem}
-        onPress={() => router.push("/statistics")}
-      >
-        <Ionicons name="pie-chart" size={iconSize} color="#fff" />
-        <Text style={{ color: "#fff" }}>Statistics</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.NavBarItem}
-        onPress={() => router.push("/accounts")}
-      >
-        <Ionicons name="layers" size={iconSize} color="#fff" />
-        <Text style={{ color: "#fff" }}>Accounts</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={styles.NavBarItem}
-        onPress={() => router.push("/settings")}
-      >
-        <Ionicons name="cog" size={iconSize} color="#fff" />
-        <Text style={{ color: "#fff" }}>Settings</Text>
-      </TouchableOpacity>
+      {ITEMS.map((item) => {
+        const active =
+          item.path === "/"
+            ? pathName === "/"
+            : pathName.startsWith(item.path);
+        const color = active ? ACTIVE : INACTIVE;
+        return (
+          <TouchableOpacity
+            key={item.path}
+            style={styles.NavBarItem}
+            onPress={() => (pathName === item.path ? null : router.push(item.path))}
+          >
+            <View style={[styles.indicator, active && styles.indicatorActive]} />
+            <Ionicons name={item.icon} size={iconSize} color={color} />
+            <Text
+              numberOfLines={1}
+              style={[styles.label, { color }, active && styles.labelActive]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        );
+      })}
     </View>
   );
 }
@@ -53,21 +51,40 @@ const styles = StyleSheet.create({
   NavBar: {
     backgroundColor: "#2C2E42",
     position: "absolute",
-    bottom: "0",
+    bottom: 0,
     paddingBottom: "2%",
-    flex: 1,
+    paddingTop: "1%",
     flexDirection: "row",
     width: "100%",
-    justifyContent: "center",
     height: "10%",
     alignItems: "center",
-    paddingRight: "10%",
-    paddingLeft: "10%",
-    gap: "15%",
+    paddingHorizontal: 8,
     borderTopWidth: 2,
     borderTopColor: "#fff",
   },
   NavBarItem: {
+    flex: 1,
     alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    marginHorizontal: 4,
+    paddingVertical: 6,
+  },
+  indicator: {
+    position: "absolute",
+    top: -7,
+    height: 3,
+    width: "55%",
+    borderRadius: 2,
+    backgroundColor: "transparent",
+  },
+  indicatorActive: {
+    backgroundColor: "#A78BFA",
+  },
+  label: {
+    fontSize: 12,
+  },
+  labelActive: {
+    fontWeight: "bold",
   },
 });

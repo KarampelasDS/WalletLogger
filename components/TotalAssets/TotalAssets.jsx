@@ -48,7 +48,7 @@ const styles = StyleSheet.create({
   },
   amountText: {
     backgroundColor: "#2C2E42",
-    borderRadius: 4,
+    borderRadius: 3,
     fontWeight: "bold",
     textAlign: "center",
     fontSize: 16,

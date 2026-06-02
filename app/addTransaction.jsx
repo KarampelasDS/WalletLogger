@@ -472,25 +472,23 @@ const AddTransaction = () => {
         />
 
         <View style={styles.typeSelector}>
-          {["Income", "Expense", "Transfer"].map((type) => (
-            <TouchableOpacity
-              key={type}
-              onPress={() => setTransactionType(type)}
-            >
-              <Text
+          {["Income", "Expense", "Transfer"].map((type) => {
+            const active = transactionType === type;
+            return (
+              <TouchableOpacity
+                key={type}
                 style={[
-                  styles.type,
-                  transactionType === type && {
-                    color: colors[type],
-                    borderWidth: 1,
-                    borderColor: colors[type],
-                  },
+                  styles.typeButton,
+                  active && { backgroundColor: colors[type] + "22" },
                 ]}
+                onPress={() => setTransactionType(type)}
               >
-                {type}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text style={[styles.typeText, active && { color: colors[type] }]}>
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         <View style={styles.TransactionDetails}>
@@ -639,7 +637,7 @@ const AddTransaction = () => {
                         backgroundColor: "#393B60",
                         paddingVertical: 6,
                         paddingHorizontal: 16,
-                        borderRadius: 6,
+                        borderRadius: 3,
                         marginRight: 4,
                         flexDirection: "row",
                         alignItems: "center",
@@ -662,7 +660,7 @@ const AddTransaction = () => {
                         backgroundColor: "#393B60",
                         paddingVertical: 6,
                         paddingHorizontal: 16,
-                        borderRadius: 6,
+                        borderRadius: 3,
                         flexDirection: "row",
                         alignItems: "center",
                       }}
@@ -938,22 +936,29 @@ const styles = StyleSheet.create({
   },
   typeSelector: {
     flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginBottom: 40,
-  },
-  type: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 20,
+    width: "90%",
+    alignSelf: "center",
     backgroundColor: "#2C2E42",
-    paddingHorizontal: 15,
-    borderRadius: 2,
+    borderRadius: 6,
+    padding: 5,
+    marginBottom: 18,
+  },
+  typeButton: {
+    flex: 1,
+    paddingVertical: 9,
+    borderRadius: 6,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  typeText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#aaa",
   },
   TransactionDetails: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 14,
+    borderRadius: 6,
     flexDirection: "column",
     alignItems: "flex-start",
     gap: 20,

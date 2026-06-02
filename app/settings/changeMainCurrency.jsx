@@ -228,7 +228,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2C2E42",
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 14,
+    borderRadius: 6,
     marginBottom: 10,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
   modal: {
     width: "85%",
     backgroundColor: "#1A1B25",
-    borderRadius: 14,
+    borderRadius: 6,
     paddingVertical: 24,
     paddingHorizontal: 22,
     alignItems: "center",
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#31323A",
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 10,
+    borderRadius: 6,
   },
   cancelText: {
     color: "#fff",
@@ -313,7 +313,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#734BE9",
     paddingVertical: 12,
     paddingHorizontal: 24,
-    borderRadius: 10,
+    borderRadius: 6,
   },
   confirmText: {
     color: "#fff",

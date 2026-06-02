@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A1B25",
     width: "82%",
     padding: 20,
-    borderRadius: 14,
+    borderRadius: 6,
     alignItems: "center",
     borderColor: "#fff",
     borderWidth: 2,
@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     paddingHorizontal: 10,
     flex: 1,
-    borderRadius: 10,
+    borderRadius: 6,
     marginRight: 8,
   },
   refresh: {
@@ -167,7 +167,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: "#734BE9",
-    borderRadius: 8,
+    borderRadius: 6,
     paddingVertical: 12,
     width: "90%",
     alignItems: "center",

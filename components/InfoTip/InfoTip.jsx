@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: "#1A1B25",
-    borderRadius: 16,
+    borderRadius: 6,
     padding: 20,
     width: "100%",
     borderWidth: 1,
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
   body: { color: "#bbb", fontSize: 15, lineHeight: 22 },
   btn: {
     backgroundColor: "#734BE9",
-    borderRadius: 10,
+    borderRadius: 6,
     paddingVertical: 11,
     alignItems: "center",
     marginTop: 18,

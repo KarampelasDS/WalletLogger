@@ -123,7 +123,11 @@ const Home = () => {
           AND strftime('%m', t.transaction_date) = '${month}'
           ORDER BY t.transaction_date DESC
         `;
-        const data = await db.getAllAsync(query);
+        // run the transactions read and the account-balance read concurrently
+        const [data, accs] = await Promise.all([
+          db.getAllAsync(query),
+          db.getAllAsync("SELECT account_balance FROM accounts"),
+        ]);
 
         const grouped = {};
         data.forEach((t) => {
@@ -135,8 +139,6 @@ const Home = () => {
         calculateMonthlyTotals(data);
         setGrouped(grouped);
         setTransactions(data);
-
-        const accs = await db.getAllAsync("SELECT account_balance FROM accounts");
         setTotalBalance(accs.reduce((s, a) => s + parseFloat(a.account_balance), 0));
       } catch (err) {
         console.error("DB read error:", err);
@@ -454,7 +456,7 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 10,
+    borderRadius: 6,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
@@ -469,7 +471,7 @@ const styles = StyleSheet.create({
   summaryCard: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 14,
+    borderRadius: 6,
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 10,

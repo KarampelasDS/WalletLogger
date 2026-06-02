@@ -16,12 +16,9 @@ export default function KeyboardHeader(props) {
 const styles = StyleSheet.create({
   KeyboardHeaderText: {
     color: "white",
-    fontSize: 20,
-    padding: 12,
+    fontSize: 18,
+    fontWeight: "600",
+    paddingVertical: 12,
     textAlign: "center",
-    borderTopColor: "#fff",
-    borderTopWidth: 2,
-    borderBottomColor: "#fff",
-    borderBottomWidth: 2,
   },
 });

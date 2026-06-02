@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   modal: {
     width: "80%",
     backgroundColor: "#1A1B25",
-    borderRadius: 14,
+    borderRadius: 6,
     paddingVertical: 20,
     paddingHorizontal: 20,
     alignItems: "center",
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#31323A",
     paddingVertical: 12,
     paddingHorizontal: 25,
-    borderRadius: 10,
+    borderRadius: 6,
   },
   cancelText: {
     color: "#fff",
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#CD5D5D",
     paddingVertical: 12,
     paddingHorizontal: 25,
-    borderRadius: 10,
+    borderRadius: 6,
   },
   deleteText: {
     color: "#fff",

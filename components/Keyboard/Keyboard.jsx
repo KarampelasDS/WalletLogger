@@ -236,34 +236,36 @@ const styles = StyleSheet.create({
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, zIndex: 1002 },
   container: {
     position: "absolute", left: 0, right: 0, bottom: 0, minHeight: minHeight,
-    backgroundColor: "#363642", zIndex: 1002, overflow: "hidden", paddingBottom: 6,
+    backgroundColor: "#1A1B25", zIndex: 1002, overflow: "hidden",
+    borderTopLeftRadius: 12, borderTopRightRadius: 12, paddingHorizontal: 6, paddingBottom: 12,
   },
-  keyboardRow: { flexDirection: "row", backgroundColor: "#363642" },
+  keyboardRow: { flexDirection: "row" },
   keyboardButton: {
-    padding: 20, minWidth: "25%", alignItems: "center", justifyContent: "center",
-    borderColor: "#d9d9d925", borderWidth: 1, backgroundColor: "transparent",
+    flex: 1, paddingVertical: 17, margin: 4, borderRadius: 6,
+    alignItems: "center", justifyContent: "center", backgroundColor: "#2C2E42",
   },
   keyboardButtonText: { color: "#fff", fontSize: 24 },
 
   // Calculator
   calcDisplay: {
-    paddingHorizontal: 18, paddingVertical: 10, minHeight: 56, justifyContent: "center",
-    borderBottomColor: "#d9d9d925", borderBottomWidth: 1,
+    backgroundColor: "#2C2E42", borderRadius: 6, marginHorizontal: 4, marginTop: 8, marginBottom: 2,
+    paddingHorizontal: 16, paddingVertical: 12, minHeight: 60, justifyContent: "center",
   },
   calcExpr: { color: "#fff", fontSize: 26, fontWeight: "600", textAlign: "right" },
   calcPreview: { color: "#A78BFA", fontSize: 15, textAlign: "right", marginTop: 2 },
   calcOp: {
-    padding: 20, minWidth: "25%", alignItems: "center", justifyContent: "center",
-    borderColor: "#d9d9d925", borderWidth: 1, backgroundColor: "#2C2E42",
+    flex: 1, paddingVertical: 17, margin: 4, borderRadius: 6,
+    alignItems: "center", justifyContent: "center", backgroundColor: "#393B50",
   },
   calcOpText: { color: "#A78BFA", fontSize: 26, fontWeight: "700" },
   calcApply: {
-    flexDirection: "row", padding: 20, minWidth: "50%", alignItems: "center",
-    justifyContent: "center", borderColor: "#d9d9d925", borderWidth: 1,
+    flex: 2, flexDirection: "row", paddingVertical: 17, margin: 4, borderRadius: 6,
+    alignItems: "center", justifyContent: "center",
   },
 
   currencyPicker: {
     position: "absolute", left: 0, right: 0, bottom: 0,
-    backgroundColor: "#363642", zIndex: 1002, overflow: "hidden",
+    backgroundColor: "#1A1B25", zIndex: 1002, overflow: "hidden",
+    borderTopLeftRadius: 12, borderTopRightRadius: 12,
   },
 });

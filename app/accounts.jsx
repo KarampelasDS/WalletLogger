@@ -220,7 +220,7 @@ const styles = StyleSheet.create({
   // Hero
   hero: {
     backgroundColor: "#2C2E42",
-    borderRadius: 16,
+    borderRadius: 6,
     padding: 18,
     marginTop: 4,
     marginBottom: 18,
@@ -253,7 +253,7 @@ const styles = StyleSheet.create({
   // Account card
   accountCard: {
     backgroundColor: "#2C2E42",
-    borderRadius: 14,
+    borderRadius: 6,
     padding: 15,
     marginBottom: 10,
   },

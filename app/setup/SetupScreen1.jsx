@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
   logoTile: {
     width: 168,
     height: 168,
-    borderRadius: 42,
+    borderRadius: 12,
     backgroundColor: "#734BE9",
     alignItems: "center",
     justifyContent: "center",

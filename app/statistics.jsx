@@ -73,6 +73,12 @@ const buildSearchSQL = (text) => {
   )`;
 };
 
+// transaction_type IN (...) clause; "AND 1=0" matches nothing when no type is selected
+const buildTypeSQL = (types) =>
+  types.length
+    ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})`
+    : "AND 1=0";
+
 const Statistics = () => {
   const db            = Store((s) => s.db);
   const dbInitialized = Store((s) => s.dbInitialized);
@@ -185,6 +191,7 @@ const Statistics = () => {
     const { catSQL, accSQL } = buildFilters(selectedCategories, selectedAccounts);
     const srchSQL = buildSearchSQL(appliedSearch);
     const types   = selectedTypes;
+    const typeSQL = buildTypeSQL(types);
 
     // Transfers use account_from_id / account_to_id (not account_id) and have no
     // category, so they need their own account clause and are excluded entirely
@@ -195,7 +202,7 @@ const Statistics = () => {
     const transferAllowed =
       selectedTypes.includes("Transfer") && selectedCategories.length === 0;
 
-    // period clause for the active tab (drives both stats and the live results list)
+    // period (date) clause for the active tab — built once and threaded everywhere
     let periodSQL = "";
     if (activeTab === "month") {
       const m = String(shownMonth + 1).padStart(2, "0");
@@ -203,11 +210,12 @@ const Statistics = () => {
     } else if (activeTab === "year") {
       periodSQL = `AND strftime('%Y',transaction_date)='${shownYear}'`;
     }
-    loadSearchResults(periodSQL, types, srchSQL);
 
-    if (activeTab === "month")     fetchMonthStats(catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL);
-    else if (activeTab === "year") fetchYearStats(catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL);
-    else                           fetchAllTimeStats(catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL);
+    const args = { periodSQL, typeSQL, catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL };
+    loadSearchResults(periodSQL, typeSQL, srchSQL);
+    if (activeTab === "month")     fetchMonthStats(args);
+    else if (activeTab === "year") fetchYearStats(args);
+    else                           fetchAllTimeStats(args);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbInitialized, shownMonth, shownYear, activeTab,
       selectedCategories, selectedAccounts, selectedTypes, appliedSearch]);
@@ -217,13 +225,11 @@ const Statistics = () => {
   const amtExpr = "COALESCE(transaction_secondCurrencyAmount, transaction_amount)";
 
   // Live search results — actual matching transactions for the current period + types
-  const loadSearchResults = async (periodSQL, types, srchSQL) => {
+  const loadSearchResults = async (periodSQL, typeSQL, srchSQL) => {
     if (!srchSQL) {
       setSearchResults([]);
       return;
     }
-    const typeSQL = types.length
-      ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
     try {
       const rows = await db.getAllAsync(
         `SELECT transaction_id, transaction_type, transaction_date,
@@ -271,30 +277,25 @@ const Statistics = () => {
     }
   };
 
-  const fetchMonthStats = async (catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL) => {
+  const fetchMonthStats = async ({ periodSQL, typeSQL, catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL }) => {
     setLoading(true);
     try {
-      const m  = String(shownMonth + 1).padStart(2, "0");
-      const y  = String(shownYear);
-      const dw = `AND strftime('%Y',transaction_date)='${y}' AND strftime('%m',transaction_date)='${m}'`;
-      loadTransfers(dw, transferAllowed, transferAccSQL, srchSQL);
+      loadTransfers(periodSQL, transferAllowed, transferAccSQL, srchSQL);
       const doInc = types.includes("Income");
       const doExp = types.includes("Expense");
-      const typeSQL = types.length
-        ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
 
       const [inc, exp, expCats, incCats, calRows, cnt, biggest] = await Promise.all([
         doInc
-          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${dw} ${catSQL} ${accSQL} ${srchSQL}`)
+          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
         doExp
-          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Expense' ${dw} ${catSQL} ${accSQL} ${srchSQL}`)
+          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
         doExp
-          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Expense' ${dw} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC`)
+          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC`)
           : Promise.resolve([]),
         doInc
-          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Income' ${dw} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC`)
+          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC`)
           : Promise.resolve([]),
         // Calendar always shows Income/Expense (Transfer has no meaningful income/expense value)
         db.getAllAsync(
@@ -302,12 +303,12 @@ const Statistics = () => {
            SUM(CASE WHEN transaction_type='Income' THEN ${amtExpr} ELSE 0 END) as income,
            SUM(CASE WHEN transaction_type='Expense' THEN ${amtExpr} ELSE 0 END) as expense
            FROM transactions
-           WHERE transaction_type IN ('Income','Expense') ${dw} ${catSQL} ${accSQL} ${srchSQL}
+           WHERE transaction_type IN ('Income','Expense') ${periodSQL} ${catSQL} ${accSQL} ${srchSQL}
            GROUP BY day ORDER BY day`
         ),
-        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${dw} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
+        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${periodSQL} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
         doExp
-          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${dw} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
+          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
           : Promise.resolve(null),
       ]);
 
@@ -325,40 +326,36 @@ const Statistics = () => {
     } finally { setLoading(false); }
   };
 
-  const fetchYearStats = async (catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL) => {
+  const fetchYearStats = async ({ periodSQL, typeSQL, catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL }) => {
     setLoading(true);
     try {
-      const y  = String(shownYear);
-      const yw = `AND strftime('%Y',transaction_date)='${y}'`;
-      loadTransfers(yw, transferAllowed, transferAccSQL, srchSQL);
+      loadTransfers(periodSQL, transferAllowed, transferAccSQL, srchSQL);
       const doInc = types.includes("Income");
       const doExp = types.includes("Expense");
-      const typeSQL = types.length
-        ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
 
       const [inc, exp, trend, expCats, incCats, cnt, biggest] = await Promise.all([
         doInc
-          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${yw} ${catSQL} ${accSQL} ${srchSQL}`)
+          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
         doExp
-          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Expense' ${yw} ${catSQL} ${accSQL} ${srchSQL}`)
+          ? db.getFirstAsync(`SELECT COALESCE(SUM(${amtExpr}),0) as total FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL}`)
           : Promise.resolve({ total: 0 }),
         db.getAllAsync(
           `SELECT strftime('%m',transaction_date) as month,
            SUM(CASE WHEN transaction_type='Income' THEN ${amtExpr} ELSE 0 END) as income,
            SUM(CASE WHEN transaction_type='Expense' THEN ${amtExpr} ELSE 0 END) as expense
-           FROM transactions WHERE 1=1 ${yw} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}
+           FROM transactions WHERE 1=1 ${periodSQL} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}
            GROUP BY month ORDER BY month`
         ),
         doExp
-          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Expense' ${yw} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC LIMIT 10`)
+          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC LIMIT 10`)
           : Promise.resolve([]),
         doInc
-          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Income' ${yw} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC LIMIT 10`)
+          ? db.getAllAsync(`SELECT category_name_snapshot, category_emoji_snapshot, SUM(${amtExpr}) as total FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} GROUP BY category_id, category_name_snapshot ORDER BY total DESC LIMIT 10`)
           : Promise.resolve([]),
-        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${yw} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
+        db.getFirstAsync(`SELECT COUNT(*) as cnt FROM transactions WHERE 1=1 ${periodSQL} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`),
         doExp
-          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${yw} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
+          ? db.getFirstAsync(`SELECT category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`)
           : Promise.resolve(null),
       ]);
 
@@ -374,14 +371,12 @@ const Statistics = () => {
     } finally { setLoading(false); }
   };
 
-  const fetchAllTimeStats = async (catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL) => {
+  const fetchAllTimeStats = async ({ periodSQL, typeSQL, catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL }) => {
     setLoading(true);
     try {
       const doInc = types.includes("Income");
       const doExp = types.includes("Expense");
-      const typeSQL = types.length
-        ? `AND transaction_type IN (${types.map((t) => `'${t}'`).join(",")})` : "AND 1=0";
-      loadTransfers("", transferAllowed, transferAccSQL, srchSQL);
+      loadTransfers(periodSQL, transferAllowed, transferAccSQL, srchSQL);
 
       const [inc, exp, expCats, incCats, yt, accs, cnt, biggest] = await Promise.all([
         doInc
@@ -1007,10 +1002,13 @@ const Statistics = () => {
 
   // ─── Filter modal ─────────────────────────────────────────────────────────────
 
+  const sameSet = (a, b) =>
+    JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
   const pendingHasChanges =
-    JSON.stringify([...pendingTypes].sort()) !== JSON.stringify([...selectedTypes].sort()) ||
-    JSON.stringify([...pendingCategories].sort()) !== JSON.stringify([...selectedCategories].sort()) ||
-    JSON.stringify([...pendingAccounts].sort()) !== JSON.stringify([...selectedAccounts].sort());
+    filterVisible &&
+    (!sameSet(pendingTypes, selectedTypes) ||
+      !sameSet(pendingCategories, selectedCategories) ||
+      !sameSet(pendingAccounts, selectedAccounts));
 
   const renderFilterModal = () => (
     <Modal
@@ -1342,8 +1340,8 @@ const styles = StyleSheet.create({
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", marginTop: 50 },
 
   // ── Tabs ──────────────────────────────────────────────────────────────────────
-  tabRow:        { flexDirection: "row", width: "90%", backgroundColor: "#2C2E42", borderRadius: 10, marginBottom: 10, padding: 3 },
-  tab:           { flex: 1, paddingVertical: 7, alignItems: "center", borderRadius: 8 },
+  tabRow:        { flexDirection: "row", width: "90%", backgroundColor: "#2C2E42", borderRadius: 6, marginBottom: 10, padding: 3 },
+  tab:           { flex: 1, paddingVertical: 7, alignItems: "center", borderRadius: 6 },
   tabActive:     { backgroundColor: "#734BE9" },
   tabText:       { color: "#aaa", fontSize: 14, fontWeight: "600" },
   tabTextActive: { color: "#fff" },
@@ -1352,7 +1350,7 @@ const styles = StyleSheet.create({
   searchBarContainer: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 10,
+    borderRadius: 6,
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 12,
@@ -1366,7 +1364,7 @@ const styles = StyleSheet.create({
   activePillsContent:  { gap: 8, flexDirection: "row", alignItems: "center", paddingVertical: 4 },
   activePill: {
     flexDirection: "row", alignItems: "center",
-    backgroundColor: "#2C2E42", borderRadius: 20,
+    backgroundColor: "#2C2E42", borderRadius: 6,
     paddingHorizontal: 12, paddingVertical: 7,
     borderWidth: 1, borderColor: "#444",
   },
@@ -1374,11 +1372,11 @@ const styles = StyleSheet.create({
 
   // ── Filter icon button with badge ─────────────────────────────────────────────
   filterBtn:          { position: "relative" },
-  filterBadgeDot:     { position: "absolute", top: -4, right: -4, backgroundColor: "#734BE9", borderRadius: 8, width: 16, height: 16, alignItems: "center", justifyContent: "center" },
+  filterBadgeDot:     { position: "absolute", top: -4, right: -4, backgroundColor: "#734BE9", borderRadius: 6, width: 16, height: 16, alignItems: "center", justifyContent: "center" },
   filterBadgeDotText: { color: "#fff", fontSize: 9, fontWeight: "700" },
 
   // ── Summary card ──────────────────────────────────────────────────────────────
-  summaryCard:    { backgroundColor: "#2C2E42", borderRadius: 14, padding: 16, flexDirection: "row", alignItems: "center", marginBottom: 18, marginTop: 4 },
+  summaryCard:    { backgroundColor: "#2C2E42", borderRadius: 6, padding: 16, flexDirection: "row", alignItems: "center", marginBottom: 18, marginTop: 4 },
   summaryItem:    { alignItems: "center", flex: 1 },
   summaryDivider: { width: 1, height: 40, backgroundColor: "#d9d9d920" },
   summaryLabel:   { color: "#aaa", fontSize: 13, marginBottom: 4 },
@@ -1386,17 +1384,16 @@ const styles = StyleSheet.create({
 
   // ── Cards / sections ──────────────────────────────────────────────────────────
   sectionTitle: { color: "#fff", fontSize: 17, fontWeight: "700", marginBottom: 8 },
-  card:         { backgroundColor: "#2C2E42", borderRadius: 14, padding: 14, marginBottom: 18 },
+  card:         { backgroundColor: "#2C2E42", borderRadius: 6, padding: 14, marginBottom: 18 },
 
   // ── KPI cards ───────────────────────────────────────────────────────────────
   kpiRow:    { flexDirection: "row", gap: 10, marginBottom: 12 },
-  kpiCard:   { flex: 1, backgroundColor: "#2C2E42", borderRadius: 14, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center", gap: 4 },
+  kpiCard:   { flex: 1, backgroundColor: "#2C2E42", borderRadius: 6, paddingVertical: 14, paddingHorizontal: 6, alignItems: "center", gap: 4 },
   kpiValue:  { fontSize: 16, fontWeight: "bold", width: "100%", textAlign: "center" },
   kpiLabel:  { color: "#888", fontSize: 11, textAlign: "center" },
-  kpiInfo:   { position: "absolute", top: 6, right: 6 },
 
   // ── Highlight (biggest expense) card ──────────────────────────────────────────
-  highlightCard:   { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#2C2E42", borderRadius: 14, padding: 14, marginBottom: 18, borderLeftWidth: 3, borderLeftColor: "#CD5D5D" },
+  highlightCard:   { flexDirection: "row", alignItems: "center", gap: 10, backgroundColor: "#2C2E42", borderRadius: 6, padding: 14, marginBottom: 18, borderLeftWidth: 3, borderLeftColor: "#CD5D5D" },
   highlightText:   { color: "#ccc", fontSize: 13, flex: 1 },
   highlightStrong: { color: "#fff", fontWeight: "700" },
 
@@ -1406,7 +1403,7 @@ const styles = StyleSheet.create({
   donutCenterValue: { color: "#fff", fontSize: 15, fontWeight: "bold", paddingHorizontal: 6 },
   donutLegend:      { flex: 1, gap: 7 },
   donutLegendRow:   { flexDirection: "row", alignItems: "center", gap: 7 },
-  donutLegendDot:   { width: 10, height: 10, borderRadius: 5 },
+  donutLegendDot:   { width: 10, height: 10, borderRadius: 3 },
   donutLegendLabel: { color: "#ddd", fontSize: 13, flex: 1 },
   donutLegendPct:   { color: "#888", fontSize: 12, fontWeight: "600" },
 
@@ -1415,8 +1412,8 @@ const styles = StyleSheet.create({
   barLabelRow:{ flexDirection: "row", justifyContent: "space-between", marginBottom: 5, alignItems: "center" },
   barLabel:   { color: "#fff", fontSize: 14, flex: 1, marginRight: 8 },
   barAmount:  { color: "#aaa", fontSize: 12, textAlign: "right" },
-  barTrack:   { height: 10, backgroundColor: "#1A1B25", borderRadius: 5, overflow: "hidden" },
-  barFill:    { height: 10, borderRadius: 5 },
+  barTrack:   { height: 10, backgroundColor: "#1A1B25", borderRadius: 3, overflow: "hidden" },
+  barFill:    { height: 10, borderRadius: 3 },
   emptyText:  { color: "#aaa", textAlign: "center", paddingVertical: 10, fontSize: 14 },
 
   // ── Calendar ──────────────────────────────────────────────────────────────────
@@ -1425,7 +1422,7 @@ const styles = StyleSheet.create({
   calRow:        { flexDirection: "row", marginBottom: 2 },
   calCell:       { flex: 1, alignItems: "center", paddingVertical: 4, minHeight: 52 },
   calDayNum:     { color: "#ccc", fontSize: 13, fontWeight: "500" },
-  calDot:        { width: 6, height: 6, borderRadius: 3, marginTop: 2 },
+  calDot:        { width: 6, height: 6, borderRadius: 2, marginTop: 2 },
   calAmount:     { fontSize: 9, marginTop: 1, fontWeight: "600" },
   calLegend:     { flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#d9d9d915" },
   calLegendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
@@ -1434,8 +1431,8 @@ const styles = StyleSheet.create({
   // ── Trend charts ──────────────────────────────────────────────────────────────
   trendContainer:  { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between" },
   trendCol:        { flex: 1, alignItems: "center" },
-  trendBarIncome:  { width: 6, backgroundColor: "#4EA758", borderRadius: 3 },
-  trendBarExpense: { width: 6, backgroundColor: "#CD5D5D", borderRadius: 3 },
+  trendBarIncome:  { width: 6, backgroundColor: "#4EA758", borderRadius: 2 },
+  trendBarExpense: { width: 6, backgroundColor: "#CD5D5D", borderRadius: 2 },
   trendLabel:      { color: "#666", fontSize: 9, marginTop: 4 },
   trendLegend:     { flexDirection: "row", justifyContent: "center", gap: 16, marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: "#d9d9d915" },
 
@@ -1467,7 +1464,7 @@ const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.55)", justifyContent: "flex-end" },
   filterPanel: {
     backgroundColor: "#1A1B25",
-    borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    borderTopLeftRadius: 12, borderTopRightRadius: 12,
     paddingHorizontal: 20, paddingTop: 16, paddingBottom: 32,
     height: "70%", width: "100%",
     borderTopWidth: 1, borderColor: "#2C2E42",
@@ -1483,7 +1480,7 @@ const styles = StyleSheet.create({
   typeRow: { flexDirection: "row", gap: 8 },
   typePill: {
     flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6,
-    backgroundColor: "#2C2E42", borderRadius: 10,
+    backgroundColor: "#2C2E42", borderRadius: 6,
     paddingVertical: 10, paddingHorizontal: 6,
     borderWidth: 1.5, borderColor: "#3a3a4a",
   },
@@ -1491,13 +1488,13 @@ const styles = StyleSheet.create({
 
   // Category / account chips
   chipsWrap:      { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  chip:           { flexDirection: "row", alignItems: "center", backgroundColor: "#2C2E42", borderRadius: 20, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: "#3a3a4a" },
+  chip:           { flexDirection: "row", alignItems: "center", backgroundColor: "#2C2E42", borderRadius: 6, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: "#3a3a4a" },
   chipActive:     { backgroundColor: "#734BE915", borderColor: "#734BE9" },
   chipText:       { color: "#ccc", fontSize: 13 },
   chipTextActive: { color: "#734BE9" },
 
   // Apply button
-  filterApply:         { backgroundColor: "#734BE9", borderRadius: 12, paddingVertical: 14, alignItems: "center", marginTop: 12 },
+  filterApply:         { backgroundColor: "#734BE9", borderRadius: 6, paddingVertical: 14, alignItems: "center", marginTop: 12 },
   filterApplyDisabled: { backgroundColor: "#3A3556" },
   filterApplyText:     { color: "#fff", fontSize: 17, fontWeight: "700" },
 });

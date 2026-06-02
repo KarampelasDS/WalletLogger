@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
   balanceRow: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 14,
+    borderRadius: 6,
     padding: 14,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   monthSummary: {
     width: "90%",
     backgroundColor: "#2C2E42",
-    borderRadius: 14,
+    borderRadius: 6,
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 8,

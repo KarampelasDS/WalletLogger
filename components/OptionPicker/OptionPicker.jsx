@@ -1,11 +1,4 @@
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Dimensions,
-} from "react-native";
+import { View, StyleSheet, ScrollView, Dimensions } from "react-native";
 import KeyboardHeader from "../KeyboardHeader/KeyboardHeader";
 import Option from "./Option";
 import { useRouter } from "expo-router";
@@ -81,9 +74,11 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     height: pickerHeight,
-    backgroundColor: "#363642",
+    backgroundColor: "#1A1B25",
     zIndex: 1002,
     overflow: "hidden",
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   scrollArea: {
     flex: 1,
@@ -93,5 +88,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "flex-start",
+    padding: 4,
   },
 });
