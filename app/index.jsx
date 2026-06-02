@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   Animated,
+  PanResponder,
 } from "react-native";
 import { useState, useEffect, useRef } from "react";
 import AddTransactionButton from "../components/TransactionsPage/AddTransactionButton";
@@ -34,7 +35,6 @@ const months = [
 ];
 
 const Home = () => {
-  const currentDate = Store((state) => state.currentDate);
   const db = Store((state) => state.db);
   const initDB = Store((state) => state.initDB);
   const dbInitialized = Store((state) => state.dbInitialized);
@@ -47,8 +47,9 @@ const Home = () => {
 
   const [grouped, setGrouped] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [shownMonth, setShownMonth] = useState(currentDate.getMonth());
-  const [shownYear, setShownYear] = useState(currentDate.getFullYear());
+  // Month/year live in the store so they survive navigating into a transaction
+  const shownMonth = Store((state) => state.historyMonth);
+  const shownYear = Store((state) => state.historyYear);
   const [monthlyIncome, setMonthlyIncome] = useState(0);
   const [monthlyExpenses, setMonthlyExpenses] = useState(0);
   const [totalBalance, setTotalBalance] = useState(0);
@@ -60,6 +61,44 @@ const Home = () => {
   const [searchText, setSearchText] = useState("");
   const searchAnim = useRef(new Animated.Value(0)).current;
   const searchInputRef = useRef(null);
+
+  // Scroll position restore
+  const scrollRef = useRef(null);
+  const didRestoreScroll = useRef(false);
+
+  // Move months. Reads/writes the store directly so the handler never goes
+  // stale inside the (memoised) PanResponder closure.
+  const shiftMonth = (delta) => {
+    const s = Store.getState();
+    let m = s.historyMonth + delta;
+    let y = s.historyYear;
+    if (m < 0) {
+      m = 11;
+      y -= 1;
+    } else if (m > 11) {
+      m = 0;
+      y += 1;
+    }
+    s.setHistoryMonth(m);
+    s.setHistoryYear(y);
+  };
+
+  // Horizontal swipe to change months (swipe left = next, right = previous).
+  // Only claims clearly-horizontal gestures so vertical scrolling still works.
+  const claimHorizontal = (_e, g) =>
+    Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2;
+  const panResponder = useRef(
+    PanResponder.create({
+      // Claim during the capture phase so the inner ScrollView doesn't swallow
+      // the gesture; only for clearly-horizontal moves (vertical scroll still works)
+      onMoveShouldSetPanResponderCapture: claimHorizontal,
+      onMoveShouldSetPanResponder: claimHorizontal,
+      onPanResponderRelease: (_e, g) => {
+        if (g.dx <= -40) shiftMonth(1);
+        else if (g.dx >= 40) shiftMonth(-1);
+      },
+    })
+  ).current;
 
   // Initialize database once
   useEffect(() => {
@@ -229,19 +268,9 @@ const Home = () => {
           <Title
             title={`${months[shownMonth]} ${shownYear}`}
             backIcon={"chevron-back-outline"}
-            onPressBackIcon={() => {
-              if (shownMonth === 0) {
-                setShownYear((y) => y - 1);
-                setShownMonth(11);
-              } else setShownMonth((m) => m - 1);
-            }}
+            onPressBackIcon={() => shiftMonth(-1)}
             frontIcon={"chevron-forward-outline"}
-            onPressFrontIcon={() => {
-              if (shownMonth === 11) {
-                setShownYear((y) => y + 1);
-                setShownMonth(0);
-              } else setShownMonth((m) => m + 1);
-            }}
+            onPressFrontIcon={() => shiftMonth(1)}
             actionButton={
               <TouchableOpacity onPress={toggleSearch}>
                 <Ionicons
@@ -279,6 +308,7 @@ const Home = () => {
           )}
         </>
       )}
+      <View style={styles.swipeArea} {...panResponder.panHandlers}>
       <View style={styles.summaryCard}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Income</Text>
@@ -318,8 +348,19 @@ const Home = () => {
         </View>
       ) : (
         <ScrollView
+          ref={scrollRef}
           style={{ width: "100%" }}
           contentContainerStyle={{ paddingBottom: 200 }}
+          scrollEventThrottle={16}
+          onScroll={(e) =>
+            Store.getState().setHistoryScrollY(e.nativeEvent.contentOffset.y)
+          }
+          onContentSizeChange={() => {
+            if (didRestoreScroll.current) return;
+            const y = Store.getState().historyScrollY;
+            if (y > 0) scrollRef.current?.scrollTo({ y, animated: false });
+            didRestoreScroll.current = true;
+          }}
         >
           {Object.keys(filteredGrouped).map((date) => {
             let dailyIncome = 0;
@@ -439,6 +480,7 @@ const Home = () => {
           })}
         </ScrollView>
       )}
+      </View>
 
       <AddTransactionButton />
     </View>
@@ -451,6 +493,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#1A1B25",
+    alignItems: "center",
+  },
+  swipeArea: {
+    flex: 1,
+    width: "100%",
     alignItems: "center",
   },
   searchBarContainer: {

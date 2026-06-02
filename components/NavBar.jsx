@@ -30,7 +30,20 @@ export default function NavBar() {
           <TouchableOpacity
             key={item.path}
             style={styles.NavBarItem}
-            onPress={() => (pathName === item.path ? null : router.push(item.path))}
+            onPress={() => {
+              if (pathName === item.path) {
+                // Already on this tab. Tapping History again jumps back to the
+                // current month (and top of the list).
+                if (item.path === "/") {
+                  const s = Store.getState();
+                  s.setHistoryMonth(new Date().getMonth());
+                  s.setHistoryYear(new Date().getFullYear());
+                  s.setHistoryScrollY(0);
+                }
+                return;
+              }
+              router.push(item.path);
+            }}
           >
             <View style={[styles.indicator, active && styles.indicatorActive]} />
             <Ionicons name={item.icon} size={iconSize} color={color} />

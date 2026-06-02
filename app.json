@@ -22,6 +22,7 @@
         "backgroundColor": "#734BE9"
       },
       "edgeToEdgeEnabled": true,
+      "allowBackup": false,
       "package": "com.dkarampelas.WalletLogger"
     },
     "web": {

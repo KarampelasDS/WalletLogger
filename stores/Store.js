@@ -52,6 +52,15 @@ export const Store = create(
       currentDate: new Date(),
       setCurrentDate: (date) => set({ currentDate: date }),
 
+      // Home/history view position — kept in-memory so navigating into a
+      // transaction and back returns to the same month and scroll offset
+      historyMonth: new Date().getMonth(),
+      setHistoryMonth: (m) => set({ historyMonth: m }),
+      historyYear: new Date().getFullYear(),
+      setHistoryYear: (y) => set({ historyYear: y }),
+      historyScrollY: 0,
+      setHistoryScrollY: (y) => set({ historyScrollY: y }),
+
       showNavbar: true,
       setShowNavbar: (show) => set({ showNavbar: show }),
 

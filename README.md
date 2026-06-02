@@ -43,7 +43,9 @@ Because nothing is uploaded, the app is fully usable on a plane, in airplane mod
 
 You set up your accounts, categories and currencies once through a guided wizard, then log money in three flavours — **Income**, **Expense**, and **Transfer** between your own accounts. Every entry can be recorded in any currency you've added; Wallet Logger converts it to your main currency on the fly using a stored exchange rate, so your balances and statistics always read in one consistent unit while preserving the original amount.
 
-On top of that sits a genuinely deep **statistics engine**: month / year / all-time views, a spending calendar, donut and bar breakdowns by category, income-vs-expense trends, transfer analysis, savings-rate and "biggest expense" insights, plus a live search and a multi-dimensional filter (by type, category and account). All of it is computed directly in SQL against the local database and rendered with hand-built charts — no charting library, no network round-trips.
+On top of that sits a genuinely deep **statistics dashboard**: month / year / all-time views, a spending calendar, donut and bar breakdowns by category, income-vs-expense trends, transfer analysis, savings-rate and "biggest expense" insights, plus a live search and filters by type, category and account. Everything is worked out on your device from your own data and drawn with custom-built charts — no network round-trips.
+
+And because it's all just a file on your phone, you stay in control of it: **export a backup** whenever you like, **restore** it on a new device, **bring your history over** from another expense app, or **wipe everything** and start fresh.
 
 ---
 
@@ -56,7 +58,10 @@ On top of that sits a genuinely deep **statistics engine**: month / year / all-t
 - **Automatic balance integrity** — account balances are always kept correct: income adds, expenses subtract, transfers move funds between accounts, and edits cleanly reverse the original entry before re-applying the new one.
 - **Change your main currency anytime** — a single action re-scales every stored rate, transaction and account balance in one atomic SQL transaction so nothing drifts.
 - **Statistics dashboard** — Month / Year / All-Time tabs with a summary card, KPI cards (savings rate, transaction count, averages, net worth), a spending **calendar**, **donut charts**, category **bar breakdowns**, monthly/yearly **trend charts**, and a **Transfers** section.
-- **Powerful filtering & search** — filter reports by transaction type, category and account; debounced full-text search across notes, categories, accounts and amounts that lists the actual matching transactions.
+- **Powerful filtering & search** — filter reports by transaction type, category and account; a live search across notes, categories, accounts and amounts that lists the actual matching transactions.
+- **Built-in calculator on the amount keypad** — type an amount or do quick math (`+ − × ÷`) right where you enter it, then tap a field to switch inputs in one go.
+- **Backup, restore & migrate** — export your whole database to a file you keep (save it to a folder or share it to Drive, email or Files), restore it later or on a new phone, or import your existing history from another expense app. Nothing is ever uploaded automatically — you choose where it goes.
+- **Reset anytime** — a dedicated, confirmation-gated option wipes all your data and walks you back through setup as if the app were brand new.
 - **Account detail pages** — tap any account for its own balance, month navigation, per-month in/out totals, and full transaction history.
 - **Graceful deletion** — deleting an account, category or currency never corrupts old records: foreign keys are nulled and snapshot fields preserve the original emoji/name/symbol for display.
 - **Drag-to-reorder management** — reorder accounts, categories and currencies; edit rates with a one-tap live refresh from the exchange-rate API.
@@ -192,7 +197,18 @@ All of it is driven by a **filter sheet** (transaction type, categories, account
 
 ### 7. Design system
 
-A single `constants/theme.js` palette defines the brand purple, semantic income / expense / transfer colours, and surfaces. Primary actions are one consistent purple, destructive actions one red, and a shared `fmtAmount` helper abbreviates large numbers (`1.23M`, `10.00B`, `2.00T`) so values never overflow on any screen size. Tooltips use one reusable component where the whole card is the tap target.
+A single `constants/theme.js` palette defines the brand purple, semantic income / expense / transfer colours, and surfaces. Primary actions are one consistent purple, destructive actions one red, and large numbers are abbreviated (`1.23M`, `10.00B`, `2.00T`) so values never overflow on any screen size. The bottom navigation highlights the tab you're on, and the corners across the app share one tight, business-like radius for a clean, consistent look.
+
+### 8. Your data is yours — backup, restore & migrate
+
+Because everything lives in a single file on your phone, moving or safeguarding it is simple:
+
+- **Export** writes a complete copy of your database to a folder you pick, or — via the share sheet — straight to Drive, email or your Files app.
+- **Restore** lets you pick one of those backups and swap it back in; it checks the file is a genuine Wallet Logger backup before replacing anything.
+- **Import** reads an export from another expense app and translates it into Wallet Logger's accounts, categories, currencies and transactions (transfers and all).
+- **Reset** clears everything and drops you back into setup with the defaults, after a confirmation.
+
+Restore, import and reset all replace what's currently in the app, so it nudges you to export a backup first.
 
 ---
 
@@ -240,6 +256,8 @@ app/                              Expo Router file-based routes
   settings/addCurrency.jsx        Add a currency (master list + live rate)
   settings/manageIncomeCategories.jsx / manageExpenseCategories.jsx
   settings/changeMainCurrency.jsx Atomic main-currency migration
+  settings/backup.jsx             Export / share / restore / import data
+  settings/reset.jsx              Wipe all data and restart setup
   setup/SetupScreen1–6.jsx        First-run onboarding wizard
 
 components/
@@ -254,7 +272,8 @@ components/
 stores/Store.js                   Zustand store (persisted + transient state, initDB)
 constants/theme.js                Single-source colour palette
 utils/format.js                   Currency-aware number formatting
-scripts/genIcons.js               Dependency-free PNG icon generator (icon / splash / adaptive)
+utils/backup.js                   Export / share / restore / wipe the database
+utils/importExternal.js           Import & translate another app's export
 assets/                           App icon, splash, adaptive icon, favicon, logo
 ```
 
