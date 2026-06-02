@@ -63,6 +63,8 @@ And because it's all just a file on your phone, you stay in control of it: **exp
 - **Built-in calculator on the amount keypad** — type an amount or do quick math (`+ − × ÷`) right where you enter it, then tap a field to switch inputs in one go.
 - **Backup, restore & migrate** — export your whole database to a file you keep (save it to a folder or share it to Drive, email or Files), restore it later or on a new phone, or import your existing history from another expense app. Nothing is ever uploaded automatically — you choose where it goes.
 - **Reset anytime** — a dedicated, confirmation-gated option wipes all your data and walks you back through setup as if the app were brand new.
+- **Swipe between months** — flick left/right on History, Statistics and Account screens to move through periods, with a smooth slide animation; tap the History tab again to jump back to the current month.
+- **Polished loading & empty states** — period changes show pulsing skeleton placeholders that match the real layout instead of a bare spinner, and empty months show a clear, friendly message.
 - **Account detail pages** — tap any account for its own balance, month navigation, per-month in/out totals, and full transaction history.
 - **Graceful deletion** — deleting an account, category or currency never corrupts old records: foreign keys are nulled and snapshot fields preserve the original emoji/name/symbol for display.
 - **Drag-to-reorder management** — reorder accounts, categories and currencies; edit rates with a one-tap live refresh from the exchange-rate API.
@@ -271,6 +273,9 @@ components/
   Keyboard/ KeyboardHeader/       Custom numeric amount keypad
   SelectionScroller/              Setup selection lists
   TransactionRecords/             Grouped-by-day transaction rows
+  MonthSwiper/                    Swipe gesture + slide animation between periods
+  Skeleton/                       Pulsing loading placeholders
+  EmptyState/                     Friendly "no transactions" placeholder
   PieChart/                       Pure-View donut chart (no charting lib)
   InfoTip/                        Reusable tappable tooltip
 
