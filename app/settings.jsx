@@ -40,6 +40,16 @@ export default function Settings() {
       icon: "swap-horizontal-outline",
       route: "/settings/changeMainCurrency",
     },
+    {
+      name: "Backup & Restore",
+      icon: "save-outline",
+      route: "/settings/backup",
+    },
+    {
+      name: "Reset App",
+      icon: "trash-outline",
+      route: "/settings/reset",
+    },
   ];
 
   return (
