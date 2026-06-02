@@ -3,10 +3,9 @@ import {
   Text,
   View,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
 import { useNavigation } from "@react-navigation/native";
 import { Store } from "../../stores/Store";
@@ -14,6 +13,9 @@ import Title from "../../components/Title/Title";
 import TransactionDay from "../../components/TransactionRecords/TransactionDay";
 import { fmtAmount } from "../../utils/format";
 import { Ionicons } from "@expo/vector-icons";
+import MonthSwiper from "../../components/MonthSwiper/MonthSwiper";
+import EmptyState from "../../components/EmptyState/EmptyState";
+import TransactionsSkeleton from "../../components/Skeleton/TransactionsSkeleton";
 
 const months = [
   "Jan","Feb","Mar","Apr","May","Jun",
@@ -61,9 +63,13 @@ export default function AccountDetail() {
     }, [dbInitialized, shownMonth, shownYear])
   );
 
+  // Debounced so rapidly flicking through months only fetches the one you land on.
+  // Hide the list immediately so in-between months never render.
   useEffect(() => {
     if (!dbInitialized || !db) return;
-    fetchTransactions();
+    setLoading(true);
+    const t = setTimeout(fetchTransactions, 180);
+    return () => clearTimeout(t);
   }, [dbInitialized, shownMonth, shownYear]);
 
   const fetchAccount = async () => {
@@ -164,7 +170,11 @@ export default function AccountDetail() {
 
   const sym = mainCurrency ? mainCurrency.currency_symbol : "";
 
+  // Slide-animation direction (-1 prev, +1 next), shared with MonthSwiper
+  const directionRef = useRef(0);
+
   const goMonthBack = () => {
+    directionRef.current = -1;
     if (shownMonth === 0) {
       setShownYear((y) => y - 1);
       setShownMonth(11);
@@ -172,6 +182,7 @@ export default function AccountDetail() {
   };
 
   const goMonthForward = () => {
+    directionRef.current = 1;
     if (shownMonth === 11) {
       setShownYear((y) => y + 1);
       setShownMonth(0);
@@ -216,6 +227,13 @@ export default function AccountDetail() {
         </TouchableOpacity>
       </View>
 
+      <MonthSwiper
+        style={{ alignItems: "center" }}
+        triggerKey={`${shownMonth}-${shownYear}`}
+        directionRef={directionRef}
+        onPrev={goMonthBack}
+        onNext={goMonthForward}
+      >
       {/* Monthly In / Out */}
       <View style={styles.monthSummary}>
         <View style={styles.summaryItem}>
@@ -234,16 +252,14 @@ export default function AccountDetail() {
       </View>
 
       {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#734BE9" />
-        </View>
+        <TransactionsSkeleton />
       ) : (
         <ScrollView
           style={{ width: "100%" }}
           contentContainerStyle={{ paddingBottom: 120 }}
         >
           {Object.keys(grouped).length === 0 && (
-            <Text style={styles.emptyText}>No transactions this month</Text>
+            <EmptyState text="No transactions this month" />
           )}
           {Object.keys(grouped).map((date) => {
             let dailyIncome = 0;
@@ -349,6 +365,7 @@ export default function AccountDetail() {
           })}
         </ScrollView>
       )}
+      </MonthSwiper>
     </View>
   );
 }

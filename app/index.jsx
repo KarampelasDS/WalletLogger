@@ -2,13 +2,14 @@ import {
   StyleSheet,
   Text,
   View,
-  ScrollView,
-  ActivityIndicator,
+  FlatList,
   TouchableOpacity,
   TextInput,
   Animated,
-  PanResponder,
 } from "react-native";
+import MonthSwiper from "../components/MonthSwiper/MonthSwiper";
+import EmptyState from "../components/EmptyState/EmptyState";
+import TransactionsSkeleton from "../components/Skeleton/TransactionsSkeleton";
 import { useState, useEffect, useRef } from "react";
 import AddTransactionButton from "../components/TransactionsPage/AddTransactionButton";
 import Title from "../components/Title/Title";
@@ -66,9 +67,12 @@ const Home = () => {
   const scrollRef = useRef(null);
   const didRestoreScroll = useRef(false);
 
-  // Move months. Reads/writes the store directly so the handler never goes
-  // stale inside the (memoised) PanResponder closure.
+  // Slide-animation direction (-1 prev, +1 next), shared with MonthSwiper
+  const directionRef = useRef(0);
+
+  // Move months. Reads/writes the store directly so the handler never goes stale.
   const shiftMonth = (delta) => {
+    directionRef.current = delta > 0 ? 1 : -1;
     const s = Store.getState();
     let m = s.historyMonth + delta;
     let y = s.historyYear;
@@ -82,23 +86,6 @@ const Home = () => {
     s.setHistoryMonth(m);
     s.setHistoryYear(y);
   };
-
-  // Horizontal swipe to change months (swipe left = next, right = previous).
-  // Only claims clearly-horizontal gestures so vertical scrolling still works.
-  const claimHorizontal = (_e, g) =>
-    Math.abs(g.dx) > 12 && Math.abs(g.dx) > Math.abs(g.dy) * 1.2;
-  const panResponder = useRef(
-    PanResponder.create({
-      // Claim during the capture phase so the inner ScrollView doesn't swallow
-      // the gesture; only for clearly-horizontal moves (vertical scroll still works)
-      onMoveShouldSetPanResponderCapture: claimHorizontal,
-      onMoveShouldSetPanResponder: claimHorizontal,
-      onPanResponderRelease: (_e, g) => {
-        if (g.dx <= -40) shiftMonth(1);
-        else if (g.dx >= 40) shiftMonth(-1);
-      },
-    })
-  ).current;
 
   // Initialize database once
   useEffect(() => {
@@ -121,8 +108,10 @@ const Home = () => {
   // Fetch transactions whenever month/year or DB state changes
   useEffect(() => {
     if (!dbInitialized) return;
+    // Hide the (heavy) list immediately so flicking through months never renders
+    // an in-between month — only the one you settle on after the debounce renders.
+    setLoading(true);
     const fetchTransactions = async () => {
-      setLoading(true);
       try {
         const month = String(shownMonth + 1).padStart(2, "0");
         const query = `
@@ -185,7 +174,9 @@ const Home = () => {
         setLoading(false);
       }
     };
-    fetchTransactions();
+    // Debounced so rapidly flicking through months only fetches the one you land on
+    const t = setTimeout(fetchTransactions, 180);
+    return () => clearTimeout(t);
   }, [dbInitialized, shownMonth, shownYear]);
 
   const calculateMonthlyTotals = (data) => {
@@ -261,6 +252,111 @@ const Home = () => {
   const fallback = (main, snapshot) =>
     main != null && main !== "" ? main : snapshot;
 
+  // Build the per-day groups the FlatList renders (one item = one day card)
+  const days = Object.keys(filteredGrouped).map((date) => {
+    let dailyIncome = 0;
+    let dailyExpenses = 0;
+    filteredGrouped[date].forEach((t) => {
+      const amt = parseFloat(
+        t.transaction_secondCurrencyAmount != null
+          ? t.transaction_secondCurrencyAmount
+          : t.transaction_amount
+      );
+      if (t.transaction_type === "Income") dailyIncome += amt;
+      else if (t.transaction_type === "Expense") dailyExpenses += amt;
+    });
+    return { date, txns: filteredGrouped[date], dailyIncome, dailyExpenses };
+  });
+
+  const renderRow = (t) => (
+    <TouchableOpacity
+      key={t.transaction_id}
+      style={styles.txRow}
+      onPress={() => {
+        setEditingID(t.transaction_id);
+        router.push(`/editTransaction`);
+      }}
+    >
+      <View style={styles.txMain}>
+        {t.transaction_type === "Transfer" ? (
+          <>
+            <Text style={styles.txLeft} numberOfLines={1}>
+              {fallback(t.account_from_emoji, t.account_from_snapshot_emoji)}
+              {"  "}
+              {fallback(t.account_from_name, t.account_from_snapshot_name)}
+            </Text>
+            <Ionicons
+              name="arrow-forward-outline"
+              size={14}
+              color="#aaa"
+              style={{ marginHorizontal: 4 }}
+            />
+            <Text style={styles.txMid} numberOfLines={1}>
+              {fallback(t.account_to_emoji, t.account_to_snapshot_emoji)}
+              {"  "}
+              {fallback(t.account_to_name, t.account_to_snapshot_name)}
+            </Text>
+            <Text style={[styles.txAmount, { color: "#734BE9" }]} numberOfLines={1}>
+              {fmtAmount(t.transaction_amount)}{" "}
+              {fallback(t.currency_symbol, t.currency_snapshot_symbol)}
+            </Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.txLeft} numberOfLines={1}>
+              {fallback(t.category_emoji, t.category_emoji_snapshot)}
+              {"  "}
+              {fallback(t.category_name, t.category_name_snapshot)}
+            </Text>
+            <Text style={styles.txMid} numberOfLines={1}>
+              {fallback(t.account_emoji, t.account_snapshot_emoji)}
+              {"  "}
+              {fallback(t.account_name, t.account_snapshot_name)}
+            </Text>
+            <Text
+              style={[
+                styles.txAmount,
+                { color: t.transaction_type === "Income" ? "#4EA758" : "#CD5D5D" },
+              ]}
+              numberOfLines={1}
+            >
+              {fmtAmount(
+                t.transaction_secondCurrencyAmount != null
+                  ? t.transaction_secondCurrencyAmount
+                  : t.transaction_amount
+              )}{" "}
+              {fallback(t.currency_symbol, t.currency_snapshot_symbol)}
+            </Text>
+          </>
+        )}
+      </View>
+      {t.transaction_note ? (
+        <Text style={styles.txNote} numberOfLines={2}>
+          {t.transaction_note}
+        </Text>
+      ) : null}
+    </TouchableOpacity>
+  );
+
+  const renderDay = ({ item }) => (
+    <TransactionDay
+      date={new Date(item.date).toLocaleDateString("en-GB", { day: "2-digit" })}
+      weekday={new Date(item.date).toLocaleDateString("en-GB", { weekday: "short" })}
+      month={new Date(item.date).toLocaleDateString("en-GB", { month: "2-digit" })}
+      year={new Date(item.date).toLocaleDateString("en-GB", { year: "2-digit" })}
+      income={item.dailyIncome}
+      expenses={item.dailyExpenses}
+      style={{
+        marginVertical: 10,
+        width: "100%",
+        paddingHorizontal: 20,
+        alignItems: "center",
+      }}
+    >
+      {item.txns.map(renderRow)}
+    </TransactionDay>
+  );
+
   return (
     <View style={styles.container}>
       {dbInitialized && (
@@ -308,7 +404,13 @@ const Home = () => {
           )}
         </>
       )}
-      <View style={styles.swipeArea} {...panResponder.panHandlers}>
+      <MonthSwiper
+        style={styles.swipeArea}
+        triggerKey={`${shownMonth}-${shownYear}`}
+        directionRef={directionRef}
+        onPrev={() => shiftMonth(-1)}
+        onNext={() => shiftMonth(1)}
+      >
       <View style={styles.summaryCard}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Income</Text>
@@ -336,21 +438,28 @@ const Home = () => {
       </View>
 
       {loading ? (
-        <View
-          style={{
-            flex: 1,
-            justifyContent: "center",
-            alignItems: "center",
-            marginTop: 50,
-          }}
-        >
-          <ActivityIndicator size="large" color="#734BE9" />
-        </View>
+        <TransactionsSkeleton />
       ) : (
-        <ScrollView
+        <FlatList
           ref={scrollRef}
           style={{ width: "100%" }}
-          contentContainerStyle={{ paddingBottom: 200 }}
+          data={days}
+          keyExtractor={(item) => item.date}
+          renderItem={renderDay}
+          ListEmptyComponent={
+            <EmptyState
+              text={
+                searchText.trim()
+                  ? "No transactions match your search"
+                  : "No transactions this month"
+              }
+            />
+          }
+          contentContainerStyle={
+            days.length === 0
+              ? { flexGrow: 1, justifyContent: "center", paddingBottom: 120 }
+              : { paddingBottom: 200 }
+          }
           scrollEventThrottle={16}
           onScroll={(e) =>
             Store.getState().setHistoryScrollY(e.nativeEvent.contentOffset.y)
@@ -358,129 +467,16 @@ const Home = () => {
           onContentSizeChange={() => {
             if (didRestoreScroll.current) return;
             const y = Store.getState().historyScrollY;
-            if (y > 0) scrollRef.current?.scrollTo({ y, animated: false });
+            if (y > 0) scrollRef.current?.scrollToOffset({ offset: y, animated: false });
             didRestoreScroll.current = true;
           }}
-        >
-          {Object.keys(filteredGrouped).map((date) => {
-            let dailyIncome = 0;
-            let dailyExpenses = 0;
-            filteredGrouped[date].forEach((t) => {
-              const amt = parseFloat(
-                t.transaction_secondCurrencyAmount != null
-                  ? t.transaction_secondCurrencyAmount
-                  : t.transaction_amount
-              );
-              if (t.transaction_type === "Income") dailyIncome += amt;
-              else if (t.transaction_type === "Expense") dailyExpenses += amt;
-            });
-            return (
-              <TransactionDay
-                date={new Date(date).toLocaleDateString("en-GB", {
-                  day: "2-digit",
-                })}
-                weekday={new Date(date).toLocaleDateString("en-GB", {
-                  weekday: "short",
-                })}
-                month={new Date(date).toLocaleDateString("en-GB", {
-                  month: "2-digit",
-                })}
-                year={new Date(date).toLocaleDateString("en-GB", {
-                  year: "2-digit",
-                })}
-                key={date}
-                income={dailyIncome}
-                expenses={dailyExpenses}
-                style={{
-                  marginVertical: 10,
-                  width: "100%",
-                  paddingHorizontal: 20,
-                  alignItems: "center",
-                }}
-              >
-                {filteredGrouped[date].map((t) => (
-                  <TouchableOpacity
-                    key={t.transaction_id}
-                    style={styles.txRow}
-                    onPress={() => {
-                      setEditingID(t.transaction_id);
-                      router.push(`/editTransaction`);
-                    }}
-                  >
-                    <View style={styles.txMain}>
-                      {t.transaction_type === "Transfer" ? (
-                        <>
-                          <Text style={styles.txLeft} numberOfLines={1}>
-                            {fallback(t.account_from_emoji, t.account_from_snapshot_emoji)}
-                            {"  "}
-                            {fallback(t.account_from_name, t.account_from_snapshot_name)}
-                          </Text>
-                          <Ionicons
-                            name="arrow-forward-outline"
-                            size={14}
-                            color="#aaa"
-                            style={{ marginHorizontal: 4 }}
-                          />
-                          <Text style={styles.txMid} numberOfLines={1}>
-                            {fallback(t.account_to_emoji, t.account_to_snapshot_emoji)}
-                            {"  "}
-                            {fallback(t.account_to_name, t.account_to_snapshot_name)}
-                          </Text>
-                          <Text
-                            style={[styles.txAmount, { color: "#734BE9" }]}
-                            numberOfLines={1}
-                          >
-                            {fmtAmount(t.transaction_amount)}{" "}
-                            {fallback(t.currency_symbol, t.currency_snapshot_symbol)}
-                          </Text>
-                        </>
-                      ) : (
-                        <>
-                          <Text style={styles.txLeft} numberOfLines={1}>
-                            {fallback(t.category_emoji, t.category_emoji_snapshot)}
-                            {"  "}
-                            {fallback(t.category_name, t.category_name_snapshot)}
-                          </Text>
-                          <Text style={styles.txMid} numberOfLines={1}>
-                            {fallback(t.account_emoji, t.account_snapshot_emoji)}
-                            {"  "}
-                            {fallback(t.account_name, t.account_snapshot_name)}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.txAmount,
-                              {
-                                color:
-                                  t.transaction_type === "Income"
-                                    ? "#4EA758"
-                                    : "#CD5D5D",
-                              },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {fmtAmount(
-                              t.transaction_secondCurrencyAmount != null
-                                ? t.transaction_secondCurrencyAmount
-                                : t.transaction_amount
-                            )}{" "}
-                            {fallback(t.currency_symbol, t.currency_snapshot_symbol)}
-                          </Text>
-                        </>
-                      )}
-                    </View>
-                    {t.transaction_note ? (
-                      <Text style={styles.txNote} numberOfLines={2}>
-                        {t.transaction_note}
-                      </Text>
-                    ) : null}
-                  </TouchableOpacity>
-                ))}
-              </TransactionDay>
-            );
-          })}
-        </ScrollView>
+          initialNumToRender={8}
+          maxToRenderPerBatch={6}
+          windowSize={9}
+          removeClippedSubviews
+        />
       )}
-      </View>
+      </MonthSwiper>
 
       <AddTransactionButton />
     </View>

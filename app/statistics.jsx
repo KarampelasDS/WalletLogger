@@ -3,7 +3,6 @@ import {
   Text,
   View,
   ScrollView,
-  ActivityIndicator,
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
@@ -17,6 +16,8 @@ import InfoTip from "../components/InfoTip/InfoTip";
 import { Store } from "../stores/Store";
 import { fmtAmount } from "../utils/format";
 import PieChart from "../components/PieChart/PieChart";
+import MonthSwiper from "../components/MonthSwiper/MonthSwiper";
+import StatsSkeleton from "../components/Skeleton/StatsSkeleton";
 
 const months = [
   "Jan","Feb","Mar","Apr","May","Jun",
@@ -212,10 +213,16 @@ const Statistics = () => {
     }
 
     const args = { periodSQL, typeSQL, catSQL, accSQL, srchSQL, types, transferAllowed, transferAccSQL };
-    loadSearchResults(periodSQL, typeSQL, srchSQL);
-    if (activeTab === "month")     fetchMonthStats(args);
-    else if (activeTab === "year") fetchYearStats(args);
-    else                           fetchAllTimeStats(args);
+    // Hide content immediately, then fetch after the debounce — flicking through
+    // months/years never renders an in-between period.
+    setLoading(true);
+    const t = setTimeout(() => {
+      loadSearchResults(periodSQL, typeSQL, srchSQL);
+      if (activeTab === "month")     fetchMonthStats(args);
+      else if (activeTab === "year") fetchYearStats(args);
+      else                           fetchAllTimeStats(args);
+    }, 180);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbInitialized, shownMonth, shownYear, activeTab,
       selectedCategories, selectedAccounts, selectedTypes, appliedSearch]);
@@ -461,7 +468,12 @@ const Statistics = () => {
 
   // ─── Navigation ───────────────────────────────────────────────────────────────
 
+  // Slide-animation direction (-1 prev, +1 next), shared with MonthSwiper
+  const directionRef = useRef(0);
+
   const goBack = () => {
+    if (activeTab === "alltime") return;
+    directionRef.current = -1;
     if (activeTab === "month") {
       if (shownMonth === 0) { setShownYear((y) => y - 1); setShownMonth(11); }
       else setShownMonth((m) => m - 1);
@@ -469,6 +481,8 @@ const Statistics = () => {
   };
 
   const goForward = () => {
+    if (activeTab === "alltime") return;
+    directionRef.current = 1;
     if (activeTab === "month") {
       if (shownMonth === 11) { setShownYear((y) => y + 1); setShownMonth(0); }
       else setShownMonth((m) => m + 1);
@@ -1312,21 +1326,27 @@ const Statistics = () => {
         </View>
       )}
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#734BE9" />
-        </View>
-      ) : (
-        <ScrollView
-          style={{ width: "100%" }}
-          contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16 }}
-        >
-          {appliedSearch.trim().length > 0 && renderSearchResults()}
-          {activeTab === "month"   && renderMonthTab()}
-          {activeTab === "year"    && renderYearTab()}
-          {activeTab === "alltime" && renderAllTimeTab()}
-        </ScrollView>
-      )}
+      <MonthSwiper
+        triggerKey={`${activeTab}-${shownMonth}-${shownYear}`}
+        directionRef={directionRef}
+        enabled={activeTab !== "alltime"}
+        onPrev={goBack}
+        onNext={goForward}
+      >
+        {loading ? (
+          <StatsSkeleton />
+        ) : (
+          <ScrollView
+            style={{ width: "100%" }}
+            contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 16 }}
+          >
+            {appliedSearch.trim().length > 0 && renderSearchResults()}
+            {activeTab === "month"   && renderMonthTab()}
+            {activeTab === "year"    && renderYearTab()}
+            {activeTab === "alltime" && renderAllTimeTab()}
+          </ScrollView>
+        )}
+      </MonthSwiper>
 
       {renderFilterModal()}
     </View>
