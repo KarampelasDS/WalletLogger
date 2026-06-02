@@ -28,6 +28,7 @@
   <a href="#install-the-apk"><img alt="Install" src="https://img.shields.io/badge/Install-1a1a1d?style=for-the-badge" /></a>
   <a href="#local-setup"><img alt="Local Setup" src="https://img.shields.io/badge/Local_Setup-1a1a1d?style=for-the-badge" /></a>
   <a href="#how-it-works--end-to-end"><img alt="How It Works" src="https://img.shields.io/badge/How_It_Works-1a1a1d?style=for-the-badge" /></a>
+  <a href="#backup-import--export"><img alt="Backup & Import" src="https://img.shields.io/badge/Backup_&_Import-1a1a1d?style=for-the-badge" /></a>
   <a href="#database-schema"><img alt="Database" src="https://img.shields.io/badge/Database-1a1a1d?style=for-the-badge" /></a>
   <a href="#app-structure"><img alt="App Structure" src="https://img.shields.io/badge/App_Structure-1a1a1d?style=for-the-badge" /></a>
   <a href="#ownership"><img alt="Ownership" src="https://img.shields.io/badge/Ownership-1a1a1d?style=for-the-badge" /></a>
@@ -199,16 +200,20 @@ All of it is driven by a **filter sheet** (transaction type, categories, account
 
 A single `constants/theme.js` palette defines the brand purple, semantic income / expense / transfer colours, and surfaces. Primary actions are one consistent purple, destructive actions one red, and large numbers are abbreviated (`1.23M`, `10.00B`, `2.00T`) so values never overflow on any screen size. The bottom navigation highlights the tab you're on, and the corners across the app share one tight, business-like radius for a clean, consistent look.
 
-### 8. Your data is yours — backup, restore & migrate
+---
 
-Because everything lives in a single file on your phone, moving or safeguarding it is simple:
+## Backup, Import & Export
 
-- **Export** writes a complete copy of your database to a folder you pick, or — via the share sheet — straight to Drive, email or your Files app.
-- **Restore** lets you pick one of those backups and swap it back in; it checks the file is a genuine Wallet Logger backup before replacing anything.
-- **Import** reads an export from another expense app and translates it into Wallet Logger's accounts, categories, currencies and transactions (transfers and all).
-- **Reset** clears everything and drops you back into setup with the defaults, after a confirmation.
+Because everything lives in a single SQLite file on your phone, moving or safeguarding your data is simple — and entirely in your hands. It all lives under **Settings → Backup & Restore**, with nothing ever uploaded automatically.
 
-Restore, import and reset all replace what's currently in the app, so it nudges you to export a backup first.
+| Action      | What it does                                                                                                                                   |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Export**  | Writes a complete `.db` copy of all your data to a folder you choose, or — via the share sheet — straight to Drive, email or your Files app.   |
+| **Restore** | Pick one of those `.db` backups and swap it back in. It verifies the file is a genuine Wallet Logger backup before replacing anything.         |
+| **Import**  | Reads a database export from another expense app and translates it into Wallet Logger's accounts, categories, currencies and transactions — including splitting/merging transfers and recomputing balances. |
+| **Reset**   | (Under **Settings → Reset App**) Wipes everything and drops you back into first-run setup with the defaults, behind a confirmation prompt.     |
+
+Use **Export** to move to a new phone or keep a safety copy, and **Import** to bring your history over from another app. Restore, Import and Reset all replace what's currently in the app, so the screen nudges you to export a backup first.
 
 ---
 

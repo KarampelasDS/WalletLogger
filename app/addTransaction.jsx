@@ -459,6 +459,13 @@ const AddTransaction = () => {
     Transfer: "#734BE9",
   };
 
+  //! Auto-advance: accepting/selecting a field jumps to the next one.
+  // The open* helpers call closeSheets() first, so the amount keyboard closes.
+  const advanceFromAmount = () => {
+    if (transactionType === "Transfer") openAccountFromPicker();
+    else openCategoryPicker();
+  };
+
   return (
     <TouchableWithoutFeedback
       style={{ zIndex: 1100 }}
@@ -817,7 +824,7 @@ const AddTransaction = () => {
             typeColor={colors[transactionType]}
             value={transactionAmount}
             valueUpdateFunction={setTransactionAmount}
-            closeKeyboard={closeKeyboard}
+            closeKeyboard={advanceFromAmount}
             currencies={storedCurrencies}
             updateCurrency={setTransactionCurrency}
             allowExchange={transactionType !== "Transfer"}
@@ -827,7 +834,10 @@ const AddTransaction = () => {
         {showCategoryPicker && (
           <OptionPicker
             value={transactionCategory}
-            valueUpdateFunction={setTransactionCategory}
+            valueUpdateFunction={(val) => {
+              setTransactionCategory(val);
+              openAccountPicker();
+            }}
             options={
               transactionType == "Income"
                 ? storedIncomeCategories
@@ -844,7 +854,10 @@ const AddTransaction = () => {
         {showAccountPicker && (
           <OptionPicker
             value={transactionAccount}
-            valueUpdateFunction={setTransactionAccount}
+            valueUpdateFunction={(val) => {
+              setTransactionAccount(val);
+              closeAccountPicker();
+            }}
             options={storedAccounts}
             headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
@@ -857,7 +870,10 @@ const AddTransaction = () => {
         {showAccountFromPicker && (
           <OptionPicker
             value={transactionAccountFrom}
-            valueUpdateFunction={setTransactionAccountFrom}
+            valueUpdateFunction={(val) => {
+              setTransactionAccountFrom(val);
+              openAccountToPicker();
+            }}
             options={storedAccounts}
             headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
@@ -870,7 +886,10 @@ const AddTransaction = () => {
         {showAccountToPicker && (
           <OptionPicker
             value={transactionAccountTo}
-            valueUpdateFunction={setTransactionAccountTo}
+            valueUpdateFunction={(val) => {
+              setTransactionAccountTo(val);
+              closeAccountToPicker();
+            }}
             options={storedAccounts}
             headerText={"Account"}
             headerBackgroundColor={colors[transactionType]}
