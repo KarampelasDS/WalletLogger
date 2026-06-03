@@ -147,7 +147,7 @@ export default function Backup() {
     <View style={styles.container}>
       <Title
         title="Backup & Restore"
-        backIcon="chevron-back-outline"
+        backIcon="arrow-back-circle-outline"
         onPressBackIcon={() => router.back()}
       />
 

@@ -51,7 +51,7 @@ export default function ResetApp() {
     <View style={styles.container}>
       <Title
         title="Reset App"
-        backIcon="chevron-back-outline"
+        backIcon="arrow-back-circle-outline"
         onPressBackIcon={() => router.back()}
       />
 

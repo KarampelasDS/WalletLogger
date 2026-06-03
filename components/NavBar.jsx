@@ -1,6 +1,7 @@
 import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter, usePathname } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Store } from "../stores/Store";
 
 const ITEMS = [
@@ -17,9 +18,10 @@ export default function NavBar() {
   const router = useRouter();
   const pathName = usePathname();
   const iconSize = Store((state) => state.iconSize);
+  const insets = useSafeAreaInsets();
 
   return (
-    <View style={styles.NavBar}>
+    <View style={[styles.NavBar, { paddingBottom: insets.bottom + 10 }]}>
       {ITEMS.map((item) => {
         const active =
           item.path === "/"
@@ -65,11 +67,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#2C2E42",
     position: "absolute",
     bottom: 0,
-    paddingBottom: "2%",
-    paddingTop: "1%",
+    // paddingBottom is applied inline (safe-area inset) so the bar sits above
+    // the system navigation bar on 3-button devices, flush on gesture devices.
+    paddingTop: 10,
     flexDirection: "row",
     width: "100%",
-    height: "10%",
     alignItems: "center",
     paddingHorizontal: 8,
     borderTopWidth: 2,

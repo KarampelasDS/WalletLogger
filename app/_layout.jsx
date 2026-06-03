@@ -3,7 +3,7 @@ import NavBar from "../components/NavBar";
 import { View } from "react-native";
 import { Dimensions, StyleSheet } from "react-native";
 import { Store } from "../stores/Store";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, SafeAreaProvider } from "react-native-safe-area-context";
 import { useEffect, useState } from "react";
 import Toast from "react-native-toast-message";
 import { useRouter } from "expo-router";
@@ -50,14 +50,14 @@ export default function Layout() {
   }, [mounted, completedSetup, router]);
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <SafeAreaView style={styles.safeArea}>
         <Slot />
       </SafeAreaView>
       {ZustandShowNavbar && <NavBar />}
       <Toast />
-    </>
+    </SafeAreaProvider>
   );
 }
 

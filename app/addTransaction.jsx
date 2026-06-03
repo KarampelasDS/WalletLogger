@@ -70,6 +70,12 @@ const AddTransaction = () => {
     setFocusedInput("Amount");
   }, []);
 
+  // Always restore the navbar when leaving this screen (e.g. hardware back
+  // pressed while a keyboard/picker is open, which otherwise leaves it hidden).
+  useEffect(() => {
+    return () => setShowNavbar(true);
+  }, []);
+
   //! Currency Picking
   const [transactionCurrency, setTransactionCurrency] = useState({
     name: "",

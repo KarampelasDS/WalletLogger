@@ -105,6 +105,12 @@ const EditTransaction = () => {
     loadCurrencies();
   }, [db]);
 
+  // Always restore the navbar when leaving this screen (e.g. hardware back
+  // pressed while a keyboard/picker is open, which otherwise leaves it hidden).
+  useEffect(() => {
+    return () => setShowNavbar(true);
+  }, []);
+
   // Category Picking
   const [transactionCategory, setTransactionCategory] = useState({
     name: "",
