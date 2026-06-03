@@ -9,20 +9,21 @@ import {
   Modal,
 } from "react-native";
 import EmojiPicker from "rn-emoji-keyboard";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function InputModal(props) {
-  const [emoji, setEmoji] = useState(props.categoryEmoji || "😊");
+  // Emoji is optional — may be left blank.
+  const [emoji, setEmoji] = useState(props.categoryEmoji || "");
   const [pickerVisible, setPickerVisible] = useState(false);
   const [categoryName, setCategoryName] = useState(props.categoryName || "");
   const [balance, setBalance] = useState(props.categoryBalance || "");
 
   const isSaveAllowed =
     categoryName.trim().length > 0 &&
-    emoji.trim().length > 0 &&
     (!props.accountMode || !isNaN(balance));
 
   useEffect(() => {
-    setEmoji(props.categoryEmoji || "😊");
+    setEmoji(props.categoryEmoji || "");
     setCategoryName(props.categoryName || "");
     setBalance(props.categoryBalance || "");
     if (props.categoryBalance < 0.01) setBalance("");
@@ -58,7 +59,20 @@ export default function InputModal(props) {
                     style={[styles.inputContainer, styles.emojiInput]}
                     onPress={() => setPickerVisible(true)}
                   >
-                    <Text style={{ fontSize: 34 }}>{emoji}</Text>
+                    {emoji ? (
+                      <>
+                        <Text style={{ fontSize: 34 }}>{emoji}</Text>
+                        <TouchableOpacity
+                          style={styles.emojiClear}
+                          onPress={() => setEmoji("")}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                          <Ionicons name="close-circle" size={18} color="#aaa" />
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <Ionicons name="happy-outline" size={30} color="#777" />
+                    )}
                   </TouchableOpacity>
 
                   <View style={[styles.inputContainer, styles.nameInput]}>
@@ -206,7 +220,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 4,
   },
-  emojiInput: { width: "19%", marginRight: 12 },
+  emojiInput: { width: "19%", marginRight: 12, position: "relative", minHeight: 44, justifyContent: "center" },
+  emojiClear: { position: "absolute", top: -6, right: -10 },
   nameInput: { width: "79%", marginLeft: 0 },
   inputText: {
     color: "white",

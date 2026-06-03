@@ -7,6 +7,7 @@ import Button from "../../components/Button/Button";
 import SelectionScroller from "../../components/SelectionScroller/SelectionScroller";
 import ScrollerOption from "../../components/SelectionScroller/ScrollerOption";
 import * as SQLite from "expo-sqlite";
+import { CURRENCY_CATALOGUE } from "../../constants/currencies";
 
 export default function SetupScreen2() {
   const router = useRouter();
@@ -103,41 +104,7 @@ export default function SetupScreen2() {
     createTables();
   }, [db]);
 
-  const currencies = [
-    { name: "Euro", symbol: "€", shorthand: "EUR" },
-    { name: "US Dollar", symbol: "$", shorthand: "USD" },
-    { name: "British Pound", symbol: "£", shorthand: "GBP" },
-    { name: "Japanese Yen", symbol: "¥", shorthand: "JPY" },
-    { name: "Swiss Franc", symbol: "CHF", shorthand: "CHF" },
-    { name: "Canadian Dollar", symbol: "C$", shorthand: "CAD" },
-    { name: "Australian Dollar", symbol: "A$", shorthand: "AUD" },
-    { name: "Chinese Yuan", symbol: "CN¥", shorthand: "CNY" },
-    { name: "Indian Rupee", symbol: "₹", shorthand: "INR" },
-    { name: "Mexican Peso", symbol: "MX$", shorthand: "MXN" },
-    { name: "Brazilian Real", symbol: "R$", shorthand: "BRL" },
-    { name: "Russian Ruble", symbol: "₽", shorthand: "RUB" },
-    { name: "Polish Złoty", symbol: "zł", shorthand: "PLN" },
-    { name: "Czech Koruna", symbol: "Kč", shorthand: "CZK" },
-    { name: "Hungarian Forint", symbol: "Ft", shorthand: "HUF" },
-    { name: "Danish Krone", symbol: "kr", shorthand: "DKK" },
-    { name: "Swedish Krona", symbol: "kr", shorthand: "SEK" },
-    { name: "Norwegian Krone", symbol: "kr", shorthand: "NOK" },
-    { name: "Icelandic Króna", symbol: "kr", shorthand: "ISK" },
-    { name: "Bulgarian Lev", symbol: "лв", shorthand: "BGN" },
-    { name: "Romanian Leu", symbol: "lei", shorthand: "RON" },
-    { name: "Turkish Lira", symbol: "₺", shorthand: "TRY" },
-    { name: "Israeli Shekel", symbol: "₪", shorthand: "ILS" },
-    { name: "South African Rand", symbol: "R", shorthand: "ZAR" },
-    { name: "Singapore Dollar", symbol: "S$", shorthand: "SGD" },
-    { name: "New Zealand Dollar", symbol: "NZ$", shorthand: "NZD" },
-    { name: "South Korean Won", symbol: "₩", shorthand: "KRW" },
-    { name: "Honk Kong Dollar", symbol: "HK$", shorthand: "HKD" },
-    { name: "Croatian Kuna", symbol: "kn", shorthand: "HRK" },
-    { name: "Indonesian Rupiah", symbol: "Rp", shorthand: "IDR" },
-    { name: "Malaysian Ringgit", symbol: "RM", shorthand: "MYR" },
-    { name: "Philippine Peso", symbol: "₱", shorthand: "PHP" },
-    { name: "Thai Baht", symbol: "฿", shorthand: "THB" },
-  ];
+  const currencies = CURRENCY_CATALOGUE;
 
   return (
     <View style={styles.container}>

@@ -63,6 +63,13 @@ const AddTransaction = () => {
     setFocusedInput(null);
   };
 
+  // Open the amount keypad automatically when the screen mounts
+  useEffect(() => {
+    setShowAmountKeyboard(true);
+    setShowNavbar(false);
+    setFocusedInput("Amount");
+  }, []);
+
   //! Currency Picking
   const [transactionCurrency, setTransactionCurrency] = useState({
     name: "",
@@ -961,6 +968,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 5,
     marginBottom: 18,
+    // sit above the close-backdrop so changing type doesn't dismiss an open sheet
+    zIndex: 1001,
   },
   typeButton: {
     flex: 1,

@@ -1125,6 +1125,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 5,
     marginBottom: 18,
+    // sit above the close-backdrop so changing type doesn't dismiss an open sheet
+    zIndex: 1001,
   },
   typeButton: {
     flex: 1,

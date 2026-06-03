@@ -60,6 +60,10 @@ export const Store = create(
       setHistoryYear: (y) => set({ historyYear: y }),
       historyScrollY: 0,
       setHistoryScrollY: (y) => set({ historyScrollY: y }),
+      // A "YYYY-MM-DD" the History screen should scroll to once (e.g. tapped
+      // from the statistics calendar), then clear.
+      historyFocusDate: null,
+      setHistoryFocusDate: (d) => set({ historyFocusDate: d }),
 
       showNavbar: true,
       setShowNavbar: (show) => set({ showNavbar: show }),

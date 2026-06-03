@@ -57,6 +57,7 @@ export default function Backup() {
         currency_id: main.currency_id,
         currency_name: main.currency_name,
         currency_symbol: main.currency_symbol,
+        currency_shorthand: main.currency_shorthand,
         conversion_rate_to_main: main.conversion_rate_to_main,
       });
     }
@@ -83,7 +84,13 @@ export default function Backup() {
       Toast.show({
         type: "success",
         text1: "Import complete",
-        text2: `${c.transactions} transactions, ${c.accounts} accounts, ${c.categories} categories`,
+        text2:
+          `${c.transactions} transactions, ${c.accounts} accounts, ${c.categories} categories` +
+          (c.skippedCurrencies > 0
+            ? ` · ${c.skippedCurrencies} unsupported ${
+                c.skippedCurrencies === 1 ? "currency" : "currencies"
+              } skipped`
+            : ""),
       });
       router.replace("/");
     } catch (err) {
@@ -116,7 +123,7 @@ export default function Backup() {
 
       // The restored DB may use a different main currency than what's cached
       const main = await newDb.getFirstAsync(`
-        SELECT c.currency_id, c.currency_name, c.currency_symbol,
+        SELECT c.currency_id, c.currency_name, c.currency_symbol, c.currency_shorthand,
                uc.conversion_rate_to_main
         FROM user_currencies uc
         JOIN currencies c ON uc.currency_id = c.currency_id

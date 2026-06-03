@@ -43,6 +43,7 @@ const Home = () => {
   const mainCurrency = Store((state) => state.mainCurrency);
   const editingID = Store((state) => state.editingID);
   const setEditingID = Store((state) => state.setEditingID);
+  const historyFocusDate = Store((state) => state.historyFocusDate);
 
   const router = useRouter();
 
@@ -357,6 +358,22 @@ const Home = () => {
     </TransactionDay>
   );
 
+  // Scroll to a specific day when arriving from the statistics calendar
+  useEffect(() => {
+    if (loading || !historyFocusDate || days.length === 0) return;
+    const idx = days.findIndex((d) => d.date === historyFocusDate);
+    Store.getState().setHistoryFocusDate(null);
+    if (idx >= 0) {
+      requestAnimationFrame(() => {
+        scrollRef.current?.scrollToIndex({
+          index: idx,
+          animated: true,
+          viewPosition: 0,
+        });
+      });
+    }
+  }, [loading, historyFocusDate]);
+
   return (
     <View style={styles.container}>
       {dbInitialized && (
@@ -474,6 +491,16 @@ const Home = () => {
           maxToRenderPerBatch={6}
           windowSize={9}
           removeClippedSubviews
+          onScrollToIndexFailed={(info) => {
+            // Item not measured yet — approximate, then retry
+            setTimeout(() => {
+              scrollRef.current?.scrollToIndex({
+                index: info.index,
+                animated: true,
+                viewPosition: 0,
+              });
+            }, 300);
+          }}
         />
       )}
       </MonthSwiper>

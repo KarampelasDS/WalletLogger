@@ -1,6 +1,7 @@
 import { File, Directory, Paths } from "expo-file-system";
 import * as DocumentPicker from "expo-document-picker";
 import * as SQLite from "expo-sqlite";
+import { ensureCurrencyCatalogue } from "../constants/currencies";
 
 const IMPORT_TEMP = "import-temp.sqlite";
 
@@ -121,7 +122,7 @@ export async function importExternalDatabase(db) {
       "SELECT * FROM INOUTCOME WHERE COALESCE(IS_DEL,0) = 0 ORDER BY ZDATE ASC"
     );
 
-    const counts = { accounts: 0, categories: 0, currencies: 0, transactions: 0 };
+    const counts = { accounts: 0, categories: 0, currencies: 0, transactions: 0, skippedCurrencies: 0 };
 
     await db.withTransactionAsync(async () => {
       // ---- Wipe existing data (replace-all import) ----
@@ -134,43 +135,86 @@ export async function importExternalDatabase(db) {
       `);
 
       // ---- Currencies ----
+      // Restore the full built-in catalogue, then adopt ONLY the source
+      // currencies whose ISO code we already support — added through the normal
+      // in-app representation (a user_currencies row pointing at a catalogue
+      // currency). Currencies we don't support are ignored entirely.
+      await ensureCurrencyCatalogue(db);
+      const catRows = await db.getAllAsync(
+        "SELECT currency_id, currency_shorthand, currency_name, currency_symbol FROM currencies"
+      );
+      const byShort = new Map(
+        catRows.map((r) => [(r.currency_shorthand || "").toUpperCase(), r])
+      );
+
       // uid -> { id, name, symbol, rate, isMain }
       const curByUid = new Map();
       let mainCurrency = null;
       for (const c of srcCurrencies) {
-        const name = c.NAME || c.ISO || "Currency";
-        const symbol = c.SYMBOL || c.ISO || "";
-        const shorthand = c.ISO || "";
-        const rate = num(c.RATE) || 1;
-        const isMain = Number(c.IS_MAIN_CURRENCY) === 1 ? 1 : 0;
+        const iso = (c.ISO || "").toUpperCase();
+        const row = byShort.get(iso);
+        if (!row) {
+          // Unsupported currency — skip it
+          counts.skippedCurrencies++;
+          continue;
+        }
 
-        const r = await db.runAsync(
-          `INSERT INTO currencies (currency_name, currency_symbol, currency_shorthand, currency_order)
-           VALUES (?, ?, ?, ?)`,
-          [name, symbol, shorthand, num(c.ORDER_SEQ)]
-        );
-        const currency_id = r.lastInsertRowId;
+        const isMain = Number(c.IS_MAIN_CURRENCY) === 1 ? 1 : 0;
+        // The main currency is always 1:1 with itself
+        const rate = isMain ? 1 : num(c.RATE) || 1;
 
         await db.runAsync(
           `INSERT INTO user_currencies
             (currency_id, is_main, conversion_rate_to_main, display_order,
              currency_snapshot_name, currency_snapshot_symbol)
            VALUES (?, ?, ?, ?, ?, ?)`,
-          [currency_id, isMain, rate, num(c.ORDER_SEQ), name, symbol]
+          [row.currency_id, isMain, rate, num(c.ORDER_SEQ), row.currency_name, row.currency_symbol]
         );
 
-        const entry = { id: currency_id, name, symbol, rate, isMain };
+        const entry = {
+          id: row.currency_id,
+          name: row.currency_name,
+          symbol: row.currency_symbol,
+          rate,
+          isMain,
+        };
         curByUid.set(c.uid, entry);
         if (isMain) mainCurrency = entry;
         counts.currencies++;
       }
-      // Fall back to the first currency if none flagged main
+
+      // If the file's main was unsupported (skipped), promote the first adopted
+      // currency to main at a 1:1 rate.
       if (!mainCurrency && curByUid.size) {
         mainCurrency = curByUid.values().next().value;
+        mainCurrency.rate = 1;
         await db.runAsync(
-          "UPDATE user_currencies SET is_main = 1 WHERE currency_id = ?",
+          "UPDATE user_currencies SET is_main = 1, conversion_rate_to_main = 1 WHERE currency_id = ?",
           [mainCurrency.id]
         );
+      }
+
+      // If NONE of the file's currencies are supported, seed a sane default main
+      // so the app still has a working currency.
+      if (curByUid.size === 0) {
+        const fallback = byShort.get("EUR") || catRows[0];
+        if (fallback) {
+          await db.runAsync(
+            `INSERT INTO user_currencies
+              (currency_id, is_main, conversion_rate_to_main, display_order,
+               currency_snapshot_name, currency_snapshot_symbol)
+             VALUES (?, 1, 1, 0, ?, ?)`,
+            [fallback.currency_id, fallback.currency_name, fallback.currency_symbol]
+          );
+          mainCurrency = {
+            id: fallback.currency_id,
+            name: fallback.currency_name,
+            symbol: fallback.currency_symbol,
+            rate: 1,
+            isMain: 1,
+          };
+          counts.currencies++;
+        }
       }
 
       const rateToMain = (uid) => {
@@ -295,7 +339,7 @@ export async function importExternalDatabase(db) {
 
     // Read back the main currency so the caller can update the store
     const main = await db.getFirstAsync(`
-      SELECT c.currency_id, c.currency_name, c.currency_symbol,
+      SELECT c.currency_id, c.currency_name, c.currency_symbol, c.currency_shorthand,
              uc.conversion_rate_to_main
       FROM user_currencies uc
       JOIN currencies c ON uc.currency_id = c.currency_id
