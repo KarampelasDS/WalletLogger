@@ -3,6 +3,7 @@ import {
   Text,
   View,
   ScrollView,
+  FlatList,
   TouchableOpacity,
   Modal,
   TouchableWithoutFeedback,
@@ -99,6 +100,7 @@ const buildFilters = (catIds, accIds) => ({
 const buildSearchSQL = (text) => {
   if (!text.trim()) return "";
   const s = text.toLowerCase().replace(/'/g, "''");
+  // Snapshots are kept in sync on rename, so they're the source of truth here.
   return `AND (
     LOWER(COALESCE(transaction_note,'')) LIKE '%${s}%' OR
     LOWER(COALESCE(category_name_snapshot,'')) LIKE '%${s}%' OR
@@ -124,32 +126,38 @@ const Statistics = () => {
   const setEditingID = Store((s) => s.setEditingID);
   const router = useRouter();
 
+  // Seed all persisted view state from the store (survives navigating away)
+  const setStatsView = Store((s) => s.setStatsView);
+  const sv0 = useRef(Store.getState().statsView).current;
+
   // ── Navigation ───────────────────────────────────────────────────────────────
-  const [shownMonth, setShownMonth] = useState(
-    new Date(currentDate).getMonth(),
-  );
-  const [shownYear, setShownYear] = useState(
-    new Date(currentDate).getFullYear(),
-  );
-  const [activeTab, setActiveTab] = useState("month");
+  const [shownMonth, setShownMonth] = useState(sv0.shownMonth);
+  const [shownYear, setShownYear] = useState(sv0.shownYear);
+  const [activeTab, setActiveTab] = useState(sv0.activeTab);
   const [loading, setLoading] = useState(false);
 
   // ── Applied filters (drive SQL re-fetch) ────────────────────────────────────
   // Default: ALL three types selected = no type filter active
-  const [selectedTypes, setSelectedTypes] = useState([...ALL_TYPES]);
-  const [selectedCategories, setSelectedCategories] = useState([]);
-  const [selectedAccounts, setSelectedAccounts] = useState([]);
+  const [selectedTypes, setSelectedTypes] = useState(sv0.selectedTypes);
+  const [selectedCategories, setSelectedCategories] = useState(sv0.selectedCategories);
+  const [selectedAccounts, setSelectedAccounts] = useState(sv0.selectedAccounts);
 
   // ── Search: text shown in box, appliedSearch drives SQL after debounce ───────
-  const [searchText, setSearchText] = useState("");
-  const [appliedSearch, setAppliedSearch] = useState("");
+  const [searchText, setSearchText] = useState(sv0.searchText);
+  const [appliedSearch, setAppliedSearch] = useState(sv0.appliedSearch);
   const searchTimeout = useRef(null);
 
   const onSearchChange = (text) => {
     setSearchText(text);
     clearTimeout(searchTimeout.current);
-    searchTimeout.current = setTimeout(() => setAppliedSearch(text), 400);
+    // Trim so leading/trailing spaces don't change the search
+    searchTimeout.current = setTimeout(() => setAppliedSearch(text.trim()), 400);
   };
+
+  // When true, the results list shows every match instead of the first 50
+  const [showAllResults, setShowAllResults] = useState(sv0.showAllResults);
+  // The matching-transactions list lives in a modal so it doesn't push the stats down
+  const [resultsModalVisible, setResultsModalVisible] = useState(sv0.resultsModalVisible);
 
   // ── Pending filter state (committed on Apply) ────────────────────────────────
   const [filterVisible, setFilterVisible] = useState(false);
@@ -208,6 +216,52 @@ const Statistics = () => {
     selectedCategories.length > 0 ||
     selectedAccounts.length > 0 ||
     appliedSearch.trim().length > 0;
+
+  // Collapse the results list back to 50 whenever the query changes — but not on
+  // mount, so a restored "show all" view survives navigating back.
+  const skipFirstCollapse = useRef(true);
+  useEffect(() => {
+    if (skipFirstCollapse.current) {
+      skipFirstCollapse.current = false;
+      return;
+    }
+    setShowAllResults(false);
+  }, [
+    appliedSearch,
+    selectedCategories,
+    selectedAccounts,
+    selectedTypes,
+    activeTab,
+    shownMonth,
+    shownYear,
+  ]);
+
+  // Persist the whole view to the store so it survives navigating away
+  useEffect(() => {
+    setStatsView({
+      activeTab,
+      shownMonth,
+      shownYear,
+      selectedTypes,
+      selectedCategories,
+      selectedAccounts,
+      appliedSearch,
+      searchText,
+      showAllResults,
+      resultsModalVisible,
+    });
+  }, [
+    activeTab,
+    shownMonth,
+    shownYear,
+    selectedTypes,
+    selectedCategories,
+    selectedAccounts,
+    appliedSearch,
+    searchText,
+    showAllResults,
+    resultsModalVisible,
+  ]);
 
   // ── Load filter options ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -272,7 +326,11 @@ const Statistics = () => {
     // months/years never renders an in-between period.
     setLoading(true);
     const t = setTimeout(() => {
-      loadSearchResults(periodSQL, typeSQL, srchSQL);
+      loadSearchResults(
+        `${periodSQL} ${typeSQL} ${catSQL} ${accSQL} ${srchSQL}`,
+        hasFilter,
+        showAllResults,
+      );
       if (activeTab === "month") fetchMonthStats(args);
       else if (activeTab === "year") fetchYearStats(args);
       else fetchAllTimeStats(args);
@@ -288,6 +346,7 @@ const Statistics = () => {
     selectedAccounts,
     selectedTypes,
     appliedSearch,
+    showAllResults,
   ]);
 
   // ─── Fetch functions ──────────────────────────────────────────────────────────
@@ -295,9 +354,11 @@ const Statistics = () => {
   const amtExpr =
     "COALESCE(transaction_secondCurrencyAmount, transaction_amount)";
 
-  // Live search results — actual matching transactions for the current period + types
-  const loadSearchResults = async (periodSQL, typeSQL, srchSQL) => {
-    if (!srchSQL) {
+  // Matching transactions for the current search AND/OR filters.
+  // `active` = whether any search/filter is on; `showAll` removes the 50-row cap.
+  const RESULTS_CAP = 50;
+  const loadSearchResults = async (clauses, active, showAll) => {
+    if (!active) {
       setSearchResults([]);
       return;
     }
@@ -305,14 +366,14 @@ const Statistics = () => {
       const rows = await db.getAllAsync(
         `SELECT transaction_id, transaction_type, transaction_date,
                 ${amtExpr} as amt, transaction_amount, currency_snapshot_symbol,
-                category_emoji_snapshot, category_name_snapshot,
-                account_snapshot_emoji, account_snapshot_name,
-                account_from_snapshot_emoji, account_from_snapshot_name,
-                account_to_snapshot_emoji, account_to_snapshot_name,
+                category_id, category_emoji_snapshot, category_name_snapshot,
+                account_id, account_snapshot_emoji, account_snapshot_name,
+                account_from_id, account_from_snapshot_emoji, account_from_snapshot_name,
+                account_to_id, account_to_snapshot_emoji, account_to_snapshot_name,
                 transaction_note
          FROM transactions
-         WHERE 1=1 ${periodSQL} ${typeSQL} ${srchSQL}
-         ORDER BY transaction_date DESC LIMIT 50`,
+         WHERE 1=1 ${clauses}
+         ORDER BY transaction_date DESC ${showAll ? "" : `LIMIT ${RESULTS_CAP}`}`,
       );
       setSearchResults(rows);
     } catch (e) {
@@ -402,12 +463,12 @@ const Statistics = () => {
           ),
           doExp
             ? db.getFirstAsync(
-                `SELECT transaction_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
+                `SELECT transaction_id, category_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
               )
             : Promise.resolve(null),
           doInc
             ? db.getFirstAsync(
-                `SELECT transaction_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
+                `SELECT transaction_id, category_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
               )
             : Promise.resolve(null),
         ]);
@@ -481,12 +542,12 @@ const Statistics = () => {
           ),
           doExp
             ? db.getFirstAsync(
-                `SELECT transaction_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
+                `SELECT transaction_id, category_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
               )
             : Promise.resolve(null),
           doInc
             ? db.getFirstAsync(
-                `SELECT transaction_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
+                `SELECT transaction_id, category_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Income' ${periodSQL} ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
               )
             : Promise.resolve(null),
         ]);
@@ -557,12 +618,12 @@ const Statistics = () => {
           ),
           doExp
             ? db.getFirstAsync(
-                `SELECT transaction_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
+                `SELECT transaction_id, category_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Expense' ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
               )
             : Promise.resolve(null),
           doInc
             ? db.getFirstAsync(
-                `SELECT transaction_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Income' ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
+                `SELECT transaction_id, category_id, category_name_snapshot, category_emoji_snapshot, ${amtExpr} as amt FROM transactions WHERE transaction_type='Income' ${catSQL} ${accSQL} ${srchSQL} ORDER BY amt DESC LIMIT 1`,
               )
             : Promise.resolve(null),
         ]);
@@ -631,6 +692,10 @@ const Statistics = () => {
   // Slide-animation direction (-1 prev, +1 next), shared with MonthSwiper
   const directionRef = useRef(0);
 
+  // Results list scroll restore (when returning from a tapped transaction)
+  const resultsListRef = useRef(null);
+  const didRestoreResults = useRef(false);
+
   const goBack = () => {
     if (activeTab === "alltime") return;
     directionRef.current = -1;
@@ -659,6 +724,10 @@ const Statistics = () => {
       : activeTab === "year"
         ? String(shownYear)
         : `${months[shownMonth]} ${shownYear}`;
+
+  // Total transactions matching the current filters/search (drives the chip + modal count)
+  const resultsCount =
+    activeTab === "month" ? monthCount : activeTab === "year" ? yearCount : allCount;
 
   // ─── Render helpers ───────────────────────────────────────────────────────────
 
@@ -761,82 +830,53 @@ const Statistics = () => {
     );
   };
 
-  const renderSearchResults = () => {
-    const scope =
-      activeTab === "month"
-        ? `${months[shownMonth]} ${shownYear}`
-        : activeTab === "year"
-          ? shownYear
-          : "all time";
+  const renderResultItem = ({ item: t, index: i }) => {
+    const isTransfer = t.transaction_type === "Transfer";
+    const color =
+      t.transaction_type === "Income"
+        ? "#4EA758"
+        : t.transaction_type === "Expense"
+          ? "#CD5D5D"
+          : "#734BE9";
+    const left = isTransfer
+      ? `${t.account_from_snapshot_emoji || ""} ${t.account_from_snapshot_name || "?"}  →  ${t.account_to_snapshot_emoji || ""} ${t.account_to_snapshot_name || "?"}`
+      : `${t.category_emoji_snapshot || ""} ${t.category_name_snapshot || "Uncategorized"}`;
+    const dateStr = new Date(t.transaction_date).toLocaleDateString("en-GB", {
+      day: "2-digit",
+      month: "short",
+    });
+    const sub = [
+      dateStr,
+      !isTransfer && t.account_snapshot_name ? t.account_snapshot_name : null,
+      t.transaction_note || null,
+    ]
+      .filter(Boolean)
+      .join("  ·  ");
     return (
-      <>
-        <Text style={styles.sectionTitle}>
-          Results · {searchResults.length}
-          {searchResults.length === 50 ? "+" : ""}
-        </Text>
-        <View style={styles.card}>
-          {searchResults.length === 0 ? (
-            <Text style={styles.emptyText}>
-              No transactions match "{appliedSearch}" in {scope}
-            </Text>
-          ) : (
-            searchResults.map((t, i) => {
-              const isTransfer = t.transaction_type === "Transfer";
-              const color =
-                t.transaction_type === "Income"
-                  ? "#4EA758"
-                  : t.transaction_type === "Expense"
-                    ? "#CD5D5D"
-                    : "#734BE9";
-              const left = isTransfer
-                ? `${t.account_from_snapshot_emoji || ""} ${t.account_from_snapshot_name || "?"}  →  ${t.account_to_snapshot_emoji || ""} ${t.account_to_snapshot_name || "?"}`
-                : `${t.category_emoji_snapshot || ""} ${t.category_name_snapshot || "Uncategorized"}`;
-              const dateStr = new Date(t.transaction_date).toLocaleDateString(
-                "en-GB",
-                {
-                  day: "2-digit",
-                  month: "short",
-                },
-              );
-              const sub = [
-                dateStr,
-                !isTransfer && t.account_snapshot_name
-                  ? t.account_snapshot_name
-                  : null,
-                t.transaction_note || null,
-              ]
-                .filter(Boolean)
-                .join("  ·  ");
-              return (
-                <TouchableOpacity
-                  key={t.transaction_id}
-                  style={[
-                    styles.resultRow,
-                    i < searchResults.length - 1 && styles.accountRowBorder,
-                  ]}
-                  onPress={() => {
-                    setEditingID(t.transaction_id);
-                    router.push("/editTransaction");
-                  }}
-                >
-                  <View style={{ flex: 1, marginRight: 8 }}>
-                    <Text style={styles.resultTitle} numberOfLines={1}>
-                      {left}
-                    </Text>
-                    <Text style={styles.resultSub} numberOfLines={1}>
-                      {sub}
-                    </Text>
-                  </View>
-                  <Text style={[styles.resultAmt, { color }]} numberOfLines={1}>
-                    {fmtAmount(isTransfer ? t.transaction_amount : t.amt)}
-                    {sym}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })
-          )}
+      <TouchableOpacity
+        style={[
+          styles.resultRow,
+          i < searchResults.length - 1 && styles.accountRowBorder,
+        ]}
+        onPress={() => {
+          // Leave the modal open so returning from the transaction restores it
+          setEditingID(t.transaction_id);
+          router.push("/editTransaction");
+        }}
+      >
+        <View style={{ flex: 1, marginRight: 8 }}>
+          <Text style={styles.resultTitle} numberOfLines={1}>
+            {left}
+          </Text>
+          <Text style={styles.resultSub} numberOfLines={1}>
+            {sub}
+          </Text>
         </View>
-      </>
+        <Text style={[styles.resultAmt, { color }]} numberOfLines={1}>
+          {fmtAmount(isTransfer ? t.transaction_amount : t.amt)}
+          {sym}
+        </Text>
+      </TouchableOpacity>
     );
   };
 
@@ -1941,6 +1981,22 @@ const Statistics = () => {
         </View>
       )}
 
+      {/* Sticky chip — opens the matching transactions in a modal so the list
+          never pushes the stats down */}
+      {!loading && hasFilter && resultsCount > 0 && (
+        <TouchableOpacity
+          style={styles.resultsChip}
+          activeOpacity={0.85}
+          onPress={() => setResultsModalVisible(true)}
+        >
+          <Ionicons name="receipt-outline" size={16} color="#fff" />
+          <Text style={styles.resultsChipText}>
+            View {resultsCount} {resultsCount === 1 ? "transaction" : "transactions"}
+          </Text>
+          <Ionicons name="chevron-forward" size={16} color="#fff" />
+        </TouchableOpacity>
+      )}
+
       <MonthSwiper
         triggerKey={`${activeTab}-${shownMonth}-${shownYear}`}
         directionRef={directionRef}
@@ -1958,13 +2014,84 @@ const Statistics = () => {
               paddingHorizontal: 16,
             }}
           >
-            {appliedSearch.trim().length > 0 && renderSearchResults()}
             {activeTab === "month" && renderMonthTab()}
             {activeTab === "year" && renderYearTab()}
             {activeTab === "alltime" && renderAllTimeTab()}
           </ScrollView>
         )}
       </MonthSwiper>
+
+      {/* Matching transactions modal */}
+      <Modal
+        visible={resultsModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setResultsModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setResultsModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.filterPanel}>
+                <View style={styles.filterHeader}>
+                  <Text style={styles.filterTitle}>
+                    {resultsCount} {resultsCount === 1 ? "transaction" : "transactions"}
+                  </Text>
+                  <TouchableOpacity onPress={() => setResultsModalVisible(false)}>
+                    <Ionicons name="close" size={26} color="#fff" />
+                  </TouchableOpacity>
+                </View>
+                <FlatList
+                  ref={resultsListRef}
+                  data={searchResults}
+                  keyExtractor={(t) => String(t.transaction_id)}
+                  renderItem={renderResultItem}
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingBottom: 16 }}
+                  initialNumToRender={20}
+                  maxToRenderPerBatch={20}
+                  windowSize={11}
+                  scrollEventThrottle={16}
+                  onScroll={(e) =>
+                    Store.getState().setStatsView({
+                      resultsScrollY: e.nativeEvent.contentOffset.y,
+                    })
+                  }
+                  onContentSizeChange={() => {
+                    if (didRestoreResults.current || searchResults.length === 0)
+                      return;
+                    const y = sv0.resultsScrollY;
+                    didRestoreResults.current = true;
+                    if (y > 0)
+                      requestAnimationFrame(() =>
+                        resultsListRef.current?.scrollToOffset({
+                          offset: y,
+                          animated: false,
+                        }),
+                      );
+                  }}
+                  ListEmptyComponent={
+                    <Text style={styles.emptyText}>No transactions to show</Text>
+                  }
+                  ListFooterComponent={
+                    !showAllResults && searchResults.length === RESULTS_CAP ? (
+                      <TouchableOpacity
+                        style={styles.showAllBtn}
+                        activeOpacity={0.7}
+                        onPress={() => setShowAllResults(true)}
+                      >
+                        <Ionicons name="chevron-down" size={16} color="#A78BFA" />
+                        <Text style={styles.showAllText}>
+                          Show all {resultsCount} transactions
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null
+                  }
+                />
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
 
       {renderFilterModal()}
     </View>
@@ -2237,6 +2364,28 @@ const styles = StyleSheet.create({
   resultTitle: { color: "#fff", fontSize: 14, fontWeight: "500" },
   resultSub: { color: "#888", fontSize: 12, marginTop: 2 },
   resultAmt: { fontSize: 14, fontWeight: "700" },
+  showAllBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 12,
+    marginTop: -8,
+    marginBottom: 8,
+  },
+  showAllText: { color: "#A78BFA", fontSize: 14, fontWeight: "600" },
+  resultsChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    alignSelf: "center",
+    backgroundColor: "#734BE9",
+    borderRadius: 100,
+    paddingVertical: 9,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+  },
+  resultsChipText: { color: "#fff", fontSize: 14, fontWeight: "600" },
 
   // ── Section title with info ─────────────────────────────────────────────────
   sectionTitleRow: {

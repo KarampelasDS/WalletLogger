@@ -162,6 +162,11 @@ export default function ManageIncomeCategories() {
           "UPDATE categories SET category_name = ?, category_emoji = ? WHERE category_id = ?",
           [newName, newEmoji, editingCategoryId]
         );
+        // Keep the snapshot on past transactions in sync with the new name/emoji
+        await db.runAsync(
+          "UPDATE transactions SET category_name_snapshot = ?, category_emoji_snapshot = ? WHERE category_id = ?",
+          [newName, newEmoji, editingCategoryId]
+        );
         Toast.show({ type: "success", text1: "Edited Category" });
       }
 

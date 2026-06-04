@@ -125,6 +125,19 @@ export default function ManageAccounts() {
           "UPDATE accounts SET account_name = ?, account_emoji = ? WHERE account_id = ?",
           [newName, newEmoji, editingAccountId]
         );
+        // Keep transaction snapshots (regular + transfer from/to) in sync
+        await db.runAsync(
+          "UPDATE transactions SET account_snapshot_name = ?, account_snapshot_emoji = ? WHERE account_id = ?",
+          [newName, newEmoji, editingAccountId]
+        );
+        await db.runAsync(
+          "UPDATE transactions SET account_from_snapshot_name = ?, account_from_snapshot_emoji = ? WHERE account_from_id = ?",
+          [newName, newEmoji, editingAccountId]
+        );
+        await db.runAsync(
+          "UPDATE transactions SET account_to_snapshot_name = ?, account_to_snapshot_emoji = ? WHERE account_to_id = ?",
+          [newName, newEmoji, editingAccountId]
+        );
         Toast.show({ type: "success", text1: "Edited Account" });
       }
 

@@ -65,6 +65,24 @@ export const Store = create(
       historyFocusDate: null,
       setHistoryFocusDate: (d) => set({ historyFocusDate: d }),
 
+      // Statistics view — kept in-memory so opening a transaction and coming
+      // back restores the same mode/period/filters/search and results position.
+      statsView: {
+        activeTab: "month",
+        shownMonth: new Date().getMonth(),
+        shownYear: new Date().getFullYear(),
+        selectedTypes: ["Income", "Expense", "Transfer"],
+        selectedCategories: [],
+        selectedAccounts: [],
+        appliedSearch: "",
+        searchText: "",
+        showAllResults: false,
+        resultsModalVisible: false,
+        resultsScrollY: 0,
+      },
+      setStatsView: (partial) =>
+        set((s) => ({ statsView: { ...s.statsView, ...partial } })),
+
       showNavbar: true,
       setShowNavbar: (show) => set({ showNavbar: show }),
 
