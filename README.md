@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
-  <strong>A private, offline-first, multi-currency expense manager for Android — track income, expenses and transfers across accounts, then understand where your money goes. Your financial data never leaves your device.</strong>
+  <strong>A private, offline-first, multi-currency expense manager for Android - Track income, expenses and transfers across accounts, then understand where your money goes. Your financial data never leaves your device.</strong>
 </p>
 
 <p align="center">
