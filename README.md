@@ -38,7 +38,7 @@
 
 ## Premise
 
-Most budgeting apps assume a single currency, push your spending history to a cloud account, monetise your data, and bury the numbers you actually care about behind a sign-up wall. Wallet Logger takes the opposite approach: it is **private by design**. There is no account, no sign-up, no analytics, and no server — **every transaction lives in a local SQLite database on your device and never leaves it**. Your finances are nobody's business but yours.
+Most budgeting apps assume a single currency, push your spending history to a cloud account, monetise your data, and bury the numbers you actually care about behind a sign-up wall. Wallet Logger takes the opposite approach: it is **private by design**. There is no account, no sign-up, no analytics, and no server. **Every transaction lives in a local SQLite database on your device and never leaves it**. Your finances are nobody's business but yours.
 
 Because nothing is uploaded, the app is fully usable on a plane, in airplane mode, or with the network permission denied entirely — and it treats multiple currencies as a first-class feature rather than an afterthought.
 
